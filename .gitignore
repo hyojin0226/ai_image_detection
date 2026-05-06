@@ -216,3 +216,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+SDLX/
+image_data/SDXL/
+image_data/SDXL_1024/
+
+SDLX/
+image_data/SDXL/
+image_data/SDXL_1024/

@@ -4,8 +4,8 @@ from tqdm import tqdm
 from concurrent.futures import ProcessPoolExecutor
 
 # 설정
-input_dir = r'C:\ai_image_detection\ai_image_detection\image_data\SDXL'  # 원본 이미지 폴더 경로
-output_dir = r'C:\ai_image_detection\ai_image_detection\256_images' # 저장할 폴더 경로
+input_dir = r'C:\ai_image_detection\ai_image_detection\image_data\SDXL_1024'  # 원본 이미지 폴더 경로
+output_dir = r'C:\ai_image_detection\ai_image_detection\image_data\SDXL' # 저장할 폴더 경로
 target_size = (256, 256)
 
 # 출력 폴더가 없으면 생성
