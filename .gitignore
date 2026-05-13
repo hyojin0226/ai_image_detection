@@ -216,3 +216,24 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+
+# Dataset folders
+data/
+
+# Model checkpoint / trained weights
+*.h5
+*.weights.h5
+*.keras
+
+# Generated images
+cam.jpg
+grad_cam*.jpg
+grad_cam*.png
+
+# Jupyter temporary files
+.ipynb_checkpoints/
+
+# Python cache
+__pycache__/
+*.pyc
