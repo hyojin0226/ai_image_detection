@@ -1,0 +1,13 @@
+dataset,evaluation_type,class,images
+train,training_split,fake,123600
+train,training_split,real,123600
+valid,training_split,fake,19200
+valid,training_split,real,19200
+test_id,id,fake,19200
+test_id,id,real,19200
+test_source_gravex,source_seen_or_mixed,fake,4600
+test_source_gravex,source_seen_or_mixed,real,4600
+test_source_stylegan,source_seen_or_mixed,fake,10000
+test_source_stylegan,source_seen_or_mixed,real,10000
+test_source_flux_sdxl,source_seen_or_mixed,fake,4600
+test_source_flux_sdxl,source_seen_or_mixed,real,4600

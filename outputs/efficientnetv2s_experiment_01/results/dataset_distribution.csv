@@ -1,0 +1,7 @@
+dataset,evaluation_type,fake,real
+test_id,id,19200,19200
+test_source_flux_sdxl,source_seen_or_mixed,4600,4600
+test_source_gravex,source_seen_or_mixed,4600,4600
+test_source_stylegan,source_seen_or_mixed,10000,10000
+train,training_split,123600,123600
+valid,training_split,19200,19200

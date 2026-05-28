@@ -1,0 +1,19 @@
+{
+  "model_name": "EfficientNetV2S",
+  "image_size": [
+    256,
+    256
+  ],
+  "class_names": [
+    "fake",
+    "real"
+  ],
+  "label_mapping": {
+    "fake": 0,
+    "real": 1
+  },
+  "output_interpretation": "model output is probability of real",
+  "decision_threshold_real": 0.7100000000000002,
+  "selected_weights": "outputs/efficientnetv2s_experiment_01/models/best_head.weights.h5",
+  "run_name": "efficientnetv2s_experiment_01"
+}
