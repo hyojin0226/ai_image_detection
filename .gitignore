@@ -226,6 +226,9 @@ data/
 *.weights.h5
 *.keras
 
+# Deployment model: tracked with Git LFS for Streamlit Community Cloud
+!outputs/efficientnetv2s_experiment_01/models/efficientnetv2s_fake_face_final.keras
+
 # Generated images
 cam.jpg
 grad_cam*.jpg

@@ -13,7 +13,7 @@
     "real": 1
   },
   "output_interpretation": "model output is probability of real",
-  "decision_threshold_real": 0.7100000000000002,
+  "decision_threshold_real": 0.24000000000000005,
   "selected_weights": "outputs/efficientnetv2s_experiment_01/models/best_finetuned.weights.h5",
   "run_name": "efficientnetv2s_experiment_01"
 }
