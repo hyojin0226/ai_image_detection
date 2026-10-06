@@ -237,3 +237,6 @@ grad_cam*.png
 # Python cache
 __pycache__/
 *.pyc
+
+# Windows shortcut made by 'AI Face Detector.bat' (absolute paths)
+*.lnk

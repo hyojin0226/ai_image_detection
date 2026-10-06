@@ -9,14 +9,18 @@
 | 파일 | 설명 |
 | --- | --- |
 | `index.html`, `style.css`, `app.js` | 사이트 화면과 예측 로직 |
+| `ui.js` | 링 모션그래픽, 배경 효과, 상단 메뉴 패널 등 화면 연출 (예측과 무관) |
+| `icon.svg`, `icon.ico` | 서비스 아이콘 (파비콘, 바로가기 로고) |
 | `model/model.json`, `model/group1-shard*.bin` | TF.js로 변환한 모델 (float16, 약 41MB) |
 | `model/inference_config.json` | 입력 크기, threshold 등 (원본과 동일) |
 
 ## 로컬에서 실행
 
-`index.html`을 더블클릭해서 열면 브라우저 보안 정책 때문에 모델을 불러오지 못합니다. 간단한 웹 서버로 실행하세요.
+저장소 맨 위에 있는 `AI Face Detector.bat`을 더블클릭하면 서버가 켜지고 브라우저가 열립니다 (창을 닫으면 서버도 꺼집니다).
+한 번 실행하면 같은 자리에 로고가 달린 바로가기 `AI Face Detector.lnk`가 생기니 다음부터는 그걸 눌러도 됩니다.
+Python 3이 설치되어 있어야 합니다.
 
-Windows에서는 `web/start.bat`을 더블클릭하면 서버가 켜지고 브라우저가 열립니다 (창을 닫으면 서버도 꺼집니다). 또는 터미널에서:
+터미널에서 직접 실행하려면:
 
 ```bash
 python -m http.server 8000 --directory web
