@@ -3,249 +3,470 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AI Face Detector</title>
-  <meta name="description" content="EfficientNetV2S 기반 AI 생성 얼굴 이미지 판별기 — 브라우저에서 바로 실행됩니다.">
-  <meta name="theme-color" content="#000000">
+  <title>Fakit — AI 얼굴 탐지</title>
+  <meta name="description" content="Fakit — 사진을 올리면 실제 사진인지 AI가 만든 얼굴인지 브라우저 안에서 바로 판별합니다. 여러 장도 한 번에.">
+  <meta name="theme-color" content="#ffffff">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
   <link rel="stylesheet" href="style.css">
   <script>document.documentElement.classList.add("js");</script>
 </head>
-<body>
+<body data-route="home">
   <div class="backdrop" aria-hidden="true">
     <span class="glow glow-a"></span>
     <span class="glow glow-b"></span>
-    <span class="glow glow-pointer" id="glow-pointer"></span>
-    <span class="dots"></span>
   </div>
 
+  <a class="skip" href="#main">본문으로 이동</a>
+
+  <!-- ── Header ─────────────────────────────────────────── -->
   <header class="nav" id="nav">
     <div class="nav-inner">
-      <a class="brand" href="./" aria-label="AI Face Detector 홈">
-        <svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true">
-          <rect width="32" height="32" rx="8" fill="#f5f5f7"/>
-          <path d="M16 6.5a8 9.5 0 0 0 0 19z" fill="#000"/>
-          <path d="M16 7.5a7 8.5 0 0 1 0 17" fill="none" stroke="#000" stroke-width="2"/>
-        </svg>
-        <span>AI Face Detector</span>
+      <a class="brand" href="#/" data-route="home" aria-label="Fakit 홈">
+        <img class="brand-mark" src="icon.svg" alt="" width="30" height="30">
+        <span class="brand-name">Fakit<b>.</b></span>
       </a>
 
       <nav class="menu" aria-label="주요 메뉴">
-        <button type="button" class="menu-item" data-panel-trigger="features" aria-expanded="false" aria-controls="sheet">기능</button>
-        <button type="button" class="menu-item" data-panel-trigger="how" aria-expanded="false" aria-controls="sheet">작동 방식</button>
-        <button type="button" class="menu-item" data-panel-trigger="performance" aria-expanded="false" aria-controls="sheet">성능</button>
+        <a class="menu-item" href="#/" data-route="home">이미지 탐지</a>
+        <a class="menu-item" href="#/text" data-route="text">글 탐지 <span class="soon">예정</span></a>
+        <a class="menu-item" href="#/video" data-route="video">영상 탐지 <span class="soon">예정</span></a>
+        <a class="menu-item" href="#/model" data-route="model">모델</a>
+        <a class="menu-item" href="#/guide" data-route="guide">가이드</a>
       </nav>
 
       <div class="nav-right">
-        <a class="nav-link" href="https://github.com/hyojin0226/ai_image_detection">GitHub</a>
-        <button type="button" class="menu-toggle" data-panel-trigger="all" aria-expanded="false" aria-controls="sheet">
-          메뉴 <span class="bars" aria-hidden="true"><i></i><i></i></span>
+        <button type="button" class="btn btn-ghost btn-sm" id="login-btn">로그인</button>
+        <div class="user" id="user-chip" hidden>
+          <button type="button" class="user-btn" id="user-btn" aria-haspopup="true" aria-expanded="false" aria-controls="user-menu">
+            <span class="avatar" id="user-avatar" aria-hidden="true"></span>
+            <span class="user-name" id="user-name"></span>
+          </button>
+          <div class="user-menu" id="user-menu" hidden>
+            <p class="user-menu-label" id="user-provider"></p>
+            <a href="#/history" data-route="history">내 기록 보기</a>
+            <button type="button" id="logout-btn">로그아웃</button>
+          </div>
+        </div>
+        <button type="button" class="menu-toggle" id="menu-toggle" aria-expanded="false" aria-controls="drawer" aria-label="메뉴 열기">
+          <span class="bars" aria-hidden="true"><i></i><i></i></span>
         </button>
       </div>
     </div>
 
-    <div class="sheet" id="sheet">
-      <div class="sheet-inner">
-        <section class="sheet-panel" data-panel="features">
-          <p class="sheet-label">기능</p>
-          <div class="feature-grid">
-            <a class="feature is-live" href="#detect">
-              <span class="tag tag-live">사용 가능</span>
-              <p class="feature-title">얼굴 판별</p>
-              <p class="feature-desc">사진 한 장으로 실제 사진인지, AI가 만든 얼굴인지 판별합니다.</p>
-            </a>
-            <!-- 아래 세 칸은 앞으로 추가할 기능 자리입니다. 기능이 생기면 내용을 바꾸고 tag를 "사용 가능"으로 바꾸세요. -->
-            <div class="feature">
-              <span class="tag">준비 중</span>
-              <p class="feature-title">여러 장 한 번에</p>
-              <p class="feature-desc">사진 여러 장을 올려 한꺼번에 판별합니다.</p>
-            </div>
-            <div class="feature">
-              <span class="tag">준비 중</span>
-              <p class="feature-title">판별 근거 보기</p>
-              <p class="feature-desc">모델이 사진의 어느 부분을 보고 판단했는지 보여줍니다.</p>
-            </div>
-            <div class="feature">
-              <span class="tag">준비 중</span>
-              <p class="feature-title">영상 판별</p>
-              <p class="feature-desc">영상 속 얼굴을 프레임 단위로 판별합니다.</p>
-            </div>
-          </div>
-        </section>
-
-        <section class="sheet-panel" data-panel="how">
-          <p class="sheet-label">작동 방식</p>
-          <ol class="steps">
-            <li>
-              <span class="step-num">01</span>
-              <p class="feature-title">올리기</p>
-              <p class="feature-desc">JPG, PNG, WEBP 얼굴 이미지를 끌어다 놓거나, 선택하거나, 붙여넣습니다.</p>
-            </li>
-            <li>
-              <span class="step-num">02</span>
-              <p class="feature-title">분석</p>
-              <p class="feature-desc">이미지를 256×256으로 맞춘 뒤, EfficientNetV2S 모델이 TensorFlow.js로 브라우저 안에서 분석합니다.</p>
-            </li>
-            <li>
-              <span class="step-num">03</span>
-              <p class="feature-title">판정</p>
-              <p class="feature-desc">REAL 확률이 기준선 0.24 이상이면 REAL, 그보다 낮으면 AI 생성 이미지로 판정합니다.</p>
-            </li>
-          </ol>
-          <p class="sheet-note">
-            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M7 10V7.5a5 5 0 0 1 10 0V10M6.5 10h11A1.5 1.5 0 0 1 19 11.5v7a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 18.5v-7A1.5 1.5 0 0 1 6.5 10Z"/></svg>
-            모델(약 41MB)을 처음 한 번 내려받은 뒤에는 모든 분석이 브라우저 안에서 이루어집니다. 업로드한 이미지는 서버로 전송되지 않습니다.
-          </p>
-        </section>
-
-        <section class="sheet-panel" data-panel="performance">
-          <p class="sheet-label">성능</p>
-          <div class="perf">
-            <div class="perf-stat"><p class="perf-num">97.8<small>%</small></p><p class="feature-desc">Accuracy · 정확도</p></div>
-            <div class="perf-stat"><p class="perf-num">99.8<small>%</small></p><p class="feature-desc">AUC · ROC 곡선 아래 면적</p></div>
-            <div class="perf-stat"><p class="perf-num">0<small>장</small></p><p class="feature-desc">서버로 전송되는 이미지</p></div>
-            <dl class="specs">
-              <div><dt>모델</dt><dd>EfficientNetV2S</dd></div>
-              <div><dt>입력 크기</dt><dd>256 × 256</dd></div>
-              <div><dt>REAL 기준선</dt><dd>0.24</dd></div>
-              <div><dt>모델 크기</dt><dd>약 41MB</dd></div>
-            </dl>
-          </div>
-        </section>
-      </div>
-    </div>
+    <nav class="drawer" id="drawer" aria-label="모바일 메뉴" hidden>
+      <a href="#/" data-route="home">이미지 탐지</a>
+      <a href="#/text" data-route="text">글 탐지 <span class="soon">예정</span></a>
+      <a href="#/video" data-route="video">영상 탐지 <span class="soon">예정</span></a>
+      <a href="#/model" data-route="model">모델</a>
+      <a href="#/guide" data-route="guide">가이드</a>
+      <a href="#/history" data-route="history">기록</a>
+      <a href="#/about" data-route="about">소개</a>
+    </nav>
   </header>
-  <div class="scrim" id="scrim"></div>
 
-  <main>
-    <div class="stage">
-      <section class="intro">
-        <p class="eyebrow">EfficientNetV2S 기반 얼굴 판별</p>
-        <h1 class="title">
-          <span class="solid">진짜일까.</span>
-          <span class="hollow" data-text="AI일까.">AI일까.</span>
-        </h1>
-        <p class="sub">얼굴 사진을 올리면 실제 사진인지,<br>AI가 만든 얼굴인지 판별합니다.</p>
-        <ul class="facts">
-          <li><strong>97.8%</strong><span>Accuracy</span></li>
-          <li><strong>99.8%</strong><span>AUC</span></li>
-          <li><strong>0장</strong><span>서버 전송</span></li>
-        </ul>
+  <main id="main" tabindex="-1">
+
+    <!-- ── Home: image detection ─────────────────────────── -->
+    <section class="page is-active" data-page="home">
+      <div class="hero">
+        <p class="eyebrow">AI 생성 얼굴 탐지</p>
+        <h1 class="title">진짜일까,<br><span class="accent">AI일까.</span></h1>
+        <p class="lead">사진을 끌어다 놓거나 붙여넣으면 실제 사진인지, AI가 만든 얼굴인지 바로 판별합니다.<br>여러 장을 한 번에 올려도 됩니다. 사진은 이 기기를 떠나지 않습니다.</p>
+      </div>
+
+      <section class="composer" id="composer" aria-label="이미지 판별">
+        <div class="composer-bar">
+          <div id="model-status" class="status" aria-live="polite">
+            <span class="dot"></span>
+            <span id="status-text">모델 불러오는 중…</span>
+            <span class="loadbar"><span id="loadbar-fill"></span></span>
+          </div>
+          <span class="private">
+            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M7 10V7.5a5 5 0 0 1 10 0V10M6.5 10h11A1.5 1.5 0 0 1 19 11.5v7a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 18.5v-7A1.5 1.5 0 0 1 6.5 10Z"/></svg>
+            기기 안에서만 분석
+          </span>
+        </div>
+        <p class="notice" id="model-error" hidden></p>
+
+        <label id="dropzone" class="dropzone" for="file-input" tabindex="0">
+          <input id="file-input" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden>
+          <span class="dz-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="28" height="28"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M12 16V4m0 0-4.5 4.5M12 4l4.5 4.5M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+          </span>
+          <strong class="dz-title">이미지를 여기에 끌어다 놓으세요</strong>
+          <span class="dz-hint">JPG · PNG · WEBP · 한 번에 최대 20장</span>
+          <span class="dz-actions">
+            <span class="btn btn-primary">이미지 선택</span>
+            <button type="button" id="paste-btn" class="btn btn-soft">클립보드에서 붙여넣기</button>
+          </span>
+          <span class="dz-kbd">화면 캡처(Win+Shift+S) 후 <kbd>Ctrl</kbd>+<kbd>V</kbd>로 바로 붙여넣을 수 있습니다</span>
+          <span class="dz-overlay" aria-hidden="true">여기에 놓으세요</span>
+        </label>
+        <p class="error" id="error" hidden></p>
       </section>
 
-      <section class="detector" id="detect" aria-label="얼굴 이미지 판별">
-        <div class="card" id="card" data-state="idle">
-          <div class="card-bar">
-            <div id="model-status" class="status" aria-live="polite">
-              <span class="dot"></span>
-              <span id="status-text">모델 불러오는 중…</span>
-              <span class="loadbar"><span id="loadbar-fill"></span></span>
-            </div>
-            <span class="private">
-              <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M7 10V7.5a5 5 0 0 1 10 0V10M6.5 10h11A1.5 1.5 0 0 1 19 11.5v7a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 18.5v-7A1.5 1.5 0 0 1 6.5 10Z"/></svg>
-              기기 안에서만 분석
-            </span>
+      <section class="queue-section" id="queue-section" hidden aria-label="판별 결과">
+        <div class="summary">
+          <div class="summary-text">
+            <p id="summary-main">0장</p>
+            <p class="summary-sub" id="summary-sub"></p>
           </div>
-          <p class="notice" id="model-error" hidden></p>
+          <div class="summary-actions">
+            <button type="button" class="btn btn-soft btn-sm" id="add-more">더 추가</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="clear-queue">모두 지우기</button>
+          </div>
+        </div>
+        <div class="queue" id="queue"></div>
+        <p class="small center" id="threshold-text"></p>
+      </section>
 
-          <label id="dropzone" class="viewfinder" for="file-input" tabindex="0">
-            <input id="file-input" type="file" accept="image/jpeg,image/png,image/webp" hidden>
-            <span class="ring" aria-hidden="true">
-              <canvas id="ring"></canvas>
-              <svg class="ring-icon" viewBox="0 0 24 24" width="30" height="30"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" d="M12 17V5m0 0-4.5 4.5M12 5l4.5 4.5M5 19h14"/></svg>
-            </span>
-            <span class="prompt" id="dz-empty">
-              <strong>얼굴 사진을 끌어다 놓으세요</strong>
-              <span class="prompt-hint">JPG · PNG · WEBP — 붙여넣기(Ctrl+V)도 됩니다</span>
-              <span class="btn btn-white">이미지 선택</span>
-            </span>
-            <span class="shot">
-              <span class="shot-blur" id="shot-blur"></span>
-              <img id="preview" alt="업로드한 이미지" hidden>
-            </span>
-            <span class="scan" aria-hidden="true"></span>
-            <span class="corners" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
-            <span class="hud"><span class="hud-dot"></span><span id="analyzing-text">분석 중…</span></span>
-          </label>
-          <p class="error" id="error" hidden></p>
+      <section class="recent" id="recent-strip" hidden aria-label="최근 기록">
+        <div class="section-head">
+          <h2>최근 기록</h2>
+          <a class="more-link" href="#/history" data-route="history">전체 보기 →</a>
+        </div>
+        <div class="recent-list" id="recent-list"></div>
+      </section>
 
-          <div class="result" id="result">
-            <div class="result-clip">
-              <div class="result-body" aria-live="polite">
-                <p class="eyebrow">Prediction</p>
-                <h2 id="prediction" class="prediction"></h2>
-                <p class="verdict-sub" id="verdict-sub"></p>
+      <section class="how" aria-label="작동 방식">
+        <div class="section-head center reveal">
+          <p class="eyebrow">How it works</p>
+          <h2 class="headline">올리고, 분석하고, 확인하세요.</h2>
+        </div>
+        <div class="steps">
+          <article class="step reveal">
+            <span class="step-num">01</span>
+            <h3>올리기</h3>
+            <p>JPG, PNG, WEBP 얼굴 이미지를 끌어다 놓거나, 선택하거나, 붙여넣습니다. 여러 장을 한 번에 올려도 됩니다.</p>
+          </article>
+          <article class="step reveal" style="--d: .08s">
+            <span class="step-num">02</span>
+            <h3>분석</h3>
+            <p>이미지를 256×256으로 맞춘 뒤, EfficientNetV2S 모델이 TensorFlow.js로 브라우저 안에서 한 장씩 분석합니다.</p>
+          </article>
+          <article class="step reveal" style="--d: .16s">
+            <span class="step-num">03</span>
+            <h3>판정</h3>
+            <p>REAL 확률이 기준선 0.24 이상이면 REAL, 그보다 낮으면 AI 생성 이미지로 판정합니다. 결과는 기록에 남습니다.</p>
+          </article>
+        </div>
+        <div class="stats reveal">
+          <div class="stat"><p class="stat-num"><span data-count="97.8">97.8</span><small>%</small></p><p>Accuracy · 정확도</p></div>
+          <div class="stat"><p class="stat-num"><span data-count="99.8">99.8</span><small>%</small></p><p>AUC · ROC 곡선 아래 면적</p></div>
+          <div class="stat"><p class="stat-num">0<small>장</small></p><p>서버로 전송되는 이미지</p></div>
+          <a class="stat stat-link" href="#/model" data-route="model"><p class="stat-num">모델<small> 자세히</small></p><p>EfficientNetV2S · 256×256 · 기준선 0.24 →</p></a>
+        </div>
+      </section>
+    </section>
 
-                <div class="split-bar">
-                  <div class="bar-fill real" id="real-bar"></div>
-                  <div class="bar-fill fake" id="fake-bar"></div>
-                  <div class="threshold" id="threshold-mark" title="REAL 판정 기준선"></div>
-                </div>
-                <div class="split-legend">
-                  <p><span class="key real"></span>REAL <strong class="num" id="real-val"></strong></p>
-                  <p>AI / FAKE <strong class="num" id="fake-val"></strong><span class="key fake"></span></p>
-                </div>
+    <!-- ── History ───────────────────────────────────────── -->
+    <section class="page" data-page="history">
+      <div class="page-head">
+        <p class="eyebrow">History</p>
+        <h1>기록</h1>
+        <p class="lead">이 기기에서 검사한 이미지의 결과입니다. 축소된 미리보기와 판정만 브라우저에 저장되며, 원본 이미지는 저장하지 않습니다.</p>
+      </div>
+      <div class="history-tools">
+        <div class="chips" role="group" aria-label="필터">
+          <button type="button" class="chip is-on" data-filter="all">전체</button>
+          <button type="button" class="chip" data-filter="real">REAL</button>
+          <button type="button" class="chip" data-filter="fake">AI</button>
+        </div>
+        <div class="history-right">
+          <span class="small" id="history-count"></span>
+          <label class="switch"><input type="checkbox" id="history-toggle" checked> <span>기록 저장</span></label>
+          <button type="button" class="btn btn-ghost btn-sm" id="history-clear">모두 삭제</button>
+        </div>
+      </div>
+      <div class="queue history-list" id="history-list"></div>
+      <div class="empty" id="history-empty">
+        <img src="icon.svg" alt="" width="44" height="44">
+        <p><strong>아직 기록이 없습니다.</strong></p>
+        <p class="small">이미지를 판별하면 결과가 여기에 쌓입니다.</p>
+        <a class="btn btn-primary" href="#/" data-route="home">이미지 판별하러 가기</a>
+      </div>
+    </section>
 
-                <div class="result-foot">
-                  <p class="small" id="threshold-text"></p>
-                  <button type="button" class="btn btn-ghost" id="reset">다른 이미지</button>
-                </div>
-              </div>
-            </div>
+    <!-- ── Model ─────────────────────────────────────────── -->
+    <section class="page" data-page="model">
+      <div class="page-head">
+        <p class="eyebrow">Model</p>
+        <h1>EfficientNetV2S 기반<br>얼굴 판별 모델</h1>
+        <p class="lead">Fakit의 이미지 탐지는 ImageNet으로 사전학습한 EfficientNetV2S를 실제 얼굴 / AI 생성 얼굴 데이터로 미세조정한 이진 분류 모델입니다. 모델은 TensorFlow.js로 변환되어 브라우저 안에서 실행됩니다.</p>
+      </div>
+
+      <div class="metrics">
+        <div class="metric"><p class="metric-num">97.8<small>%</small></p><p>Accuracy</p></div>
+        <div class="metric"><p class="metric-num">99.8<small>%</small></p><p>ROC-AUC</p></div>
+        <div class="metric"><p class="metric-num">256<small>px</small></p><p>입력 크기 (정사각)</p></div>
+        <div class="metric"><p class="metric-num">0.24</p><p>REAL 판정 기준선</p></div>
+        <div class="metric"><p class="metric-num">41<small>MB</small></p><p>모델 크기 (float16)</p></div>
+        <div class="metric"><p class="metric-num">0<small>장</small></p><p>서버로 전송되는 이미지</p></div>
+      </div>
+
+      <section class="block">
+        <h2>추론 파이프라인</h2>
+        <ol class="pipeline">
+          <li><b>입력 이미지</b><span>JPG · PNG · WEBP</span></li>
+          <li><b>RGB 변환 · 256×256 리사이즈</b><span>투명 영역은 검정으로 채움</span></li>
+          <li><b>Rescaling</b><span>모델 내부에서 0–255 → 정규화</span></li>
+          <li><b>EfficientNetV2S backbone</b><span>ImageNet 사전학습 가중치</span></li>
+          <li><b>GlobalAveragePooling · Dropout 0.35</b><span>분류 헤드</span></li>
+          <li><b>Dense · Sigmoid</b><span>P(real) 하나를 출력</span></li>
+          <li><b>판정</b><span>P(real) ≥ 0.24 → REAL, 미만 → AI GENERATED</span></li>
+        </ol>
+      </section>
+
+      <div class="two-col">
+        <section class="block">
+          <h2>학습 방법</h2>
+          <ul class="bullets">
+            <li><b>2단계 학습.</b> 먼저 backbone을 고정한 채 분류 헤드만 학습(lr 1e-3)하고, 이어서 backbone 뒷부분 일부 레이어를 풀어 낮은 학습률(lr 1e-5)로 미세조정합니다. BatchNormalization 레이어는 고정합니다.</li>
+            <li><b>데이터 증강.</b> 좌우 반전, 소폭 회전(±2%), 확대/축소(±5%), 대비 변화(±10%)를 적용해 데이터셋별 크롭·배치 차이를 외우지 않도록 합니다.</li>
+            <li><b>클래스 불균형.</b> fake / real 비율에 따라 class weight를 적용합니다.</li>
+            <li><b>콜백.</b> EarlyStopping, ReduceLROnPlateau, 최고 성능 가중치 저장.</li>
+          </ul>
+        </section>
+        <section class="block">
+          <h2>평가와 기준선</h2>
+          <ul class="bullets">
+            <li><b>기준선은 검증셋에서.</b> 판정 기준선(0.24)은 테스트셋이 아니라 검증셋에서 Macro F1이 가장 높은 값으로 고른 뒤, 모든 테스트에 동일하게 적용합니다.</li>
+            <li><b>생성기별 테스트.</b> 같은 분포의 ID 테스트 외에 GRAVEX, StyleGAN, FLUX·SDXL 등 생성기별 테스트셋으로 일반화 성능을 따로 봅니다. 학습에 쓰지 않은 생성기는 OOD로 표시합니다.</li>
+            <li><b>지표.</b> Accuracy 외에 fake 클래스 기준 Precision / Recall / F1, Macro F1, ROC-AUC를 함께 봅니다.</li>
+            <li><b>Grad-CAM.</b> 마지막 convolution 레이어(top_conv)로 모델이 어느 부분을 보고 판단했는지 확인합니다.</li>
+          </ul>
+        </section>
+      </div>
+
+      <section class="block">
+        <h2>사양</h2>
+        <dl class="specs">
+          <div><dt>아키텍처</dt><dd>EfficientNetV2S (include_top=False) + GAP + Dropout 0.35 + Dense(1, sigmoid)</dd></div>
+          <div><dt>클래스</dt><dd>fake = 0 · real = 1 (출력은 real일 확률)</dd></div>
+          <div><dt>입력</dt><dd>256 × 256 × 3, 0–255 범위 (모델 내부 Rescaling)</dd></div>
+          <div><dt>판정 기준선</dt><dd>P(real) ≥ 0.24 → REAL</dd></div>
+          <div><dt>브라우저 실행</dt><dd>TensorFlow.js Graph Model, float16 가중치, 약 41MB (10개 shard)</dd></div>
+          <div><dt>원본과의 차이</dt><dd>리사이즈를 PIL 대신 canvas로 수행 · 테스트 이미지 기준 확률 차이 약 0.001 이하</dd></div>
+        </dl>
+      </section>
+
+      <section class="block block-warn">
+        <h2>한계</h2>
+        <ul class="bullets">
+          <li>얼굴 사진으로 학습한 모델입니다. 풍경, 사물, 전신 사진에서는 신뢰할 수 없습니다.</li>
+          <li>학습에 포함되지 않은 최신 생성기(OOD)의 이미지는 놓칠 수 있습니다.</li>
+          <li>심하게 압축되거나 해상도가 낮은 이미지, 필터·보정이 강한 사진은 오판 가능성이 높아집니다.</li>
+          <li>결과는 참고용입니다. 확률이 기준선 근처라면 추가 확인이 필요합니다.</li>
+        </ul>
+      </section>
+    </section>
+
+    <!-- ── Text detection (shell) ────────────────────────── -->
+    <section class="page" data-page="text">
+      <div class="page-head">
+        <p class="eyebrow">Text</p>
+        <h1>AI 글 탐지 <span class="badge badge-soon">준비 중</span></h1>
+        <p class="lead">문장을 붙여넣으면 AI가 쓴 글인지 판별하는 기능입니다. 모델 연결 전이라 지금은 화면만 준비되어 있습니다.</p>
+      </div>
+      <section class="composer shell" aria-label="글 탐지 (준비 중)">
+        <div class="composer-bar">
+          <div class="status muted"><span class="dot"></span><span>텍스트 모델 연결 전</span></div>
+        </div>
+        <div class="shell-body">
+          <textarea class="shell-textarea" rows="8" placeholder="판별할 글을 여기에 붙여넣으세요. (이후 추가 예정)" disabled></textarea>
+          <div class="shell-foot">
+            <span class="small">0 / 5,000자</span>
+            <button type="button" class="btn btn-primary" disabled>분석하기</button>
           </div>
         </div>
       </section>
+      <div class="placeholder">
+        <p>결과가 여기에 표시됩니다.</p>
+        <p class="small">* 이후 추가 예정</p>
+      </div>
+    </section>
 
-      <a class="scroll-cue" href="#how" aria-label="작동 방식으로 내려가기"><span></span></a>
-    </div>
+    <!-- ── Video detection (shell) ───────────────────────── -->
+    <section class="page" data-page="video">
+      <div class="page-head">
+        <p class="eyebrow">Video</p>
+        <h1>AI 영상 탐지 <span class="badge badge-soon">준비 중</span></h1>
+        <p class="lead">영상 속 얼굴을 프레임 단위로 판별하는 기능입니다. 모델 연결 전이라 지금은 화면만 준비되어 있습니다.</p>
+      </div>
+      <section class="composer shell" aria-label="영상 탐지 (준비 중)">
+        <div class="composer-bar">
+          <div class="status muted"><span class="dot"></span><span>영상 모델 연결 전</span></div>
+        </div>
+        <div class="dropzone is-disabled" aria-disabled="true">
+          <span class="dz-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="28" height="28"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4 7.5A2.5 2.5 0 0 1 6.5 5h8A2.5 2.5 0 0 1 17 7.5v9a2.5 2.5 0 0 1-2.5 2.5h-8A2.5 2.5 0 0 1 4 16.5zM17 10l4-2.5v9L17 14"/></svg>
+          </span>
+          <strong class="dz-title">영상을 여기에 끌어다 놓으세요</strong>
+          <span class="dz-hint">MP4 · WEBM · MOV (이후 추가 예정)</span>
+          <span class="dz-actions"><span class="btn btn-primary">영상 선택</span></span>
+        </div>
+      </section>
+      <div class="placeholder">
+        <p>결과가 여기에 표시됩니다.</p>
+        <p class="small">* 이후 추가 예정</p>
+      </div>
+    </section>
 
-    <section class="more" id="how">
-      <div class="section-head reveal">
-        <p class="eyebrow">How it works</p>
-        <h2 class="headline">올리고, 분석하고,<br>확인하세요.</h2>
+    <!-- ── Guide ─────────────────────────────────────────── -->
+    <section class="page" data-page="guide">
+      <div class="page-head">
+        <p class="eyebrow">Guide</p>
+        <h1>사용 가이드</h1>
+        <p class="lead">Fakit을 처음 쓰는 분을 위한 안내입니다.</p>
       </div>
 
-      <div class="bento">
-        <article class="tile reveal">
-          <div class="glyph glyph-upload" aria-hidden="true"><span class="g-photo"></span><span class="g-tray"></span></div>
-          <p class="tile-step">01</p>
-          <h3>올리기</h3>
-          <p class="tile-desc">JPG, PNG, WEBP 얼굴 이미지를 끌어다 놓거나, 선택하거나, 붙여넣습니다.</p>
-        </article>
-        <article class="tile reveal" style="--d: .1s">
-          <div class="glyph glyph-scan" aria-hidden="true"><span class="g-frame"><span class="g-beam"></span></span></div>
-          <p class="tile-step">02</p>
-          <h3>분석</h3>
-          <p class="tile-desc">이미지를 256×256으로 맞춘 뒤, EfficientNetV2S 모델이 브라우저 안에서 분석합니다.</p>
-        </article>
-        <article class="tile reveal" style="--d: .2s">
-          <div class="glyph glyph-verdict" aria-hidden="true">
-            <span class="g-label"><b class="g-ai">AI GENERATED</b><b class="g-real">REAL</b></span>
-            <span class="g-bar"><span class="g-fill"></span><span class="g-tick"></span></span>
-          </div>
-          <p class="tile-step">03</p>
-          <h3>판정</h3>
-          <p class="tile-desc">REAL 확률이 기준선 0.24 이상이면 REAL, 그보다 낮으면 AI 생성 이미지로 판정합니다.</p>
-        </article>
+      <section class="block">
+        <h2>이미지 올리는 세 가지 방법</h2>
+        <div class="steps compact">
+          <article class="step"><span class="step-num">드래그</span><h3>끌어다 놓기</h3><p>탐색기나 다른 창에서 사진을 페이지 어디에든 끌어다 놓으면 됩니다. 여러 장을 한꺼번에 놓아도 됩니다.</p></article>
+          <article class="step"><span class="step-num">붙여넣기</span><h3>Ctrl + V</h3><p>화면 캡처(Win+Shift+S)나 복사한 이미지를 페이지에서 바로 붙여넣습니다. 클립보드 버튼으로도 됩니다.</p></article>
+          <article class="step"><span class="step-num">업로드</span><h3>이미지 선택</h3><p>‘이미지 선택’ 버튼으로 파일을 고릅니다. 한 번에 최대 20장, 장당 15MB까지입니다.</p></article>
+        </div>
+      </section>
 
-        <article class="tile tile-stats reveal">
-          <div class="stat"><p class="stat-num"><span data-count="97.8">97.8</span><small>%</small></p><p class="tile-desc">Accuracy · 정확도</p></div>
-          <div class="stat"><p class="stat-num"><span data-count="99.8">99.8</span><small>%</small></p><p class="tile-desc">AUC · ROC 곡선 아래 면적</p></div>
-        </article>
-        <article class="tile tile-private reveal" style="--d: .1s">
-          <svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M7 10V7.5a5 5 0 0 1 10 0V10M6.5 10h11A1.5 1.5 0 0 1 19 11.5v7a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 18.5v-7A1.5 1.5 0 0 1 6.5 10Z"/></svg>
-          <h3>사진은 이 기기를<br>떠나지 않습니다.</h3>
-          <p class="tile-desc">모델(약 41MB)을 처음 한 번 내려받은 뒤에는 모든 분석이 브라우저 안에서 이루어집니다.</p>
-        </article>
+      <section class="block">
+        <h2>자주 묻는 질문</h2>
+        <div class="faq">
+          <details><summary>어떤 사진에 쓸 수 있나요?</summary><p>얼굴이 또렷하게 보이는 인물 사진에 맞춰 학습한 모델입니다. 풍경·사물 사진이나 얼굴이 아주 작은 사진에서는 결과를 믿기 어렵습니다.</p></details>
+          <details><summary>결과는 얼마나 정확한가요?</summary><p>테스트셋 기준 정확도 97.8%, ROC-AUC 99.8%입니다. 다만 학습에 포함되지 않은 최신 생성기나 보정이 강한 사진은 틀릴 수 있어 참고용으로만 사용해 주세요.</p></details>
+          <details><summary>사진이 서버로 전송되나요?</summary><p>아니요. 처음 한 번 모델(약 41MB)을 내려받은 뒤에는 모든 분석이 브라우저 안에서 이루어집니다. 업로드한 이미지는 어디로도 전송되지 않습니다.</p></details>
+          <details><summary>기록은 어디에 저장되나요?</summary><p>이 브라우저의 저장소(localStorage)에 축소된 미리보기와 판정 결과만 저장됩니다. 기록 페이지에서 끄거나 모두 삭제할 수 있습니다.</p></details>
+          <details><summary>로그인하면 무엇이 달라지나요?</summary><p>지금은 간편 로그인 화면만 준비된 체험 단계입니다. 계정 연동이 완료되면 기기 간 기록 동기화 등을 제공할 예정입니다.</p></details>
+          <details><summary>REAL 확률이 기준선 근처예요.</summary><p>0.24 근처의 값은 모델도 확신하지 못한다는 뜻입니다. 다른 사진으로 다시 확인하거나 메타데이터, 출처를 함께 확인해 주세요.</p></details>
+        </div>
+      </section>
+    </section>
+
+    <!-- ── About ─────────────────────────────────────────── -->
+    <section class="page" data-page="about">
+      <div class="page-head">
+        <p class="eyebrow">About</p>
+        <h1>Fakit 소개</h1>
+        <p class="lead">Fakit은 AI가 만든 콘텐츠를 가려내는 탐지 도구입니다. 지금은 얼굴 이미지 판별을 제공하며, 글과 영상 탐지를 차례로 추가할 계획입니다.</p>
       </div>
+      <div class="two-col">
+        <section class="block">
+          <h2>왜 만들었나요</h2>
+          <p class="body">생성 모델이 만든 얼굴은 이제 사람 눈으로 구분하기 어렵습니다. Fakit은 설치나 가입 없이, 사진을 서버에 올리지 않고도 브라우저에서 바로 판별할 수 있도록 만들었습니다.</p>
+        </section>
+        <section class="block">
+          <h2>로드맵</h2>
+          <ul class="roadmap">
+            <li class="done"><b>이미지 탐지</b><span>여러 장 동시 판별 · 기록 · 사용 가능</span></li>
+            <li><b>글 탐지</b><span>AI 작성 텍스트 판별 · 준비 중</span></li>
+            <li><b>영상 탐지</b><span>프레임 단위 얼굴 판별 · 준비 중</span></li>
+            <li><b>계정 연동</b><span>카카오 · 네이버 · 구글 간편 로그인 · 준비 중</span></li>
+          </ul>
+        </section>
+      </div>
+      <section class="block">
+        <h2>소스 코드</h2>
+        <p class="body">모델 학습 노트북, 변환 스크립트, 웹 코드는 GitHub에 공개되어 있습니다. <a class="link" href="https://github.com/hyojin0226/ai_image_detection">github.com/hyojin0226/ai_image_detection</a></p>
+      </section>
     </section>
   </main>
 
+  <!-- ── Footer ─────────────────────────────────────────── -->
   <footer class="foot">
-    <span>모델 결과는 참고용이며 틀릴 수 있습니다.</span>
-    <a href="https://github.com/hyojin0226/ai_image_detection">GitHub</a>
+    <div class="foot-inner">
+      <div class="foot-brand">
+        <a class="brand" href="#/" data-route="home"><img class="brand-mark" src="icon.svg" alt="" width="26" height="26"><span class="brand-name">Fakit<b>.</b></span></a>
+        <p class="small">모델 결과는 참고용이며 틀릴 수 있습니다.<br>업로드한 이미지는 서버로 전송되지 않습니다.</p>
+      </div>
+      <div class="foot-cols">
+        <div>
+          <p class="foot-label">탐지</p>
+          <a href="#/" data-route="home">이미지 탐지</a>
+          <a href="#/text" data-route="text">글 탐지</a>
+          <a href="#/video" data-route="video">영상 탐지</a>
+        </div>
+        <div>
+          <p class="foot-label">정보</p>
+          <a href="#/model" data-route="model">모델</a>
+          <a href="#/guide" data-route="guide">가이드</a>
+          <a href="#/about" data-route="about">소개</a>
+        </div>
+        <div>
+          <p class="foot-label">내 활동</p>
+          <a href="#/history" data-route="history">기록</a>
+          <button type="button" class="link-btn" data-open-login>로그인</button>
+          <a href="https://github.com/hyojin0226/ai_image_detection">GitHub</a>
+        </div>
+      </div>
+    </div>
+    <p class="foot-copy">© 2026 Fakit</p>
   </footer>
+
+  <!-- ── Bottom dock: quick access to 기록 ─────────────── -->
+  <nav class="dock" aria-label="하단 메뉴">
+    <a href="#/" data-route="home"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5h-5v5H5a1 1 0 0 1-1-1z"/></svg><span>홈</span></a>
+    <a href="#/history" data-route="history"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4.5h4.5M12 8v4.5l3 2"/></svg><span>기록</span><b class="dock-badge" id="dock-history-count" hidden>0</b></a>
+    <a href="#/model" data-route="model"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M12 3 4 7.5v9L12 21l8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9"/></svg><span>모델</span></a>
+    <button type="button" id="dock-login" data-open-login><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm-7 8a7 7 0 0 1 14 0"/></svg><span id="dock-login-label">로그인</span></button>
+  </nav>
+
+  <!-- ── Login modal ───────────────────────────────────── -->
+  <dialog class="modal" id="login-modal" aria-labelledby="login-title">
+    <button type="button" class="modal-close" id="login-close" aria-label="닫기">×</button>
+    <div class="login">
+      <img src="icon.svg" alt="" width="52" height="52" class="login-mark">
+      <h2 id="login-title">Fakit에 로그인</h2>
+      <p class="login-sub">간편 로그인으로 기록을 관리하세요.</p>
+      <div class="providers">
+        <button type="button" class="provider provider-kakao" data-provider="kakao">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M12 3C6.5 3 2 6.5 2 10.8c0 2.7 1.8 5.1 4.5 6.5l-1 3.8c-.1.3.2.5.5.3l4.4-2.9c.5.1 1.1.1 1.6.1 5.5 0 10-3.5 10-7.8S17.5 3 12 3z"/></svg>
+          <span>카카오로 시작하기</span>
+        </button>
+        <button type="button" class="provider provider-naver" data-provider="naver">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M4 4h5.2l5.6 8.1V4H20v16h-5.2L9.2 11.9V20H4z"/></svg>
+          <span>네이버로 시작하기</span>
+        </button>
+        <button type="button" class="provider provider-google" data-provider="google">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="#4285F4" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.9h5.4c-.2 1.2-.9 2.3-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.4z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6C4.8 19.8 8.1 22 12 22z"/><path fill="#FBBC05" d="M6.4 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.4H3.1C2.4 8.8 2 10.4 2 12s.4 3.2 1.1 4.6z"/><path fill="#EA4335" d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.8-2.8C17 3 14.7 2 12 2 8.1 2 4.8 4.2 3.1 7.4L6.4 10c.8-2.3 3-4.1 5.6-4.1z"/></svg>
+          <span>Google로 시작하기</span>
+        </button>
+      </div>
+      <p class="login-note">
+        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 8v4.5m0 3.5h.01M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z"/></svg>
+        소셜 로그인 연동은 준비 중입니다. 지금은 체험 모드로, 로그인 상태가 이 기기에만 저장되며 어떤 정보도 외부로 전송되지 않습니다.
+      </p>
+      <button type="button" class="link-btn" id="login-guest">로그인 없이 계속하기</button>
+    </div>
+  </dialog>
+
+  <!-- ── Result detail modal ───────────────────────────── -->
+  <dialog class="modal modal-wide" id="detail-modal" aria-labelledby="detail-verdict">
+    <button type="button" class="modal-close" id="detail-close" aria-label="닫기">×</button>
+    <div class="detail">
+      <div class="detail-shot"><img id="detail-img" alt="검사한 이미지"></div>
+      <div class="detail-body">
+        <p class="eyebrow">Prediction</p>
+        <h2 id="detail-verdict" class="prediction"></h2>
+        <p class="verdict-sub" id="detail-sub"></p>
+        <div class="split-bar">
+          <div class="bar-fill real" id="detail-real-bar"></div>
+          <div class="bar-fill fake" id="detail-fake-bar"></div>
+          <div class="threshold" id="detail-threshold" title="REAL 판정 기준선"></div>
+        </div>
+        <div class="split-legend">
+          <p><span class="key real"></span>REAL <strong class="num" id="detail-real"></strong></p>
+          <p>AI / FAKE <strong class="num" id="detail-fake"></strong><span class="key fake"></span></p>
+        </div>
+        <p class="small" id="detail-threshold-text"></p>
+        <p class="detail-name" id="detail-name"></p>
+      </div>
+    </div>
+  </dialog>
+
+  <input id="file-input-more" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden>
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
   <script src="ui.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>

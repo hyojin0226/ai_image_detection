@@ -1,92 +1,196 @@
-// Page chrome only (idle ring graphic, scroll reveal, pointer glow, nav flyout). Loaded before
-// TF.js so the page animates without waiting for the model runtime.
+// Page chrome: hash router, nav/drawer, login modal (demo), toast, scroll reveal.
+// Loaded before TF.js so the page is usable while the model runtime downloads.
+// Shares helpers with app.js through window.Fakit.
 (() => {
+  const $ = (id) => document.getElementById(id);
   const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // ── Ring shown in the empty viewfinder ───────────────────────────────
-  // A circle of ticks with two waves travelling round it, plus an arc sweeping an inner track.
-  // It speeds up while the pointer is over the drop area or a file is being dragged in.
-  function startRing(canvas, card) {
-    const ctx = canvas.getContext("2d");
-    const host = canvas.parentElement;
-    const zone = host.closest(".viewfinder");
-    const TICKS = 120;
-    const CALM = 0.25;
-    let size = 0, energy = CALM, hovered = false, phase = 0, last = 0, frame = null;
-
-    function draw() {
-      const c = size / 2;
-      ctx.clearRect(0, 0, size, size);
-      ctx.lineCap = "round";
-      ctx.lineWidth = Math.max(1.2, size / 190);
-      for (let i = 0; i < TICKS; i++) {
-        const angle = (i / TICKS) * Math.PI * 2;
-        const wave = 0.5 + 0.5 * Math.sin(angle * 2 - phase);
-        const ripple = 0.5 + 0.5 * Math.sin(angle * 5 + phase * 0.6 + 1.3);
-        const level = Math.pow(wave * 0.75 + ripple * 0.25, 2.2);   // 0 = resting tick, 1 = crest
-        const inner = c * 0.66;
-        const outer = inner + c * (0.05 + 0.24 * level * (0.6 + 0.4 * energy));
-        const cos = Math.cos(angle), sin = Math.sin(angle);
-        ctx.strokeStyle = `hsla(211, 100%, ${100 - 30 * level}%, ${0.16 + 0.84 * level})`;
-        ctx.beginPath();
-        ctx.moveTo(c + cos * inner, c + sin * inner);
-        ctx.lineTo(c + cos * outer, c + sin * outer);
-        ctx.stroke();
-      }
-      const track = c * 0.55;
-      ctx.lineWidth = Math.max(1, size / 240);
-      ctx.strokeStyle = "rgba(255, 255, 255, .12)";
-      ctx.beginPath();
-      ctx.arc(c, c, track, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.strokeStyle = "rgba(255, 255, 255, .85)";
-      ctx.beginPath();
-      ctx.arc(c, c, track, -phase * 0.9, -phase * 0.9 + Math.PI * 0.45);
-      ctx.stroke();
-    }
-
-    function resize() {
-      const next = Math.min(host.clientWidth, host.clientHeight, 340);
-      if (next <= 0 || next === size) return;
-      const dpr = Math.min(devicePixelRatio || 1, 2);
-      size = next;
-      canvas.width = canvas.height = Math.round(size * dpr);
-      canvas.style.width = canvas.style.height = `${size}px`;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      draw();
-    }
-
-    const shouldRun = () => !reduceMotion && !document.hidden && card.dataset.state === "idle";
-    function tick(now) {
-      const dt = Math.min((now - last) / 1000, 0.05);
-      last = now;
-      const target = hovered || card.classList.contains("drag") ? 1 : CALM;
-      energy += (target - energy) * 0.06;
-      phase += dt * (0.9 + energy * 1.8);
-      if (size) draw();
-      frame = shouldRun() ? requestAnimationFrame(tick) : null;
-    }
-    function wake() {
-      resize();
-      if (frame || !shouldRun()) return;
-      last = performance.now();
-      frame = requestAnimationFrame(tick);
-    }
-
-    zone.addEventListener("pointerenter", () => { hovered = true; });
-    zone.addEventListener("pointerleave", () => { hovered = false; });
-    new ResizeObserver(resize).observe(host);
-    new MutationObserver(wake).observe(card, { attributes: true, attributeFilter: ["data-state"] });
-    document.addEventListener("visibilitychange", wake);
-    wake();
+  // ── Toast ────────────────────────────────────────────────────────────
+  let toastTimer = null;
+  function toast(message, ms = 3200) {
+    const el = $("toast");
+    el.textContent = message;
+    el.hidden = false;
+    requestAnimationFrame(() => el.classList.add("on"));
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      el.classList.remove("on");
+      setTimeout(() => { el.hidden = true; }, 300);
+    }, ms);
   }
-  startRing(document.getElementById("ring"), document.getElementById("card"));
 
-  // ── Scroll reveal + stat count-up on the second screen ───────────────
+  // ── Router (hash based: #/, #/history, #/model …) ────────────────────
+  const TITLES = {
+    home: "Fakit — AI 얼굴 탐지",
+    history: "기록 — Fakit",
+    model: "모델 — Fakit",
+    text: "AI 글 탐지 — Fakit",
+    video: "AI 영상 탐지 — Fakit",
+    guide: "가이드 — Fakit",
+    about: "소개 — Fakit",
+  };
+  let current = null;
+
+  function routeName() {
+    const name = location.hash.replace(/^#\/?/, "").split("?")[0];
+    return TITLES[name] ? name : "home";
+  }
+  function render() {
+    const name = routeName();
+    if (name === current) return;
+    current = name;
+    document.querySelectorAll(".page").forEach((p) => p.classList.toggle("is-active", p.dataset.page === name));
+    document.querySelectorAll("[data-route]").forEach((link) => {
+      const on = link.dataset.route === name;
+      link.classList.toggle("is-current", on);
+      if (on) link.setAttribute("aria-current", "page");
+      else link.removeAttribute("aria-current");
+    });
+    document.title = TITLES[name];
+    document.body.dataset.route = name;
+    closeDrawer();
+    closeUserMenu();
+    window.scrollTo({ top: 0, behavior: "instant" });
+    document.dispatchEvent(new CustomEvent("fakit:route", { detail: { route: name } }));
+  }
+  function go(name) {
+    location.hash = name === "home" ? "#/" : `#/${name}`;
+  }
+  addEventListener("hashchange", render);
+
+  // ── Mobile drawer ────────────────────────────────────────────────────
+  const drawer = $("drawer");
+  const menuToggle = $("menu-toggle");
+  function closeDrawer() {
+    drawer.hidden = true;
+    menuToggle.setAttribute("aria-expanded", "false");
+    menuToggle.setAttribute("aria-label", "메뉴 열기");
+  }
+  menuToggle.addEventListener("click", () => {
+    const open = drawer.hidden;
+    drawer.hidden = !open;
+    menuToggle.setAttribute("aria-expanded", String(open));
+    menuToggle.setAttribute("aria-label", open ? "메뉴 닫기" : "메뉴 열기");
+  });
+  drawer.addEventListener("click", (e) => { if (e.target.closest("a")) closeDrawer(); });
+
+  // ── Modals ───────────────────────────────────────────────────────────
+  function openModal(dialog) {
+    if (!dialog.open) dialog.showModal();
+  }
+  function closeModal(dialog) {
+    if (dialog.open) dialog.close();
+  }
+  // Click on the backdrop (outside the dialog's box) closes it.
+  document.querySelectorAll("dialog.modal").forEach((dialog) => {
+    dialog.addEventListener("click", (e) => {
+      if (e.target !== dialog) return;
+      const r = dialog.getBoundingClientRect();
+      const inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+      if (!inside) dialog.close();
+    });
+  });
+
+  // ── Login (demo: no real OAuth yet, state lives in this browser only) ──
+  const USER_KEY = "fakit.user";
+  const PROVIDERS = {
+    kakao: { label: "카카오", bg: "#fee500", ink: "#191919" },
+    naver: { label: "네이버", bg: "#03c75a", ink: "#ffffff" },
+    google: { label: "Google", bg: "#ffffff", ink: "#1f1f1f", border: "#d9d4ee" },
+  };
+  const loginModal = $("login-modal");
+
+  function getUser() {
+    try {
+      const u = JSON.parse(localStorage.getItem(USER_KEY));
+      return u && PROVIDERS[u.provider] ? u : null;
+    } catch { return null; }
+  }
+  function setUser(user) {
+    try {
+      if (user) localStorage.setItem(USER_KEY, JSON.stringify(user));
+      else localStorage.removeItem(USER_KEY);
+    } catch { /* storage blocked: state just won't persist */ }
+    renderUser();
+  }
+  function renderUser() {
+    const user = getUser();
+    $("login-btn").hidden = !!user;
+    $("user-chip").hidden = !user;
+    $("dock-login-label").textContent = user ? "내 계정" : "로그인";
+    if (user) {
+      const p = PROVIDERS[user.provider];
+      const avatar = $("user-avatar");
+      avatar.textContent = user.name.slice(0, 1);
+      avatar.style.background = p.bg;
+      avatar.style.color = p.ink;
+      avatar.style.boxShadow = p.border ? `inset 0 0 0 1px ${p.border}` : "none";
+      $("user-name").textContent = user.name;
+      $("user-provider").textContent = `${p.label} 계정 · 체험 모드`;
+    }
+    document.dispatchEvent(new CustomEvent("fakit:user", { detail: { user } }));
+  }
+  function openLogin() {
+    closeDrawer();
+    closeUserMenu();
+    if (getUser()) { go("history"); return; }
+    loginModal.querySelectorAll(".provider").forEach((b) => {
+      b.disabled = false;
+      b.querySelector("span").textContent = `${PROVIDERS[b.dataset.provider].label}로 시작하기`;
+    });
+    openModal(loginModal);
+  }
+  $("login-btn").addEventListener("click", openLogin);
+  document.querySelectorAll("[data-open-login]").forEach((b) => b.addEventListener("click", openLogin));
+  $("login-close").addEventListener("click", () => closeModal(loginModal));
+  $("login-guest").addEventListener("click", () => closeModal(loginModal));
+  loginModal.querySelectorAll(".provider").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const provider = btn.dataset.provider;
+      const p = PROVIDERS[provider];
+      loginModal.querySelectorAll(".provider").forEach((b) => { b.disabled = true; });
+      btn.querySelector("span").textContent = `${p.label} 연결 중…`;
+      // Stand-in for the OAuth round trip until the providers are wired up.
+      setTimeout(() => {
+        setUser({ provider, name: `${p.label} 사용자`, since: Date.now() });
+        closeModal(loginModal);
+        toast(`${p.label} 계정으로 로그인했습니다 · 체험 모드`);
+      }, reduceMotion ? 0 : 700);
+    });
+  });
+
+  // User chip popover
+  const userBtn = $("user-btn");
+  const userMenu = $("user-menu");
+  function closeUserMenu() {
+    userMenu.hidden = true;
+    userBtn.setAttribute("aria-expanded", "false");
+  }
+  userBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const open = userMenu.hidden;
+    userMenu.hidden = !open;
+    userBtn.setAttribute("aria-expanded", String(open));
+  });
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest("#user-chip")) closeUserMenu();
+  });
+  $("logout-btn").addEventListener("click", () => {
+    setUser(null);
+    closeUserMenu();
+    toast("로그아웃했습니다.");
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    closeDrawer();
+    closeUserMenu();
+  });
+
+  // ── Scroll reveal + count-up ─────────────────────────────────────────
   function countUp(el) {
     const target = Number(el.dataset.count);
     const start = performance.now();
-    const duration = 1400;
+    const duration = 1300;
     const tick = (now) => {
       const t = Math.min((now - start) / duration, 1);
       el.textContent = (target * (1 - Math.pow(1 - t, 4))).toFixed(1);
@@ -104,79 +208,7 @@
   }, { threshold: 0.15, rootMargin: "0px 0px -6% 0px" });
   document.querySelectorAll(".reveal").forEach((el) => revealObserver.observe(el));
 
-  // ── Backdrop glow that trails the pointer ────────────────────────────
-  const glow = document.getElementById("glow-pointer");
-  let targetX = 0, targetY = 0, x = 0, y = 0, frame = null;
-  function follow() {
-    x += (targetX - x) * 0.08;
-    y += (targetY - y) * 0.08;
-    glow.style.transform = `translate3d(${x}px, ${y}px, 0)`;
-    frame = Math.abs(targetX - x) + Math.abs(targetY - y) > 0.5 ? requestAnimationFrame(follow) : null;
-  }
-  addEventListener("pointermove", (e) => {
-    if (e.pointerType !== "mouse") return;
-    targetX = e.clientX;
-    targetY = e.clientY;
-    if (!glow.classList.contains("on")) {
-      x = targetX;
-      y = targetY;
-      glow.classList.add("on");
-    }
-    if (!frame) frame = requestAnimationFrame(follow);
-  }, { passive: true });
-
-  // ── Nav flyout ───────────────────────────────────────────────────────
-  const nav = document.getElementById("nav");
-  const sheet = document.getElementById("sheet");
-  const scrim = document.getElementById("scrim");
-  const triggers = [...nav.querySelectorAll("[data-panel-trigger]")];
-  const canHover = matchMedia("(hover: hover) and (pointer: fine)").matches;
-  let closeTimer = null;
-
-  const isOpen = (name) => nav.classList.contains("sheet-open") && sheet.dataset.open === name;
-
-  function openSheet(name) {
-    clearTimeout(closeTimer);
-    sheet.dataset.open = name;
-    nav.classList.add("sheet-open");
-    scrim.classList.add("on");
-    triggers.forEach((t) => t.setAttribute("aria-expanded", String(t.dataset.panelTrigger === name)));
-  }
-  function closeSheet() {
-    clearTimeout(closeTimer);
-    nav.classList.remove("sheet-open");
-    scrim.classList.remove("on");
-    triggers.forEach((t) => t.setAttribute("aria-expanded", "false"));
-  }
-
-  triggers.forEach((trigger) => {
-    const name = trigger.dataset.panelTrigger;
-    // With a mouse the panel is already open from hover, so a click only ever opens.
-    trigger.addEventListener("click", () => {
-      if (isOpen(name) && !(canHover && name !== "all")) closeSheet();
-      else openSheet(name);
-    });
-    if (canHover && name !== "all") trigger.addEventListener("mouseenter", () => openSheet(name));
-  });
-  if (canHover) {
-    nav.addEventListener("mouseleave", () => { closeTimer = setTimeout(closeSheet, 200); });
-    nav.addEventListener("mouseenter", () => clearTimeout(closeTimer));
-  }
-  nav.addEventListener("focusout", (e) => {
-    if (e.relatedTarget && !nav.contains(e.relatedTarget)) closeSheet();
-  });
-  scrim.addEventListener("click", closeSheet);
-  document.addEventListener("keydown", (e) => {
-    if (e.key !== "Escape" || !nav.classList.contains("sheet-open")) return;
-    const active = triggers.find((t) => t.getAttribute("aria-expanded") === "true");
-    closeSheet();
-    if (active) active.focus();
-  });
-  sheet.querySelectorAll('a[href="#detect"]').forEach((link) => link.addEventListener("click", (e) => {
-    e.preventDefault();
-    closeSheet();
-    const dropzone = document.getElementById("dropzone");
-    dropzone.scrollIntoView({ behavior: "smooth", block: "center" });
-    dropzone.focus({ preventScroll: true });
-  }));
+  window.Fakit = { toast, go, routeName, openModal, closeModal, getUser };
+  renderUser();
+  render();
 })();

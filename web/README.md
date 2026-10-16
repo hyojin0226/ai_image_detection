@@ -1,16 +1,34 @@
-# AI Face Detector — HTML 버전
+# Fakit — HTML 버전
 
 `feature/main-model-hyojin` 브랜치의 `streamlit_app.py`를 서버 없이 브라우저에서 돌아가는 정적 사이트로 옮긴 버전입니다.
 같은 EfficientNetV2S 모델을 [TensorFlow.js](https://www.tensorflow.org/js)로 변환해 사용하고, 판정 기준(threshold 0.24)도 동일합니다.
 업로드한 이미지는 서버로 전송되지 않습니다.
 
+## 페이지 구성
+
+주소 해시(`#/…`)로 페이지를 전환하는 단일 HTML입니다. 모델은 한 번만 불러오고 페이지를 옮겨도 유지됩니다.
+
+| 주소 | 내용 |
+| --- | --- |
+| `#/` | 이미지 탐지. 드래그 앤 드롭·붙여넣기(Ctrl+V)·파일 선택으로 한 번에 최대 20장 판별 |
+| `#/history` | 기록. 이 기기에서 판별한 결과(축소 미리보기 + 판정)를 localStorage에 보관 |
+| `#/model` | 모델 설명. 파이프라인, 학습 방법, 평가, 사양, 한계 |
+| `#/text` | AI 글 탐지 — 틀만 있음 (이후 추가 예정) |
+| `#/video` | AI 영상 탐지 — 틀만 있음 (이후 추가 예정) |
+| `#/guide` | 사용 가이드와 FAQ |
+| `#/about` | 소개와 로드맵 |
+
+간편 로그인(카카오 → 네이버 → 구글) 창은 체험 모드입니다. 실제 OAuth는 연결되어 있지 않으며 로그인 상태는 이 브라우저에만 저장됩니다.
+
 ## 폴더 구성
 
 | 파일 | 설명 |
 | --- | --- |
-| `index.html`, `style.css`, `app.js` | 사이트 화면과 예측 로직 |
-| `ui.js` | 링 모션그래픽, 배경 효과, 상단 메뉴 패널 등 화면 연출 (예측과 무관) |
-| `icon.svg`, `icon.ico` | 서비스 아이콘 (파비콘, 바로가기 로고) |
+| `index.html` | 모든 페이지 마크업 |
+| `style.css` | 스타일 (보라 포인트 컬러, 흰 배경) |
+| `ui.js` | 라우터, 상단 메뉴, 로그인 창, 토스트 등 화면 연출 (예측과 무관) |
+| `app.js` | 모델 로딩, 이미지 큐 분석, 기록 저장, 결과 상세 창 |
+| `icon.svg`, `icon.ico` | Fakit 로고 (파비콘, 바로가기 아이콘) |
 | `model/model.json`, `model/group1-shard*.bin` | TF.js로 변환한 모델 (float16, 약 41MB) |
 | `model/inference_config.json` | 입력 크기, threshold 등 (원본과 동일) |
 

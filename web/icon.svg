@@ -1,6 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <!-- AI Face Detector mark: one face, half solid (real) and half outline (generated). -->
-  <rect width="32" height="32" rx="8" fill="#000"/>
-  <path d="M16 6.5a8 9.5 0 0 0 0 19z" fill="#fff"/>
-  <path d="M16 7.5a7 8.5 0 0 1 0 17" fill="none" stroke="#fff" stroke-width="2"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Fakit mark: a bold F on a purple tile. A darker F sits behind it, offset, so the letter reads as stamped. -->
+  <defs>
+    <linearGradient id="fakit-g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8b6cff"/>
+      <stop offset="1" stop-color="#5a3bf0"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="18" fill="url(#fakit-g)"/>
+  <path d="M23 50V20h25v8H32v5h14v8H32v9z" fill="#3a22b3" opacity=".6"/>
+  <path d="M19 46V16h25v8H28v5h14v8H28v9z" fill="#fff"/>
+  <circle cx="47.5" cy="46.5" r="4.5" fill="#d9ccff"/>
 </svg>
