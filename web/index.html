@@ -70,9 +70,26 @@
 
     <!-- ── Home: image detection ─────────────────────────── -->
     <section class="page is-active" data-page="home">
+      <!-- Landing scene: blurred display text with a cursor-following lens that shows it sharp;
+           letters spin in 3D as the page scrolls. Based on the "HOVER + SCROLL EFFECT" idea by
+           pixlspace (Spline community, CC BY 4.0), rebuilt natively. To use a real Spline scene
+           instead, set SPLINE_SCENE / SPLINE_VIEWER_SRC at the top of ui.js. -->
+      <div class="scene" id="scene" aria-label="Fakit — REAL or AI">
+        <div class="scene-layer scene-blur" aria-hidden="true">
+          <p class="scene-word" data-word>Fakit<b>.</b></p>
+          <p class="scene-tag" data-tag>REAL or AI</p>
+        </div>
+        <div class="scene-layer scene-lens" id="scene-lens" aria-hidden="true">
+          <p class="scene-word" data-word>Fakit<b>.</b></p>
+          <p class="scene-tag" data-tag>REAL or AI</p>
+        </div>
+        <span class="scene-ring" id="scene-ring" aria-hidden="true"></span>
+        <h1 class="sr-only">Fakit — REAL or AI, AI 생성 얼굴 탐지</h1>
+        <a class="scene-cue" href="#composer" aria-label="아래로 내려가 이미지 판별 시작"><span></span></a>
+      </div>
+
       <div class="hero">
         <p class="eyebrow">AI 생성 얼굴 탐지</p>
-        <h1 class="title">진짜일까,<br><span class="accent">AI일까.</span></h1>
         <p class="lead">사진을 끌어다 놓거나 붙여넣으면 실제 사진인지, AI가 만든 얼굴인지 바로 판별합니다.<br>여러 장을 한 번에 올려도 됩니다. 사진은 이 기기를 떠나지 않습니다.</p>
       </div>
 

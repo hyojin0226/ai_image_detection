@@ -18,6 +18,14 @@
 | `#/guide` | 사용 가이드와 FAQ |
 | `#/about` | 소개와 로드맵 |
 
+랜딩 상단의 3D 장면(블러된 `Fakit.` 글자 위를 커서를 따라다니는 렌즈가 선명하게 비추고, 스크롤하면 글자가 뒤집히는 효과)은
+Spline 커뮤니티의 [HOVER + SCROLL EFFECT](https://app.spline.design/community/file/355705e7-5f04-4051-93d5-5007f7034ada)(pixlspace, CC BY 4.0)를 참고해
+CSS/JS로 직접 구현한 것입니다. `prefers-reduced-motion` 환경에서는 정적인 글자만 보입니다.
+
+실제 Spline 씬으로 바꾸려면 ① 위 링크에서 본인 계정으로 Remix → ② 글자를 `Fakit` 또는 `REAL or AI`로 수정 →
+③ Export → Viewer에서 받은 `scene.splinecode` 주소와 viewer 스크립트 주소를 `ui.js` 맨 위의 `SPLINE_SCENE`, `SPLINE_VIEWER_SRC`에 넣으면
+내장 장면 대신 Spline 씬이 표시됩니다.
+
 간편 로그인(카카오 → 네이버 → 구글) 창은 체험 모드입니다. 실제 OAuth는 연결되어 있지 않으며 로그인 상태는 이 브라우저에만 저장됩니다.
 
 ## 폴더 구성

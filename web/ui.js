@@ -1,6 +1,15 @@
 // Page chrome: hash router, nav/drawer, login modal (demo), toast, scroll reveal.
 // Loaded before TF.js so the page is usable while the model runtime downloads.
 // Shares helpers with app.js through window.Fakit.
+// ── Optional Spline scene for the landing hero ──────────────────────────
+// Remix https://app.spline.design/community/file/355705e7-5f04-4051-93d5-5007f7034ada in your own
+// Spline account, change the text, then Export → Viewer. Paste the two values the export gives you:
+//   SPLINE_SCENE      = "https://prod.spline.design/<id>/scene.splinecode"
+//   SPLINE_VIEWER_SRC = "https://unpkg.com/@splinetool/viewer@<version>/build/spline-viewer.js"
+// Leave both empty to use the built-in lens/scroll scene below.
+const SPLINE_SCENE = "";
+const SPLINE_VIEWER_SRC = "";
+
 (() => {
   const $ = (id) => document.getElementById(id);
   const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -207,6 +216,90 @@
     });
   }, { threshold: 0.15, rootMargin: "0px 0px -6% 0px" });
   document.querySelectorAll(".reveal").forEach((el) => revealObserver.observe(el));
+
+  // ── Landing scene: blurred display text, a lens that follows the pointer and shows it sharp,
+  //    letters that spin in 3D as the page scrolls ────────────────────────────────────────────
+  function initScene() {
+    const scene = $("scene");
+    if (!scene) return;
+    scene.querySelector(".scene-cue").addEventListener("click", (e) => {
+      e.preventDefault();
+      $("composer").scrollIntoView({ behavior: reduceMotion ? "instant" : "smooth", block: "start" });
+    });
+
+    if (SPLINE_SCENE && SPLINE_VIEWER_SRC) {
+      const script = document.createElement("script");
+      script.type = "module";
+      script.src = SPLINE_VIEWER_SRC;
+      document.head.append(script);
+      const viewer = document.createElement("spline-viewer");
+      viewer.setAttribute("url", SPLINE_SCENE);
+      viewer.setAttribute("loading-anim-type", "spinner-small-dark");
+      scene.prepend(viewer);
+      scene.classList.add("has-spline");
+      return;
+    }
+    if (reduceMotion) { scene.classList.add("no-lens"); return; }
+
+    // Split both copies into per-letter spans so they can be transformed identically.
+    const words = [...scene.querySelectorAll("[data-word]")];
+    words.forEach((word) => {
+      word.innerHTML = [...word.childNodes].map((node) => {
+        if (node.nodeType === Node.ELEMENT_NODE) return `<span class="ch">${node.outerHTML}</span>`;
+        return [...node.textContent].map((c) => `<span class="ch">${c === " " ? "&nbsp;" : c}</span>`).join("");
+      }).join("");
+    });
+    const letters = words.map((w) => [...w.querySelectorAll(".ch")]);
+    const count = letters[0].length;
+
+    let targetX = 0.5, targetY = 0.46, x = targetX, y = targetY;
+    let rot = 0, velocity = 0, lastScroll = scrollY, lastMove = performance.now(), frame = null, visible = true;
+
+    const setTarget = (clientX, clientY) => {
+      const r = scene.getBoundingClientRect();
+      targetX = Math.min(Math.max((clientX - r.left) / r.width, 0), 1);
+      targetY = Math.min(Math.max((clientY - r.top) / r.height, 0), 1);
+      lastMove = performance.now();
+    };
+    scene.addEventListener("pointermove", (e) => setTarget(e.clientX, e.clientY), { passive: true });
+    scene.addEventListener("touchmove", (e) => setTarget(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+
+    function tick(now) {
+      // Idle: let the lens wander so the scene stays alive without a pointer.
+      if (now - lastMove > 2500) {
+        const t = now / 1000;
+        targetX = 0.5 + Math.sin(t * 0.45) * 0.3;
+        targetY = 0.46 + Math.sin(t * 0.9) * 0.14;
+      }
+      x += (targetX - x) * 0.12;
+      y += (targetY - y) * 0.12;
+      scene.style.setProperty("--lens-x", `${(x * 100).toFixed(2)}%`);
+      scene.style.setProperty("--lens-y", `${(y * 100).toFixed(2)}%`);
+      scene.style.setProperty("--px", `${((x - 0.5) * -18).toFixed(2)}px`);
+      scene.style.setProperty("--py", `${((y - 0.5) * -12).toFixed(2)}px`);
+
+      // Scroll: letters flip over as the page moves, and blur more while it is moving fast.
+      const s = scrollY;
+      velocity += (s - lastScroll - velocity) * 0.2;
+      lastScroll = s;
+      rot += (s * 0.55 - rot) * 0.1;
+      scene.style.setProperty("--boost", `${Math.min(Math.abs(velocity) * 0.5, 22).toFixed(1)}px`);
+      for (let i = 0; i < count; i++) {
+        const a = rot * (1 + i * 0.1);   // later letters lag a little behind, like a ripple
+        const transform = `perspective(700px) rotateX(${a.toFixed(2)}deg)`;
+        letters.forEach((list) => { list[i].style.transform = transform; });
+      }
+      frame = visible && !document.hidden ? requestAnimationFrame(tick) : null;
+    }
+    function wake() {
+      if (frame || !visible || document.hidden) return;
+      frame = requestAnimationFrame(tick);
+    }
+    new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; wake(); }, { threshold: 0 }).observe(scene);
+    document.addEventListener("visibilitychange", wake);
+    wake();
+  }
+  initScene();
 
   window.Fakit = { toast, go, routeName, openModal, closeModal, getUser };
   renderUser();
