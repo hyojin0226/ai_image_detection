@@ -5,6 +5,7 @@
 """
 
 import os
+import re
 from pathlib import Path
 
 import pandas as pd
@@ -69,6 +70,70 @@ def scan_data_dir(data_dir: Path = ROOT / "data") -> pd.DataFrame:
                     "y": LABEL_TO_INDEX[label],
                 })
     return pd.DataFrame(rows)
+
+
+FFHQ_NAME = re.compile(r"\d{5}\.(png|jpg)")
+ONE_MFF_NAME = re.compile(r"[A-Z0-9]{10}\.jpg")  # 1M Fake Faces 파일명 형식
+
+
+def _classify(source: str, label: str, original_name: str, original_path: str):
+    """(family, generator, domain, image_key, group_key)를 반환합니다.
+
+    - family: fake의 생성기 계열 (gan / diffusion / manip). 출처가 불분명하면 unknown
+    - domain: 사진 종류 (photo: FFHQ 같은 정지 사진 / video: 영상 프레임). real·fake 모두 기록
+    - image_key: 같은 사진을 하나로 묶는 키 (FFHQ ID, 1MFF 파일명)
+    - group_key: split을 나눌 때 함께 움직여야 하는 단위 (같은 영상의 프레임 등)
+    """
+    name = original_name
+    if FFHQ_NAME.fullmatch(name):
+        key = f"ffhq:{int(name[:5])}"
+        return "real", "ffhq", "photo", key, key
+    if ONE_MFF_NAME.fullmatch(name):
+        key = f"1mff:{name}"
+        return "gan", "stylegan_1mff", "photo", key, key
+
+    path_key = f"path:{original_path or name}"
+    if source == "flux_sdxl":
+        generator = next((g.lower() for g in ["FLUX_DEV", "FLUX_PRO", "SDXL"] if f"/{g}/" in original_path), "unknown")
+        return "diffusion", generator, "photo", path_key, path_key
+    if "_SD_" in name:
+        return "diffusion", "sd", "photo", path_key, path_key
+
+    # 영상 프레임: 같은 영상(또는 같은 대상 영상)의 프레임은 같은 split에 들어가야 합니다.
+    if match := re.match(r"fake_(DeepFakeDetection)_(.+)_\d+\.jpg$", name):
+        return "manip", "ffpp_dfd", "video", path_key, f"ffpp_dfd:{match.group(2)}"
+    if match := re.match(r"fake_([A-Za-z0-9]+)_(\d+)_\d+_\d+\.jpg$", name):
+        return "manip", f"ffpp_{match.group(1).lower()}", "video", path_key, f"ffpp:{match.group(2)}"
+    if match := re.match(r"real_(\d+)_\d+\.jpg$", name):
+        return "real", "ffpp_real", "video", path_key, f"ffpp:{match.group(1)}"
+    if match := re.match(r"(celebdf)_[a-z]+_(.+?)_frame", name):
+        family = "manip" if label == "fake" else "real"
+        return family, "celebdf", "video", path_key, f"celebdf:{match.group(2)}"
+    if match := re.match(r"(dfdc)_[a-z]+_(?:fake_)?([a-z]+)_\d+_\d+\.jpg$", name):
+        family = "manip" if label == "fake" else "real"
+        return family, "dfdc", "video", path_key, f"dfdc:{match.group(2)}"
+
+    # aug_ai_*, 1024_man_men_*, ai_detect_*, Aumented real 등: 생성기·출처를 특정할 수 없음
+    return "unknown", "unknown", "unknown", path_key, path_key
+
+
+def annotate(rows: pd.DataFrame) -> pd.DataFrame:
+    """scan_data_dir() 결과에 원본 파일명, 계열, 중복 제거 키, 파일 형식을 추가합니다."""
+    manifest = pd.read_csv(MANIFEST_PATH, encoding="utf-8-sig")
+    original_by_name = dict(zip(manifest["saved_path"].str.split("/").str[-1], manifest["original_path"]))
+
+    rows = rows.copy()
+    name = rows["path"].str.split("/").str[-1]
+    original_path = name.map(original_by_name).fillna("")
+    original_name = original_path.str.split("/").str[-1].where(original_path != "", name)
+    info = [
+        _classify(s, l, n, p)
+        for s, l, n, p in zip(rows["source"], rows["label"], original_name, original_path)
+    ]
+    rows[["family", "generator", "domain", "image_key", "group_key"]] = pd.DataFrame(info, index=rows.index)
+    rows["original_name"] = original_name
+    rows["ext"] = name.str.extract(r"\.(\w+)$")[0].str.lower()
+    return rows
 
 
 def select(manifest: pd.DataFrame, split=None, sources=None) -> pd.DataFrame:

@@ -62,6 +62,24 @@
 - **세부 생성기 구분이 가능함:** flux_sdxl fake는 원본 경로로 FLUX_DEV / FLUX_PRO / SDXL을 나눌 수 있습니다(train 기준 4,210 / 1,858 / 30,732장). SDXL이 대부분입니다.
 - **조치:** Phase 2의 LOGO split은 manifest가 아니라 `src.data.scan_data_dir()`(실제 폴더 기준)로 만듭니다. real 출처(FFHQ 계열이 stylegan·flux_sdxl·ffhq_1mff에 모두 있음)가 겹칠 수 있으므로, 출처 판별 대조 실험에서 함께 확인합니다.
 
+### 2.4 Phase 2 준비 중 확인한 중복 문제 (2026-10-31)
+
+같은 사진이 **여러 소스와 여러 split에 중복**으로 들어가 있습니다. 같은 ID/파일명끼리 dHash 거리를 재 보면 중앙값 0~1이고(다른 사진끼리는 약 120), 100쌍 모두 같은 사진이었습니다.
+
+- **Real:** stylegan(140k real), flux_sdxl(K130 real), ffhq_1mff(FFHQ 256), gravex real의 숫자 파일명은 모두 **FFHQ 원본(ID 00000~69999)의 복사본**입니다. 전체 real 183,700장 중 FFHQ 사진은 고유 70,000장뿐입니다.
+- **Fake:** stylegan fake(140k)와 ffhq_1mff fake는 모두 **1M Fake Faces(StyleGAN)**에서 왔고, gravex fake 중 17,832장도 같은 이미지입니다. fake 183,697장 중 고유 이미지는 154,316장입니다.
+- **1차 실험 test에 미친 영향:**
+
+| 1차 test | 이미지 | 같은 사진이 train에도 있음 |
+|---|---:|---:|
+| real | 13,438 | **9,762 (73%)** |
+| fake | 13,438 | **4,329 (32%)** |
+
+  1차 ID Test 97.8%와 Phase 1 결과의 절대 수치는 **외운 사진이 섞인 값이라 실제보다 높게 나왔을 수 있습니다.** 변환에 따른 상대적인 변화는 여전히 참고할 수 있습니다.
+- **GRAVEX 구성 (fake 46,000장 기준, 디스크 전체 split):** StyleGAN(1MFF) 17,832 / DFDC 8,688 / CelebDF 4,987 / FaceForensics++ 4,626 / SD 3,144 / aug 2,042 / 기타 생성 약 1,100.
+  real은 FFHQ 31,350 / 영상 프레임(real_·CelebDF·DFDC) 약 14,300입니다.
+- **결론:** "데이터셋(source)" 단위로 하나를 빼는 기존 LOGO-A/B/C는 같은 생성기와 같은 사진이 다른 소스에 남아 있어서 진짜 OOD가 되지 않습니다. 생성기 계열 단위로 다시 나누고, 사진 단위 중복 제거가 필요합니다(Phase 2 설계 변경 참고).
+
 ---
 
 ## 3. 코드 작업 위치와 구조
@@ -122,7 +140,7 @@ ai_image_detection/
 
 ```bash
 source .venv-exp2/bin/activate
-python scripts/31_train_clip_probe.py --config configs/logo_holdout_flux_sdxl.yaml
+python scripts/31_train_clip_probe.py --config configs/logo_diffusion.yaml
 ```
 
 ---
@@ -182,18 +200,43 @@ python scripts/31_train_clip_probe.py --config configs/logo_holdout_flux_sdxl.ya
 ### Phase 2. Leave-One-Generator-Out 데이터 분할
 **질문:** 처음 보는 생성기도 잡아낼 수 있는가?
 
-생성 소스 3종 중 1종을 학습에서 완전히 빼고, 빠진 소스로만 테스트합니다.
+> **설계 변경 (2026-10-31):** 처음 계획한 소스 단위 LOGO-A/B/C는 같은 생성기·같은 사진이 다른 소스에 중복되어 있어(2.4절) 진짜 OOD가 되지 않습니다. **생성기 계열 단위**로 바꾸고 **사진 단위 중복 제거**를 적용했습니다.
 
-| 실험 | 학습 소스 | 테스트 소스 (진짜 OOD) |
+생성기 계열 3종 중 1종을 학습에서 완전히 빼고, 빠진 계열로만 OOD 테스트합니다. 모델은 계열을 모르고 항상 real/fake 이진 분류만 합니다(계열은 데이터를 나누고 결과를 보고할 때만 사용).
+
+| 계열 | 포함 이미지 (중복 제거 후 고유 장수) |
+|---|---|
+| gan | 1M Fake Faces(StyleGAN): stylegan·ffhq_1mff fake 전체 + GRAVEX 일부 (87,340) |
+| diffusion | FLUX_DEV·FLUX_PRO·SDXL·GRAVEX SD (45,546) |
+| manip | 영상 얼굴 조작: FaceForensics++·CelebDF·DFDC (18,301 / 영상 묶음 5,031) |
+| real | FFHQ 사진 70,000 + 영상 프레임 14,304 |
+| 제외 | 생성기를 특정할 수 없는 aug_ai·1024_man_men·ai_detect 등 3,473 |
+
+| 실험 | 학습 fake | 학습 real | OOD 테스트 |
+|---|---|---|---|
+| LOGO-gan | diffusion + manip | FFHQ + 영상 프레임 | gan fake vs 학습에 안 쓴 FFHQ |
+| LOGO-diffusion | gan + manip | FFHQ + 영상 프레임 | diffusion fake vs 학습에 안 쓴 FFHQ |
+| LOGO-manip | gan + diffusion | **FFHQ만** | manip fake vs 영상 프레임 real (학습에 전혀 안 씀) |
+
+- **분할 규칙:** 같은 사진(FFHQ ID, 1MFF 파일명)은 한 번만 사용하고, 같은 묶음(같은 사진, 같은 영상·대상 영상의 프레임)은 해시로 같은 bucket(train/valid/test = 70/10/20)에 넣습니다. test bucket의 FFHQ는 test_id와 test_ood가 겹치지 않게 나눕니다.
+- **크기:** 실험마다 train 30,000 / valid 5,000 / test_id 3,000 / test_ood 10,000 (클래스당). train은 계열 비율을 유지해 샘플링합니다.
+- **누수 검사:** 스크립트가 실행할 때마다 train·valid와 test_id·test_ood 사이에 같은 사진·같은 묶음이 없는지, 빼야 할 계열이 학습에 없는지 확인합니다(3종 모두 통과).
+- 스크립트: `scripts/20_build_logo_splits.py` → `data/manifests/logo_{gan,diffusion,manip}.csv`, 구성표 `outputs/exp2/logo_splits/split_summary.csv`
+
+#### 대조 실험: 파일 형식만으로 real/fake를 맞힐 수 있는가
+
+real이 대부분 같은 FFHQ 사진이라 원래 계획한 "real 출처 맞히기"는 의미가 없어서, **이미지 내용 없이 파일 정보(PNG 여부, JPEG 양자화 테이블, 픽셀당 파일 크기, 크기)만으로** real/fake를 맞히는 분류기로 대체했습니다(`scripts/21_shortcut_probe.py`).
+
+| 데이터 | test_id 정확도 / AUC | test_ood 정확도 / AUC |
 |---|---|---|
-| LOGO-A | StyleGAN + FLUX·SDXL | GRAVEX |
-| LOGO-B | GRAVEX + FLUX·SDXL | StyleGAN |
-| LOGO-C | GRAVEX + StyleGAN | FLUX·SDXL |
+| 1차 데이터 | 67.8% / 0.772 | – |
+| LOGO-gan | **89.6% / 0.970** | 50.5% / 0.528 |
+| LOGO-diffusion | 69.0% / 0.752 | **71.3% / 0.831** |
+| LOGO-manip | 73.9% / 0.854 | 51.7% / 0.556 |
 
-- 기존 `split_manifest.csv`를 기준으로 **파일 복사 없이** 목록(CSV)만 새로 만듭니다. 디스크 공간을 아끼고 split을 추적하기 쉽게 하기 위해서입니다.
-- 학습 시간을 고려해 각 실험은 **클래스당 최대 30,000장**으로 샘플링합니다. 소스별 비율은 동일하게 맞춥니다.
-- 지름길 학습 점검용 대조 실험: real 이미지끼리 "출처 맞히기" 분류기를 학습해 봅니다. 정확도가 높게 나오면 real 출처마다 쉽게 구별되는 차이(압축·해상도 등)가 있다는 뜻입니다.
-- 스크립트: `scripts/20_build_logo_splits.py` → `data/manifests/logo_*.csv`
+- 원인: ffhq_1mff는 real이 PNG, fake가 JPEG이고, FLUX·SDXL fake는 real보다 낮은 JPEG 품질(양자화 평균 약 11 vs 5)로 저장되어 있습니다.
+- **파일 압축 정보만으로 최대 90%까지 맞힐 수 있으므로**, 모델이 진짜/가짜 대신 압축 차이를 배울 위험이 있습니다. LOGO-diffusion은 OOD에서도 71%라서, 정규화하지 않으면 OOD 성능이 실제보다 좋아 보일 수 있습니다.
+- **Phase 3 규칙 추가:** 모든 이미지를 읽은 뒤 **같은 방식으로 JPEG 재인코딩**합니다. 학습 때는 real·fake 모두 무작위 품질(60~95), 평가 때는 고정 품질 90을 씁니다. 파일 형식 단서가 남지 않게 하기 위해서입니다. 이미 픽셀에 남은 이중 압축 흔적까지 완전히 지울 수는 없으므로, 결과 해석 시 한계로 적습니다.
 
 ### Phase 3. 모델 비교
 | 모델 | 방식 | 선택 이유 |
@@ -210,7 +253,7 @@ python scripts/31_train_clip_probe.py --config configs/logo_holdout_flux_sdxl.ya
 ### Phase 4. 결과 정리 & 데모 반영
 - `scripts/40_summarize_results.py`로 아래 형태의 최종 표를 자동 생성합니다.
 
-| 모델 | ID Macro F1 | OOD GRAVEX | OOD StyleGAN | OOD FLUX·SDXL | OOD 평균 | JPEG q50 |
+| 모델 | ID Macro F1 | OOD gan | OOD diffusion | OOD manip | OOD 평균 | JPEG q50 |
 |---|---|---|---|---|---|---|
 | EfficientNetV2S | | | | | | |
 | ConvNeXt-T | | | | | | |
@@ -237,7 +280,7 @@ python scripts/31_train_clip_probe.py --config configs/logo_holdout_flux_sdxl.ya
 
 - [x] Phase 0 — 브랜치·환경·공통 모듈 (브랜치 push는 남음)
 - [x] Phase 1 — 강건성 테스트 & GRAVEX 오탐 분석
-- [ ] Phase 2 — LOGO split 생성 & 출처 판별 대조 실험
+- [x] Phase 2 — LOGO split 생성(계열 단위·중복 제거) & 파일 형식 대조 실험
 - [ ] Phase 3 — CLIP 선형 분류기 (LOGO 3종)
 - [ ] Phase 3 — EfficientNetV2S (LOGO 3종)
 - [ ] Phase 3 — ConvNeXt-T (LOGO 3종)
