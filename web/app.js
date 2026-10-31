@@ -1,10 +1,10 @@
 // Detection: same model, preprocessing and threshold as streamlit_app.py, run in the browser with
 // TF.js. Images are queued and analysed one at a time; results are kept in a local history.
+import { classifyFile, supportedImageMime } from './file-types.js';
 const MODEL_URL = "model/model.json";
 const CONFIG_URL = "model/inference_config.json";
 const MAX_QUEUE = 20;                 // images per batch
 const MAX_BYTES = 15 * 1024 * 1024;   // per image
-const MIN_SCAN_MS = 650;              // inference is near-instant; keep the scan visible long enough to read
 const THUMB_SIZE = 160;               // history stores a small JPEG thumbnail, never the original
 const HISTORY_KEY = "fakit.history.v1";
 const HISTORY_ON_KEY = "fakit.history.enabled";
@@ -67,7 +67,7 @@ const threshold = () => Number(config.decision_threshold_real);
 
 // Equivalent of PIL image.convert("RGB").resize(image_size) → float32 (0–255; the model's own
 // Rescaling layer normalises).
-function toInputTensor(img) {
+function inputCanvas(img) {
   const [h, w] = config.image_size;
   const canvas = document.createElement("canvas");
   canvas.width = w;
@@ -78,10 +78,10 @@ function toInputTensor(img) {
   ctx.fillStyle = "#000";                 // flatten transparency like convert("RGB")
   ctx.fillRect(0, 0, w, h);
   ctx.drawImage(img, 0, 0, w, h);
-  return tf.tidy(() => tf.browser.fromPixels(canvas, 3).toFloat().expandDims(0));
+  return canvas;
 }
+function toInputTensor(img) { return tf.tidy(() => tf.browser.fromPixels(inputCanvas(img), 3).toFloat().expandDims(0)); }
 
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // requestAnimationFrame stalls in background tabs; never let that hold up a result.
 const nextFrame = () => new Promise((resolve) => {
   const fallback = setTimeout(resolve, 100);
@@ -99,7 +99,7 @@ function showError(msg) {
 // Pasted images skip the JPG/PNG/WEBP check: capture tools put BMP/GIF/etc. on the clipboard, and
 // anything the browser can't decode is still rejected by decode() below.
 function acceptable(file, pasted) {
-  return pasted ? file.type.startsWith("image/") : /^image\/(jpeg|png|webp)$/.test(file.type);
+  return pasted ? file.type.startsWith("image/") : Boolean(supportedImageMime(file));
 }
 
 async function addFiles(fileList, { pasted = false } = {}) {
@@ -111,6 +111,9 @@ async function addFiles(fileList, { pasted = false } = {}) {
   const problems = [];
   const accepted = [];
   for (const file of files) {
+    const kind = classifyFile(file);
+    if (kind === "video") { problems.push(`${file.name}: 영상 파일입니다. 영상 분석은 아직 지원하지 않습니다.`); continue; }
+    if (kind === "text") { problems.push(`${file.name}: 글·문서 파일입니다. 글 분석은 아직 지원하지 않습니다.`); continue; }
     if (state.items.length + accepted.length >= MAX_QUEUE) { problems.push(`한 번에 최대 ${MAX_QUEUE}장까지 올릴 수 있습니다.`); break; }
     if (!acceptable(file, pasted)) { problems.push(`${file.name || "이미지"}: JPG, PNG, WEBP만 지원합니다.`); continue; }
     if (file.size > MAX_BYTES) { problems.push(`${file.name}: 15MB를 넘습니다.`); continue; }
@@ -134,7 +137,7 @@ async function addFiles(fileList, { pasted = false } = {}) {
     const item = { id: state.nextId++, name, url, img, status: "queued", real: null, fake: null, verdict: null, pasted, at: Date.now() };
     state.items.push(item);
     mountItem(item);
-    if (i === 0) els.queueSection.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    if (i === 0) els.queueSection.scrollIntoView({ behavior: reduceMotion ? "instant" : "smooth", block: "nearest" });
   }
 
   renderSummary();
@@ -152,10 +155,12 @@ async function pump() {
       if (!item) break;
       item.status = "analyzing";
       renderItem(item);
+      renderProcess(item, "waiting");
       try {
         await modelReady;
       } catch {
         state.items.filter((i) => i.status !== "done").forEach((i) => { i.status = "error"; i.error = "모델 없음"; renderItem(i); });
+        renderProcess(item, "error");
         break;
       }
       await analyzeItem(item);
@@ -168,21 +173,21 @@ async function pump() {
 }
 
 async function analyzeItem(item) {
-  const started = performance.now();
-  await nextFrame();   // let the scan paint
+  if (!state.items.includes(item)) return;
+  renderProcess(item, "analyzing");
+  await nextFrame();
   try {
     const input = toInputTensor(item.img);
     const output = model.predict(input);
     const probabilityReal = (await output.data())[0];
     tf.dispose([input, output]);
-    const remaining = reduceMotion ? 0 : MIN_SCAN_MS - (performance.now() - started);
-    if (remaining > 0) await sleep(remaining);
     if (!state.items.includes(item)) return;   // removed while analysing
     item.real = probabilityReal;
     item.fake = 1 - probabilityReal;
     item.verdict = probabilityReal >= threshold() ? "real" : "fake";
     item.status = "done";
     renderItem(item);
+    renderProcess(item, "done");
     saveToHistory(item);
   } catch (err) {
     console.error(err);
@@ -190,6 +195,7 @@ async function analyzeItem(item) {
     item.status = "error";
     item.error = "분석 실패";
     renderItem(item);
+    renderProcess(item, "error");
   }
 }
 
@@ -197,7 +203,7 @@ async function analyzeItem(item) {
 function cardHTML(entry, { removable = true, date = false } = {}) {
   return `
     ${removable ? `<button type="button" class="shot-remove" aria-label="목록에서 제거">×</button>` : ""}
-    <div class="shot-img"><img src="${entry.url || entry.thumb}" alt=""><span class="scan" aria-hidden="true"></span><span class="shot-chip"></span></div>
+    <div class="shot-img"><img src="${entry.url || entry.thumb}" alt=""><span class="shot-chip"></span></div>
     <div class="shot-meta"><span class="shot-verdict"></span><span class="shot-prob"></span></div>
     <p class="shot-name" title="${escapeHTML(entry.name)}">${escapeHTML(entry.name)}</p>
     ${date ? `<p class="shot-date">${formatDate(entry.at)}</p>` : ""}`;
@@ -215,7 +221,7 @@ function applyStatus(el, entry) {
     const isReal = entry.verdict === "real";
     chip.textContent = isReal ? "REAL" : "AI";
     verdict.textContent = isReal ? "REAL" : "AI GENERATED";
-    prob.textContent = pct(isReal ? entry.real : entry.fake);
+    prob.textContent = `REAL 점수 ${entry.real.toFixed(3)}`;
   }
 }
 function mountItem(item) {
@@ -236,6 +242,34 @@ function mountItem(item) {
 function renderItem(item) {
   if (item.el) applyStatus(item.el, item);
 }
+function renderProcess(item, phase) {
+  if (!state.items.includes(item)) return;
+  const view = $("process-view");
+  document.dispatchEvent(new CustomEvent('fakit:inspect', { detail: { url: item.url, state: phase, label: phase === 'done' ? `${item.verdict === 'real' ? 'REAL' : 'AI'} · REAL 점수 ${item.real.toFixed(3)}` : phase === 'error' ? '분석 실패' : phase === 'waiting' ? '모델 준비 중' : '분석 중' } }));
+  view.hidden = false;
+  view.dataset.phase = phase;
+  view.dataset.item = String(item.id);
+  $("process-name").textContent = item.name;
+  $("process-original").src = item.url;
+  $("process-size").textContent = `${item.img.naturalWidth} × ${item.img.naturalHeight}`;
+  const input = $("process-input");
+  input.hidden = !config;
+  if (config) {
+    const prepared = inputCanvas(item.img);
+    input.width = prepared.width; input.height = prepared.height;
+    input.getContext("2d").drawImage(prepared, 0, 0);
+    $("process-input-size").textContent = `${prepared.width} × ${prepared.height}`;
+  }
+  const messages = { waiting: "모델 준비 대기", analyzing: "이미지 전체 분석 중", done: "분석 완료", error: "분석 실패 · 새로고침 후 다시 시도하세요" };
+  $("process-status").textContent = messages[phase];
+  $("process-score").hidden = phase !== "done";
+  $("process-verdict").textContent = phase === "done" ? (item.verdict === "real" ? "REAL 분류" : "AI 분류") : phase === "error" ? "결과 없음" : "결과 대기";
+  if (phase === "done") {
+    $("process-boundary").style.left = `${threshold() * 100}%`;
+    $("process-point").style.left = `${item.real * 100}%`;
+    $("process-value").textContent = `REAL 점수 ${item.real.toFixed(3)} · 기준 ${threshold().toFixed(2)}`;
+  }
+}
 function removeItem(item) {
   const idx = state.items.indexOf(item);
   if (idx < 0) return;
@@ -243,11 +277,14 @@ function removeItem(item) {
   item.el.remove();
   URL.revokeObjectURL(item.url);
   renderSummary();
+  if ($("process-view").dataset.item === String(item.id)) $("process-view").hidden = true;
 }
 function clearQueue() {
+  document.dispatchEvent(new CustomEvent('fakit:inspect', { detail: { state: 'idle', label: 'DROP A FILE' } }));
   state.items.forEach((i) => { i.el.remove(); URL.revokeObjectURL(i.url); });
   state.items.length = 0;
   renderSummary();
+  $("process-view").hidden = true;
 }
 function renderSummary() {
   const n = state.items.length;
@@ -257,7 +294,8 @@ function renderSummary() {
   const fake = state.items.filter((i) => i.verdict === "fake").length;
   const pending = state.items.filter((i) => i.status === "queued" || i.status === "analyzing").length;
   const failed = state.items.filter((i) => i.status === "error").length;
-  els.summaryMain.textContent = pending ? `${n}장 중 ${n - pending}장 분석 완료` : `${n}장 분석 완료`;
+  const done = state.items.filter(i => i.status === "done").length;
+  els.summaryMain.textContent = `${n}장 중 ${done}장 분석 완료`;
   const parts = [];
   if (real) parts.push(`<b class="real">REAL ${real}장</b>`);
   if (fake) parts.push(`<b class="fake">AI ${fake}장</b>`);
@@ -274,11 +312,11 @@ function openDetail(entry) {
   els.detailImg.src = entry.url || entry.thumb;
   els.detailVerdict.textContent = isReal ? "REAL" : "AI GENERATED";
   els.detailVerdict.className = `prediction ${isReal ? "is-real" : "is-fake"}`;
-  els.detailSub.textContent = isReal ? "실제 사진으로 판정했습니다." : "AI가 생성한 얼굴로 판정했습니다.";
+  els.detailSub.textContent = isReal ? "모델이 실제 사진 범주로 분류했습니다. 진위가 확인된 것은 아닙니다." : "모델이 AI 생성 범주로 분류했습니다. 생성 사실을 입증하는 결과는 아닙니다.";
   els.detailReal.textContent = pct(entry.real);
   els.detailFake.textContent = pct(entry.fake);
   els.detailThreshold.style.left = `${t * 100}%`;
-  els.detailThresholdText.textContent = `REAL 확률이 기준선 ${t.toFixed(2)} 이상이면 REAL로 판정합니다.`;
+  els.detailThresholdText.textContent = `REAL 점수 ${entry.real.toFixed(3)} / 기준선 ${t.toFixed(2)}. 점수는 모델 출력이며, 이 사진에 대한 정답률이 아닙니다.`;
   els.detailName.textContent = entry.at ? `${entry.name} · ${formatDate(entry.at)}` : entry.name;
   els.detailRealBar.style.width = "0";
   els.detailFakeBar.style.width = "0";
@@ -290,6 +328,7 @@ function openDetail(entry) {
   }));
 }
 els.detailClose.addEventListener("click", () => closeModal(els.detail));
+$("detail-help").addEventListener("click", () => closeModal(els.detail));
 
 // ── History (localStorage, thumbnails only) ────────────────────────────
 function historyEnabled() {
@@ -447,7 +486,7 @@ document.addEventListener("paste", (e) => {
   if (!files.length) files = [...data.items].filter((i) => i.kind === "file" && i.type.startsWith("image/")).map((i) => i.getAsFile()).filter(Boolean);
   e.preventDefault();
   if (files.length) addFiles(files, { pasted: true });
-  else { if (routeName() !== "home") go("home"); showError(NO_CLIPBOARD_IMAGE); }
+  else { if (routeName() !== "home") go("home"); showError(data.getData("text/plain") ? "글이 붙여넣어졌습니다. 글 분석은 아직 지원하지 않습니다." : NO_CLIPBOARD_IMAGE); }
 });
 
 // Button alternative for when the keyboard shortcut isn't handy (needs localhost/https).
@@ -475,4 +514,5 @@ els.pasteBtn.addEventListener("click", async (e) => {
 
 refreshHistoryViews();
 if (routeName() === "history") renderHistoryPage();
+window.Fakit.addFiles = addFiles;
 loadResources();

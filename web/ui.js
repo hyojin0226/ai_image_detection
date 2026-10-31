@@ -1,4 +1,4 @@
-// Page chrome: hash router, nav/drawer, login modal (demo), toast, scroll reveal.
+// Page chrome: hash router, nav/drawer, server-backed login, toast, scroll reveal.
 // Loaded before TF.js so the page is usable while the model runtime downloads.
 // Shares helpers with app.js through window.Fakit.
 (() => {
@@ -24,8 +24,8 @@
     home: "Fakit — AI 얼굴 탐지",
     history: "기록 — Fakit",
     model: "모델 — Fakit",
-    text: "AI 글 탐지 — Fakit",
-    video: "AI 영상 탐지 — Fakit",
+    results: "결과 읽는 법 — Fakit",
+    privacy: "사진과 기록 관리 — Fakit",
     guide: "가이드 — Fakit",
     about: "소개 — Fakit",
   };
@@ -33,6 +33,7 @@
 
   function routeName() {
     const name = location.hash.replace(/^#\/?/, "").split("?")[0];
+    if (name === "text" || name === "video") return "home";
     return TITLES[name] ? name : "home";
   }
   function render() {
@@ -91,8 +92,11 @@
     });
   });
 
-  // ── Login (demo: no real OAuth yet, state lives in this browser only) ──
-  const USER_KEY = "fakit.user";
+  // ── Login: only the server can establish an authenticated identity. ──
+  let authenticatedUser = null;
+  let csrfToken = null;
+  let availableProviders = new Set();
+  let authLoaded = false;
   const PROVIDERS = {
     kakao: { label: "카카오", bg: "#fee500", ink: "#191919" },
     naver: { label: "네이버", bg: "#03c75a", ink: "#ffffff" },
@@ -101,16 +105,10 @@
   const loginModal = $("login-modal");
 
   function getUser() {
-    try {
-      const u = JSON.parse(localStorage.getItem(USER_KEY));
-      return u && PROVIDERS[u.provider] ? u : null;
-    } catch { return null; }
+    return authenticatedUser;
   }
   function setUser(user) {
-    try {
-      if (user) localStorage.setItem(USER_KEY, JSON.stringify(user));
-      else localStorage.removeItem(USER_KEY);
-    } catch { /* storage blocked: state just won't persist */ }
+    authenticatedUser = user;
     renderUser();
   }
   function renderUser() {
@@ -126,7 +124,7 @@
       avatar.style.color = p.ink;
       avatar.style.boxShadow = p.border ? `inset 0 0 0 1px ${p.border}` : "none";
       $("user-name").textContent = user.name;
-      $("user-provider").textContent = `${p.label} 계정 · 체험 모드`;
+      $("user-provider").textContent = `${p.label} 계정`;
     }
     document.dispatchEvent(new CustomEvent("fakit:user", { detail: { user } }));
   }
@@ -134,11 +132,32 @@
     closeDrawer();
     closeUserMenu();
     if (getUser()) { go("history"); return; }
-    loginModal.querySelectorAll(".provider").forEach((b) => {
-      b.disabled = false;
-      b.querySelector("span").textContent = `${PROVIDERS[b.dataset.provider].label}로 시작하기`;
-    });
+    renderProviders();
     openModal(loginModal);
+  }
+  function renderProviders() {
+    loginModal.querySelectorAll(".provider").forEach((b) => {
+      const enabled = availableProviders.has(b.dataset.provider);
+      b.disabled = !enabled;
+      b.querySelector("span").textContent = `${PROVIDERS[b.dataset.provider].label}로 시작하기${enabled ? "" : authLoaded ? " · 준비 중" : " · 확인 중"}`;
+    });
+  }
+  async function refreshAuth() {
+    try {
+      const response = await fetch("/api/auth", { cache: "no-store" });
+      if (!response.ok) throw new Error("Auth unavailable");
+      const data = await response.json();
+      availableProviders = new Set(data.providers.filter(p => p.enabled).map(p => p.id));
+      csrfToken = data.csrf;
+      setUser(data.user);
+      $("auth-message").textContent = availableProviders.size
+        ? "사용할 계정을 선택하세요. 이미지 분석은 로그인 없이도 이용할 수 있어요."
+        : "소셜 로그인은 준비 중이에요. 이미지 분석은 로그인 없이 이용할 수 있어요.";
+    } catch {
+      availableProviders.clear();
+      setUser(null);
+      $("auth-message").textContent = "로그인 서비스에 연결할 수 없습니다. 이미지 분석은 계속 이용할 수 있어요.";
+    } finally { authLoaded = true; renderProviders(); }
   }
   $("login-btn").addEventListener("click", openLogin);
   document.querySelectorAll("[data-open-login]").forEach((b) => b.addEventListener("click", openLogin));
@@ -150,12 +169,7 @@
       const p = PROVIDERS[provider];
       loginModal.querySelectorAll(".provider").forEach((b) => { b.disabled = true; });
       btn.querySelector("span").textContent = `${p.label} 연결 중…`;
-      // Stand-in for the OAuth round trip until the providers are wired up.
-      setTimeout(() => {
-        setUser({ provider, name: `${p.label} 사용자`, since: Date.now() });
-        closeModal(loginModal);
-        toast(`${p.label} 계정으로 로그인했습니다 · 체험 모드`);
-      }, reduceMotion ? 0 : 700);
+      location.assign(`/auth/${provider}/login`);
     });
   });
 
@@ -175,10 +189,16 @@
   document.addEventListener("click", (e) => {
     if (!e.target.closest("#user-chip")) closeUserMenu();
   });
-  $("logout-btn").addEventListener("click", () => {
-    setUser(null);
-    closeUserMenu();
-    toast("로그아웃했습니다.");
+  $("logout-btn").addEventListener("click", async () => {
+    $("logout-btn").disabled = true;
+    try {
+      const response = await fetch("/auth/logout", { method: "POST", headers: { "X-CSRF-Token": csrfToken } });
+      if (!response.ok) throw new Error("Logout failed");
+      await refreshAuth();
+      closeUserMenu();
+      toast("로그아웃했습니다.");
+    } catch { toast("로그아웃하지 못했습니다. 새로고침 후 다시 시도해 주세요."); }
+    finally { $("logout-btn").disabled = false; }
   });
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
@@ -211,4 +231,14 @@
   window.Fakit = { toast, go, routeName, openModal, closeModal, getUser };
   renderUser();
   render();
+  refreshAuth();
+  const authUrl = new URL(location.href);
+  if (authUrl.searchParams.has("auth_error")) {
+    const messages = { not_configured: "아직 준비 중인 로그인입니다.", invalid_state: "로그인 요청이 만료되었어요. 다시 시도해 주세요.", cancelled: "로그인을 취소했습니다.", failed: "로그인하지 못했습니다. 잠시 후 다시 시도해 주세요." };
+    toast(messages[authUrl.searchParams.get("auth_error")] || messages.failed, 6000);
+    authUrl.searchParams.delete("auth_error");
+    history.replaceState(null, "", authUrl);
+  }
+  // Browser back/forward cache must not resurrect an old signed-in display.
+  addEventListener("pageshow", e => { if (e.persisted) refreshAuth(); });
 })();

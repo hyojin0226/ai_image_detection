@@ -1,0 +1,8 @@
+{
+  "manifest_version": 3,
+  "name": "Fakit — 이미지 주소 가져오기",
+  "version": "0.1.0",
+  "description": "웹페이지의 이미지를 우클릭해 Fakit으로 주소를 가져옵니다.",
+  "permissions": ["contextMenus"],
+  "background": { "service_worker": "background.js", "type": "module" }
+}
