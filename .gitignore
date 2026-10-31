@@ -240,3 +240,6 @@ grad_cam*.png
 # Python cache
 __pycache__/
 *.pyc
+
+# 2차 실험 PyTorch 환경
+.venv-exp2/

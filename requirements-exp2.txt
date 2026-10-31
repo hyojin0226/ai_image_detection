@@ -1,0 +1,14 @@
+# 2차 실험(Phase 2~3)용 PyTorch 환경: .venv-exp2
+# 설치: python3 -m venv .venv-exp2 && .venv-exp2/bin/pip install -r requirements-exp2.txt
+# 확인 환경: WSL Ubuntu, Python 3.12, RTX 4060 Ti (torch CUDA 12.x 빌드)
+torch==2.15.0
+torchvision==0.29.2
+timm==1.0.30
+open_clip_torch==3.3.0
+numpy==2.5.4
+pandas==3.1.0
+scikit-learn==1.9.1
+Pillow==13.0.0
+PyYAML==6.0.3
+matplotlib==3.11.2
+tqdm==4.70.1
