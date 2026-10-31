@@ -1,0 +1,9 @@
+source,label,size,images
+ffhq_1mff,fake,256x256,2303
+ffhq_1mff,real,256x256,4000
+flux_sdxl,fake,256x256,2679
+flux_sdxl,real,256x256,720
+gravex,fake,256x256,2688
+gravex,real,256x256,4599
+stylegan,fake,256x256,5768
+stylegan,real,256x256,4119

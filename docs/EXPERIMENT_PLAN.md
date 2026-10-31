@@ -149,6 +149,36 @@ python scripts/31_train_clip_probe.py --config configs/logo_holdout_flux_sdxl.ya
 - 추가 분석: GRAVEX에서 놓친 Fake 이미지 상위 사례 Grad-CAM (`gravex_false_negative_cases_threshold_024.csv` 활용)
 - 산출물: `outputs/exp2/robustness/robustness_summary.csv`, `notebooks/01_robustness_report.ipynb`
 
+#### Phase 1 결과 (2026-10-31)
+
+실행: `source scripts/tf_gpu_env.sh && python scripts/10_eval_robustness.py && python scripts/11_gradcam_gravex_fn.py`
+리포트: `notebooks/01_robustness_report.ipynb` (`scripts/12_build_robustness_report.py`로 생성)
+
+- 변환은 256x256으로 맞춘 뒤 적용했습니다. 확인해 보니 **test 이미지는 모든 소스가 이미 256x256**이라 해상도 차이에 따른 지름길은 없습니다.
+- 변환 없음(none)의 정확도는 97.78%로 1차(97.79%)와 거의 같습니다. 차이는 이미지 디코딩·리사이즈 라이브러리(PIL vs TF) 차이입니다.
+
+| 변환 | 정확도 | AUC | Fake Recall | Real Recall |
+|---|---:|---:|---:|---:|
+| none | 97.78% | 0.9983 | 96.43% | 99.12% |
+| JPEG q90 / q70 / q50 | 97.49 / 97.32 / **96.60%** | 0.9977 / 0.9972 / 0.9957 | 96.44 / 96.22 / 96.06% | 98.55 / 98.41 / **97.14%** |
+| 리사이즈 0.75× / 0.5× | 97.74 / **96.99%** | 0.9980 / 0.9965 | 96.66 / 96.10% | 98.82 / 97.89% |
+| 블러 σ0.5 / σ1.0 | 97.78 / 97.34% | 0.9981 / 0.9974 | 96.58 / 96.48% | 98.97 / 98.19% |
+
+- **결론 1: 압축·축소에 꽤 강건합니다.** 가장 센 JPEG q50에서도 정확도가 1.2%p만 떨어집니다. 지름길 학습을 했다는 강한 신호는 없습니다.
+- **결론 2: 떨어지는 쪽은 Real입니다.** 압축·축소가 세질수록 Fake recall은 거의 그대로이고 **Real을 Fake로 오판하는 비율이 늘어납니다**(q50에서 real recall 99.1% → 97.1%). SNS에 올라간 진짜 사진이 FAKE로 뜰 위험과 같은 방향입니다.
+- **결론 3: GRAVEX 약점의 원인은 "부분 조작" 이미지입니다.** GRAVEX fake에는 전체 생성 얼굴뿐 아니라 실제 영상에서 얼굴만 바꾼 이미지가 섞여 있습니다. 원본 파일명 기준 출처별 놓친 비율:
+
+| GRAVEX fake 출처 | 이미지 | 놓침 | 놓친 비율 |
+|---|---:|---:|---:|
+| 생성 얼굴 (SD/StyleGAN 등) | 1,381 | 13 | **0.9%** |
+| DFDC (영상 딥페이크) | 555 | 48 | 8.6% |
+| CelebDF (영상 딥페이크) | 314 | 58 | 18.5% |
+| aug | 121 | 22 | 18.2% |
+| **FaceForensics++** (FaceSwap, NeuralTextures, Deepfakes, FaceShifter, Face2Face) | 291 | **286** | **98.3%** |
+
+  놓친 428장 중 286장(67%)이 FaceForensics++ 조작 이미지입니다. 이 모델은 **"AI가 통째로 만든 얼굴"은 거의 다 잡지만, "실제 영상에서 얼굴 일부만 바꾼 딥페이크"는 사실상 못 잡습니다.** Grad-CAM에서도 놓친 사례는 저해상도·블록 노이즈가 많은 영상 프레임이고, 히트맵이 얼굴이 아닌 배경·가장자리에 퍼져 있습니다.
+- **Phase 2~3에 주는 시사점:** GRAVEX는 성격이 다른 두 과제(전체 생성 / 부분 조작)가 섞인 소스입니다. LOGO 결과를 해석할 때 GRAVEX를 "생성 얼굴"과 "부분 조작"으로 나눠서 보고하는 것을 권장합니다.
+
 ### Phase 2. Leave-One-Generator-Out 데이터 분할
 **질문:** 처음 보는 생성기도 잡아낼 수 있는가?
 
@@ -206,7 +236,7 @@ python scripts/31_train_clip_probe.py --config configs/logo_holdout_flux_sdxl.ya
 ## 6. 진행 체크리스트
 
 - [x] Phase 0 — 브랜치·환경·공통 모듈 (브랜치 push는 남음)
-- [ ] Phase 1 — 강건성 테스트 & GRAVEX 오탐 분석
+- [x] Phase 1 — 강건성 테스트 & GRAVEX 오탐 분석
 - [ ] Phase 2 — LOGO split 생성 & 출처 판별 대조 실험
 - [ ] Phase 3 — CLIP 선형 분류기 (LOGO 3종)
 - [ ] Phase 3 — EfficientNetV2S (LOGO 3종)

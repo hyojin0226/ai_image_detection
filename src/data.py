@@ -84,12 +84,9 @@ def sample_per_class(rows: pd.DataFrame, max_per_class: int, seed: int) -> pd.Da
     """클래스당 최대 `max_per_class`장. 소스 비율은 원래 비율을 유지합니다."""
     parts = []
     for _, class_rows in rows.groupby("label"):
-        n = min(max_per_class, len(class_rows))
-        fraction = n / len(class_rows)
-        parts.append(
-            class_rows.groupby("source", group_keys=False)
-            .apply(lambda g: g.sample(frac=fraction, random_state=seed))
-        )
+        fraction = min(max_per_class, len(class_rows)) / len(class_rows)
+        for _, source_rows in class_rows.groupby("source"):
+            parts.append(source_rows.sample(frac=fraction, random_state=seed))
     return pd.concat(parts).reset_index(drop=True)
 
 

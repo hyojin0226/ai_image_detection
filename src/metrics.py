@@ -34,6 +34,8 @@ def compute_metrics(y_true, prob_real, threshold: float) -> dict:
         "n_images": len(y_true),
         "threshold": threshold,
         "accuracy": accuracy_score(y_true, y_pred),
+        # fake/real 비율이 다른 소스별 평가용 (두 클래스 recall의 평균)
+        "balanced_accuracy": (recall[0] + recall[1]) / 2,
         "roc_auc_real_positive": auc,
         "macro_f1": f1_score(y_true, y_pred, average="macro", zero_division=0),
         "fake_precision": precision[0],
