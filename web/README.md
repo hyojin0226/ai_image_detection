@@ -51,6 +51,8 @@ python -m http.server 8000 --directory web
 
 ## 소셜 로그인 설정
 
+`npm run check:auth`로 비밀 값 노출 없이 설정 여부와 콜백 주소를 확인할 수 있습니다. `.env`와 Google에서 내려받은 `client_secret*.json`은 Git에 올리지 않습니다. 키를 입력한 뒤 서버를 재시작해야 적용됩니다. 개발자 콘솔의 로그인 활성화·동의 화면·허용 사용자·콜백 등록과 실제 계정 로그인까지 확인해야 연동이 완료됩니다.
+
 각 개발자 콘솔에 웹 앱을 등록하고 아래 콜백 주소를 정확히 입력합니다. `localhost`와 `127.0.0.1`을 섞지 말고 **http://localhost:8000**으로 접속하세요.
 
 | 서비스 | `.env` 항목 | 로컬 Redirect / Callback URL |

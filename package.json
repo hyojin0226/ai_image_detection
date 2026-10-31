@@ -5,6 +5,7 @@
   "engines": { "node": ">=22" },
   "scripts": {
     "start": "node --env-file-if-exists=.env server.mjs",
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs",
+    "check:auth": "node --env-file-if-exists=.env scripts/check-auth.mjs"
   }
 }
