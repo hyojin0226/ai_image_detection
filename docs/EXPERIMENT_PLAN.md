@@ -248,7 +248,27 @@ real이 대부분 같은 FFHQ 사진이라 원래 계획한 "real 출처 맞히�
 - CLIP은 특징을 한 번만 추출(`30_extract_clip_features.py`)하면 분류기 학습은 몇 분이면 끝나므로, LOGO 3종을 빠르게 반복할 수 있습니다.
 - 3개 모델 × LOGO 3종 = **9개 학습**. 모델마다 threshold는 valid에서 정하고 테스트에 그대로 적용합니다(1차와 같은 규칙).
 - 8GB VRAM 대응: CNN은 batch 32 + mixed precision, CLIP 특징 추출은 fp16으로 진행합니다.
-- 산출물: `outputs/exp2/<model>/<logo_id>/` (metrics.csv, predictions.csv, roc.png)
+- 산출물: `outputs/exp2/<model>/<logo_id>/` (metrics.csv, config.yaml, CNN은 training_history.csv). predictions.csv·best.pt는 용량 때문에 git에서 제외합니다.
+- 실제 설정: CNN은 timm ImageNet 사전학습 가중치, AdamW(lr 1e-4) + OneCycle, bf16, 4 epoch, batch 32(학습 1회 약 17분). CLIP은 openai ViT-L/14 특징 + LogisticRegression(C는 valid AUC로 선택, LOGO 3종 모두 C=10).
+
+#### Phase 3 결과 (2026-10-31, `scripts/40_summarize_results.py` → `outputs/exp2/summary/`)
+
+| 모델 | ID Macro F1 | OOD gan (F1 / AUC) | OOD diffusion (F1 / AUC) | OOD manip (F1 / AUC) | OOD 평균 (F1 / AUC) | JPEG q50 Macro F1 |
+|---|---|---|---|---|---|---|
+| EfficientNetV2S | 0.978 | 0.333 / 0.474 | 0.342 / 0.692 | 0.414 / 0.442 | 0.363 / 0.536 | 0.971 |
+| ConvNeXt-T | 0.982 | 0.333 / 0.377 | 0.337 / **0.871** | 0.423 / 0.433 | 0.365 / 0.560 | **0.978** |
+| CLIP + Linear | 0.942 | 0.393 / **0.785** | 0.339 / 0.308 | **0.491** / 0.553 | 0.408 / 0.549 | 0.911 |
+
+ID·JPEG q50은 LOGO 3종 평균입니다. OOD Macro F1 0.333은 "전부 REAL로 예측"한 것과 같은 값입니다.
+
+**해석**
+1. **학습에서 본 계열은 3개 모델 모두 잘 잡습니다.** ID Macro F1 0.94~0.98이고, JPEG q50에서도 1~3%p만 떨어집니다. CNN 2종이 CLIP보다 3~4%p 높습니다.
+2. **처음 보는 계열은 3개 모델 모두 사실상 못 잡습니다.** valid threshold를 그대로 쓰면 OOD fake의 0~25%만 FAKE로 판정하고 대부분을 REAL로 넘깁니다. 어떤 모델도 LOGO 3종 모두에서 AUC가 0.5보다 확실히 높지 않았습니다.
+3. **AUC가 0.87이어도 threshold가 맞지 않으면 쓸 수 없습니다.** ConvNeXt-T의 OOD diffusion은 순위로는 꽤 구분하지만(AUC 0.871), valid threshold에서는 fake recall이 0.4%입니다. OOD real의 95%를 REAL로 맞히도록 threshold를 다시 잡아도 fake recall은 48%입니다(`runs.csv`의 `ood_fake_recall_at_real95`). 새 계열마다 threshold 보정용 데이터가 필요하다는 뜻입니다.
+4. **모델마다 강한 계열이 다릅니다.** CLIP은 처음 보는 GAN에 상대적으로 강하지만(AUC 0.785) diffusion에서는 오히려 반대로 판단합니다(AUC 0.308: FLUX·SDXL을 FFHQ 실사보다 더 진짜로 봄). CNN은 반대로 diffusion에서 높고 GAN에서는 0.5 아래입니다. UnivFD 논문의 "CLIP이 새 생성기에 강하다"는 결과는 이 엄격한 조건(중복 제거·형식 정규화)에서 일관되게 재현되지 않았습니다.
+5. **OOD manip은 데이터셋별로 갈립니다** (`ood_by_generator.csv`). CNN은 FF++ 조작 6종을 valid threshold에서도 57~83% 잡지만, CelebDF·DFDC는 AUC 0.27~0.57로 거의 못 잡습니다. manip을 뺀 학습에는 영상 real이 없어서, 영상 출처(화질·압축) 차이가 판단에 섞였을 가능성이 큽니다.
+
+**결론:** 이 데이터 안에서는 모델을 바꾸는 것만으로 일반화 문제를 풀 수 없습니다. 데모에 쓰는 최종 모델은 "학습한 생성기 계열에서만 신뢰할 수 있다"는 한계를 명시해야 하고, 실제로 쓰려면 탐지하려는 계열의 데이터를 학습에 넣어야 합니다(Phase 4 결정 사항).
 
 ### Phase 4. 결과 정리 & 데모 반영
 - `scripts/40_summarize_results.py`로 아래 형태의 최종 표를 자동 생성합니다.
@@ -281,10 +301,10 @@ real이 대부분 같은 FFHQ 사진이라 원래 계획한 "real 출처 맞히�
 - [x] Phase 0 — 브랜치·환경·공통 모듈 (브랜치 push는 남음)
 - [x] Phase 1 — 강건성 테스트 & GRAVEX 오탐 분석
 - [x] Phase 2 — LOGO split 생성(계열 단위·중복 제거) & 파일 형식 대조 실험
-- [ ] Phase 3 — CLIP 선형 분류기 (LOGO 3종)
-- [ ] Phase 3 — EfficientNetV2S (LOGO 3종)
-- [ ] Phase 3 — ConvNeXt-T (LOGO 3종)
-- [ ] Phase 4 — 최종 비교표 & 리포트 노트북
+- [x] Phase 3 — CLIP 선형 분류기 (LOGO 3종)
+- [x] Phase 3 — EfficientNetV2S (LOGO 3종)
+- [x] Phase 3 — ConvNeXt-T (LOGO 3종)
+- [ ] Phase 4 — 최종 비교표(완료: `40_summarize_results.py`) & 리포트 노트북 & 데모 반영 결정
 - [ ] (선택) Phase 5 — 데이터 보강
 
 ## 7. 역할 분담 (팀 논의 후 기입)

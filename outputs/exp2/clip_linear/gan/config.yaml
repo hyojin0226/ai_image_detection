@@ -1,0 +1,5 @@
+C: 10.0
+holdout: gan
+model: clip_vit_l14_linear
+threshold: 0.5900000000000002
+valid_macro_f1: 0.9391794085805691

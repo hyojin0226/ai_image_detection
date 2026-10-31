@@ -20,6 +20,36 @@ def choose_threshold(y_true, prob_real):
     return float(thresholds[best]), float(scores[best])
 
 
+def save_run_results(out_dir, config: dict, valid_rows, valid_prob, eval_sets: dict):
+    """Phase 3 공통 결과 저장. threshold는 valid에서만 정하고 모든 테스트에 그대로 적용합니다.
+
+    eval_sets: {이름: (rows, prob_real)}. rows에는 y, family, generator 열이 있어야 합니다.
+    저장: metrics.csv(전체·계열별), predictions.csv, config.yaml
+    """
+    import pandas as pd
+    import yaml
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    threshold, valid_f1 = choose_threshold(valid_rows["y"].to_numpy(), valid_prob)
+
+    metrics, predictions = [], []
+    for name, (rows, prob) in eval_sets.items():
+        rows = rows.assign(prob_real=prob, eval_set=name)
+        predictions.append(rows)
+        metrics.append({"eval_set": name, "subset": "all", **compute_metrics(rows["y"], prob, threshold)})
+        # 계열별 fake recall (real은 공통이므로 fake 쪽만 나눠 봄)
+        for family, fake in rows[rows["y"] == 0].groupby("family"):
+            recall = float((fake["prob_real"] < threshold).mean())
+            metrics.append({"eval_set": name, "subset": f"fake_recall:{family}", "n_images": len(fake), "fake_recall": recall})
+
+    pd.DataFrame(metrics).to_csv(out_dir / "metrics.csv", index=False)
+    columns = ["eval_set", "path", "y", "family", "generator", "domain", "prob_real"]
+    pd.concat(predictions)[columns].to_csv(out_dir / "predictions.csv", index=False)
+    with open(out_dir / "config.yaml", "w", encoding="utf-8") as file:
+        yaml.safe_dump({**config, "threshold": threshold, "valid_macro_f1": valid_f1}, file, allow_unicode=True)
+    return pd.DataFrame(metrics)
+
+
 def compute_metrics(y_true, prob_real, threshold: float) -> dict:
     y_true = np.asarray(y_true).astype(int)
     prob_real = np.asarray(prob_real, dtype=float)

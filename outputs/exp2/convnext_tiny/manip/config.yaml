@@ -1,0 +1,9 @@
+batch_size: 32
+best_valid_auc: 0.9999980399999999
+epochs: 4
+holdout: manip
+limit: null
+lr: 0.0001
+model: convnext_tiny
+threshold: 0.05
+valid_macro_f1: 0.999299999937

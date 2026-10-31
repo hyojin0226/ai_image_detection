@@ -1,0 +1,9 @@
+batch_size: 32
+best_valid_auc: 0.9972679999999999
+epochs: 4
+holdout: gan
+limit: null
+lr: 0.0001
+model: efficientnetv2s
+threshold: 0.4700000000000001
+valid_macro_f1: 0.9686997718213366

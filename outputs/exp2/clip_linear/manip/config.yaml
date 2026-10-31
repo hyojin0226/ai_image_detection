@@ -1,0 +1,5 @@
+C: 10.0
+holdout: manip
+model: clip_vit_l14_linear
+threshold: 0.35000000000000003
+valid_macro_f1: 0.9677995826825916

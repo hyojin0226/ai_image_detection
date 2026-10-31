@@ -246,3 +246,6 @@ __pycache__/
 
 # 2차 실험 예측 원본 (용량이 커서 제외, 스크립트로 재생성)
 outputs/exp2/**/predictions/
+outputs/exp2/**/features/
+outputs/exp2/**/*.pt
+outputs/exp2/*/*/predictions.csv

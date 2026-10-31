@@ -1,0 +1,5 @@
+C: 10.0
+holdout: diffusion
+model: clip_vit_l14_linear
+threshold: 0.4000000000000001
+valid_macro_f1: 0.9218690593661996

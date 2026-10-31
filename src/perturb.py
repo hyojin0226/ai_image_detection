@@ -1,6 +1,7 @@
 """강건성 평가용 이미지 변환 (PIL 기반이라 TensorFlow/PyTorch 양쪽에서 사용 가능)."""
 
 import io
+import random
 
 from PIL import Image, ImageFilter
 
@@ -27,6 +28,18 @@ def blur(sigma: float):
     def apply(image: Image.Image) -> Image.Image:
         return image.filter(ImageFilter.GaussianBlur(radius=sigma))
     return apply
+
+
+def random_jpeg(low: int = 60, high: int = 95):
+    """Phase 3 학습용: real·fake 모두 무작위 품질로 재인코딩해서 파일 형식·압축 차이 단서를 없앱니다."""
+    def apply(image: Image.Image) -> Image.Image:
+        return jpeg(random.randint(low, high))(image)
+    return apply
+
+
+# Phase 3 JPEG 정규화 규칙 (EXPERIMENT_PLAN.md Phase 2 대조 실험 참고)
+TRAIN_JPEG = random_jpeg(60, 95)
+EVAL_JPEG = jpeg(90)
 
 
 # EXPERIMENT_PLAN.md Phase 1의 변환 목록
