@@ -4,7 +4,7 @@
 
 ## 실행
 
-1. 저장소 루트에서 `npm start`로 Fakit을 실행합니다 (Node.js 22 이상).
+1. 확장 프로그램은 [배포된 Fakit](https://fakit-integrated.onrender.com)에 연결됩니다. 로컬 서버 실행은 필요하지 않습니다.
 2. Chrome 주소창에 `chrome://extensions`를 입력합니다.
 3. **개발자 모드**를 켜고 **압축해제된 확장 프로그램을 로드합니다**에서 이 `extension` 폴더를 선택합니다.
 4. 일반 웹페이지에서 이미지를 우클릭하고 **Fakit으로 이미지 가져오기**를 선택합니다.

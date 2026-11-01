@@ -1,5 +1,5 @@
 // Change this to your deployed Fakit URL when publishing the site.
-const FAKIT_URL = 'http://localhost:8000/';
+const FAKIT_URL = 'https://fakit-integrated.onrender.com/';
 const MENU_ID = 'fakit-image';
 
 chrome.runtime.onInstalled.addListener(() => {

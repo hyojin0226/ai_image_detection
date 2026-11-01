@@ -16,7 +16,7 @@ test('image context menu passes an encoded URL in the fragment only', async () =
   const source = 'https://images.example/photo.jpg?a=1&b=한글#detail';
   clicked({ menuItemId: menu.id, srcUrl: source });
   const target = new URL(opened.url);
-  assert.equal(target.origin, 'http://localhost:8000');
+  assert.equal(target.origin, 'https://fakit-integrated.onrender.com');
   assert.equal(target.search, '');
   assert.equal(new URLSearchParams(target.hash.slice(1)).get('image'), new URL(source).href);
   for (const srcUrl of ['blob:https://example.com/id', 'data:image/png;base64,a', 'javascript:alert(1)', 'https://user:pass@example.com/a.jpg']) {
