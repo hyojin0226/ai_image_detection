@@ -28,7 +28,12 @@ export function createApp({ env = process.env, fetchImpl = fetch, now = Date.now
   const cookie = (id, age) => `${cookieName}=${id}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${age}${secure ? '; Secure' : ''}`;
   async function remote(url, options) {
     const response = await fetchImpl(url, { ...options, redirect: 'error', signal: AbortSignal.timeout(10000) });
-    if (!response.ok) throw new Error('Provider request failed');
+    if (!response.ok) {
+      const error = new Error('Provider request failed');
+      error.providerStatus = response.status;
+      error.providerHost = new URL(url).hostname;
+      throw error;
+    }
     const data = await response.json();
     if (!data || data.error) throw new Error('Invalid provider response');
     return data;
@@ -92,8 +97,9 @@ export function createApp({ env = process.env, fetchImpl = fetch, now = Date.now
           sessions.set(newSid, { expires: now() + sessionTTL, csrf: random(), user: { id: `${name}:${id}`, provider: name, name: typeof displayName === 'string' ? displayName.slice(0, 100) : '사용자' } });
           res.setHeader('Set-Cookie', cookie(newSid, sessionTTL / 1000));
           return redirect('/');
-        } catch {
-          // Do not log provider responses: they can contain credentials or personal data.
+        } catch (error) {
+          // Log only fixed diagnostics, never provider bodies, tokens, or profile data.
+          console.error('OAuth failure', name, error.providerHost || 'local', error.providerStatus || 0, error.name);
           return redirect('/?auth_error=failed');
         }
       }
