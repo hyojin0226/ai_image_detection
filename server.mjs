@@ -15,7 +15,7 @@ const equal = (a, b) => typeof a === 'string' && typeof b === 'string' && Buffer
 const sessionTTL = 8 * 60 * 60 * 1000;
 
 export function createApp({ env = process.env, fetchImpl = fetch, now = Date.now } = {}) {
-  const origin = new URL(env.APP_ORIGIN || 'http://localhost:8000');
+  const origin = new URL(env.APP_ORIGIN || env.RENDER_EXTERNAL_URL || 'http://localhost:8000');
   if (origin.pathname !== '/' || origin.search || origin.hash || origin.username || origin.password ||
       (origin.protocol !== 'https:' && !(origin.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(origin.hostname)))) {
     throw new Error('APP_ORIGIN must be an HTTPS origin (HTTP is allowed only on loopback).');
@@ -100,7 +100,7 @@ export function createApp({ env = process.env, fetchImpl = fetch, now = Date.now
       if (!['GET', 'HEAD'].includes(req.method)) return send(405, { error: 'Method not allowed' });
       const pathname = decodeURIComponent(url.pathname);
       // Explicit public-file allowlist: repository files and credentials are never served.
-      if (!/^\/(?:|index\.html|(?:app|ui|lens|file-types|image-import)\.js|(?:style|experience)\.css|icon\.(?:svg|ico)|extension\.zip|model\/[\w.-]+\.(?:json|bin))$/.test(pathname)) return send(404, { error: 'Not found' });
+      if (!/^\/(?:|index\.html|(?:app|ui|lens|file-types|image-import|input-adapters|batch-input)\.js|(?:style|experience)\.css|icon\.(?:svg|ico)|extension\.zip|model\/[\w.-]+\.(?:json|bin))$/.test(pathname)) return send(404, { error: 'Not found' });
       const file = path.join(webRoot, pathname === '/' ? 'index.html' : pathname.slice(1));
       const content = await readFile(file);
       const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.bin': 'application/octet-stream', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.zip': 'application/zip' };

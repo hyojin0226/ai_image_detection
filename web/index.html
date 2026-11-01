@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Fakit — AI 얼굴 탐지</title>
-  <meta name="description" content="Fakit — 사진을 올리면 실제 사진인지 AI가 만든 얼굴인지 브라우저 안에서 바로 판별합니다. 여러 장도 한 번에.">
+  <meta name="description" content="Fakit — 사진을 올리면 실제 사진인지 AI가 만든 얼굴인지 브라우저 안에서 바로 판별합니다. 하나의 입력창에서 시작하세요.">
   <meta name="theme-color" content="#ffffff">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
@@ -67,58 +67,59 @@
 
     <!-- ── Home: image detection ─────────────────────────── -->
     <section class="page is-active" data-page="home">
-      <div class="tool-heading"><h1>파일 탐지</h1><p>이미지를 놓아 시작하세요.</p></div>
-
-      <section class="composer" id="composer" aria-label="이미지 판별">
-        <div class="composer-bar">
-          <div id="model-status" class="status" aria-live="polite">
-            <span class="dot"></span>
-            <span id="status-text">모델 불러오는 중…</span>
-            <span class="loadbar"><span id="loadbar-fill"></span></span>
-          </div>
-          <span class="private">
-            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M7 10V7.5a5 5 0 0 1 10 0V10M6.5 10h11A1.5 1.5 0 0 1 19 11.5v7a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 18.5v-7A1.5 1.5 0 0 1 6.5 10Z"/></svg>
-            기기 안에서만 분석
-          </span>
+      <section id="composer" class="unified-stage" data-intro="true" data-state="idle" aria-label="통합 검사">
+        <div class="lens-stage" id="lens-stage">
+          <div id="text-frame" aria-label="글 작성 영역"></div>
+          <div id="photo-deck" aria-hidden="true"></div>
+          <svg id="lens-art" viewBox="0 0 1000 440" role="img" aria-label="Fakit">
+            <defs>
+              <text id="word-shape" x="500" y="280" text-anchor="middle" font-size="300" font-weight="800" letter-spacing="-18">Fakit<tspan fill="#5B2EE0">.</tspan></text>
+              <clipPath id="lens-core-clip"><circle id="core-circle" cx="500" cy="220" r="116"/></clipPath>
+              <clipPath id="lens-clip"><circle id="clip-circle" cx="500" cy="220" r="130"/></clipPath>
+              <linearGradient id="rim-light" x1="0" y1="0" x2="1" y2="1"><stop stop-color="white"/><stop offset=".5" stop-color="#5B2EE0" stop-opacity=".3"/><stop offset="1" stop-color="white"/></linearGradient>
+            </defs>
+            <g class="word-outside"><use href="#word-shape" class="rgb-red" x="-2"/><use href="#word-shape" class="rgb-blue" x="2"/><use href="#word-shape"/></g>
+            <g clip-path="url(#lens-clip)" id="lens-interior">
+              <rect width="100%" height="100%" fill="#F6F4EF"/>
+              <use href="#word-shape" id="clear-word"/>
+              <g clip-path="url(#lens-core-clip)" id="core-layer"><use href="#word-shape" id="core-word"/></g>
+              <image id="lens-image" preserveAspectRatio="xMidYMid slice" visibility="hidden"/>
+              <text id="lens-excerpt" text-anchor="middle" visibility="hidden" font-size="18" fill="#14111F"></text>
+            </g>
+          </svg>
+          <button id="lens-target" type="button" aria-label="파일 선택 또는 입력 검사"><span class="lens-optics" aria-hidden="true"><span class="lens-glint"></span></span><span id="lens-ready" class="lens-ready" aria-label="이미지 분석 준비 완료" hidden></span><span class="lens-scan" aria-hidden="true"></span><span id="lens-readout" hidden><strong id="lens-percent"></strong><span id="lens-verdict"></span><small id="score-caption"></small></span></button>
         </div>
-        <p class="notice" id="model-error" hidden></p>
-
-        <label id="dropzone" class="dropzone" for="file-input" tabindex="0">
-          <input id="file-input" type="file" accept="image/*,video/*,.txt,.md,.pdf,.docx" multiple hidden>
-          <span class="lens-surface" aria-hidden="true">
-            <span class="lens-layer lens-soft"><span class="lens-word">Fakit.</span><img class="lens-photo" alt="" hidden></span>
-            <span class="lens-layer lens-clear"><span class="lens-word">Fakit.</span><img class="lens-photo" alt="" hidden></span>
-            <span class="glass-lens"></span>
-            <span class="stage-corner stage-top">FAKIT / INSPECT</span><span class="stage-corner stage-bottom" id="lens-state">DROP A FILE</span>
-          </span>
-          <span class="dz-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="28" height="28"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M12 16V4m0 0-4.5 4.5M12 4l4.5 4.5M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
-          </span>
-          <strong class="dz-title">파일을 놓거나 선택하세요</strong>
-          <span class="dz-hint">현재 지원: JPG · PNG · WEBP / 최대 20장 · 장당 15MB</span>
-          <span class="dz-actions">
-            <span class="btn btn-primary">파일 선택</span>
-            <button type="button" id="paste-btn" class="btn btn-soft">클립보드에서 붙여넣기</button>
-          </span>
-          <span class="dz-kbd">화면 캡처(Win+Shift+S) 후 <kbd>Ctrl</kbd>+<kbd>V</kbd>로 바로 붙여넣을 수 있습니다</span>
-          <span class="dz-overlay" aria-hidden="true">여기에 놓으세요</span>
-        </label>
-        <div class="input-tools"><button type="button" class="link-btn" id="open-text">글 붙여넣기</button><span>JPG · PNG · WEBP · 최대 15MB</span></div>
-        <section id="text-entry" class="text-entry" hidden aria-label="글 입력"><label for="text-content">글 입력</label><textarea id="text-content" rows="5" maxlength="20000" placeholder="확인할 글을 붙여넣으세요"></textarea><div><p class="small" id="text-status" role="status">글 모델은 아직 연결되지 않았습니다.</p><button type="button" class="link-btn" id="close-text">닫기</button></div></section>
-        <p class="error" id="error" hidden></p>
-        <details class="url-import" id="url-import">
-          <summary>이미지 주소로 가져오기 <span aria-hidden="true">↗</span></summary>
-          <form id="image-url-form">
-            <label for="image-url">이미지 URL</label>
-            <div class="url-input-row"><input id="image-url" type="url" placeholder="https://example.com/photo.jpg" maxlength="16384" required><button class="btn btn-primary" type="submit" id="import-image">가져와 분석하기</button></div>
-            <p class="small" id="import-status" role="status">외부 접근이 허용된 JPG·PNG·WEBP 이미지를 가져올 수 있어요. 최대 15MB.</p>
+        <p class="stage-copy">파일을 놓거나 렌즈를 눌러보세요</p>
+        <button id="open-input" type="button" aria-controls="input-panel" aria-expanded="false">글이나 링크 입력 <span aria-hidden="true">↗</span></button>
+        <div class="unified-controls">
+          <div id="input-panel" hidden>
+          <button id="close-input" type="button" aria-label="입력창 닫기">접기 ↑</button>
+          <div class="input-meta"><div id="input-chip" hidden><button id="kind-button" type="button" aria-haspopup="true" aria-expanded="false"></button><button id="clear-input" type="button" aria-label="입력 취소">×</button></div><span id="input-note"></span></div>
+          <div id="kind-menu" class="kind-menu" hidden aria-label="입력 종류 변경"><button type="button" data-kind="image">이미지</button><button type="button" data-kind="video">영상</button><button type="button" data-kind="text">글</button><button type="button" data-kind="url">링크</button></div>
+          <form id="unified-form" class="unified-bar">
+            <button id="pick-button" type="button" aria-label="파일 추가" aria-expanded="false" aria-controls="pick-menu">+</button>
+            <textarea id="unified-input" rows="1" aria-label="검사할 글 또는 링크" placeholder="이미지·영상을 놓거나, 글이나 링크를 붙여넣어 보세요"></textarea>
+            <button id="inspect-button" type="submit" disabled>검사</button>
           </form>
-        </details>
+          <div id="pick-menu" class="pick-menu" hidden><button id="pick-file" type="button">사진·영상 선택</button><button id="take-photo" type="button">사진 찍기</button><button id="pick-album" type="button">앨범에서 선택</button></div>
+          <input id="unified-file" type="file" accept="image/*,video/*" multiple hidden>
+          <input id="camera-file" type="file" accept="image/*" capture="environment" hidden>
+          <input id="album-file" type="file" accept="image/*,video/*" multiple hidden>
+          <p class="format-help">이미지 최대 20장 · 장당 15MB / 글 20,000자 / 영상·글 분석 준비 중</p>
+          <p class="privacy-note"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3M5 10h14v11H5Z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>사진은 서버로 올라가지 않아요. 기기 안에서만 분석해요.</span></p>
+          <p class="privacy-extra">글·영상은 전송하지 않아요. 링크는 원본 사이트에 직접 요청해요.</p>
+          </div>
+          <div id="attachment-list" hidden aria-label="첨부 파일과 개별 결과"></div>
+          <div class="lens-feedback"><p id="lens-message" role="status" aria-live="polite" aria-atomic="true"></p><button type="button" id="cancel-analysis" hidden>취소</button><button type="button" id="retry-analysis" hidden>다시 시도</button><button type="button" id="reset-analysis" hidden>다시 검사</button></div>
+        </div>
       </section>
+      <div id="full-drop" hidden aria-hidden="true"><span>놓으면 바로 검사해요</span></div>
+      <!-- Existing inference/history rendering targets remain private to the model bridge. -->
+      <div hidden aria-hidden="true"><div id="model-status"><span id="status-text"></span><span id="loadbar-fill"></span></div><p id="model-error" hidden></p><div id="dropzone"></div><input id="file-input" type="file"><button id="paste-btn"></button><p id="error" hidden></p></div>
 
       <section class="extension-banner" aria-labelledby="extension-title">
         <div class="extension-symbol" aria-hidden="true">↗</div>
-        <div><h2 id="extension-title">Chrome 확장 프로그램</h2><p>이미지를 우클릭해 주소 가져오기</p></div>
+        <div><h2 id="extension-title">다른 방법</h2><p>Chrome에서 이미지를 우클릭해 가져오기</p></div>
         <details class="extension-install"><summary>확장 프로그램 받기 <span aria-hidden="true">↓</span></summary><div class="extension-instructions"><a class="btn btn-primary" href="extension.zip" download>개발용 ZIP 다운로드</a><ol><li>ZIP 파일의 압축을 풀어주세요.</li><li>Chrome에서 <code>chrome://extensions</code>를 열고 개발자 모드를 켜세요.</li><li>‘압축해제된 확장 프로그램을 로드합니다’로 압축을 푼 폴더를 선택하세요.</li></ol><p class="small">스토어 등록 전 개발용 버전입니다. 가져올 수 없는 이미지는 직접 업로드해 주세요.</p></div></details>
       </section>
 
@@ -286,9 +287,9 @@
       <section class="block">
         <h2>이미지 올리는 세 가지 방법</h2>
         <div class="steps compact">
-          <article class="step"><span class="step-num">드래그</span><h3>끌어다 놓기</h3><p>탐색기나 다른 창에서 사진을 파일 입력 영역에 끌어다 놓으면 됩니다. 여러 장을 한꺼번에 놓아도 됩니다.</p></article>
-          <article class="step"><span class="step-num">붙여넣기</span><h3>Ctrl + V</h3><p>화면 캡처(Win+Shift+S)나 복사한 이미지를 페이지에서 바로 붙여넣습니다. 클립보드 버튼으로도 됩니다.</p></article>
-          <article class="step"><span class="step-num">업로드</span><h3>이미지 선택</h3><p>‘이미지 선택’ 버튼으로 파일을 고릅니다. 한 번에 최대 20장, 장당 15MB까지입니다.</p></article>
+          <article class="step"><span class="step-num">드래그</span><h3>끌어다 놓기</h3><p>탐색기나 다른 창에서 사진을 파일 입력 영역에 끌어다 놓으면 됩니다. 여러 파일을 놓으면 최대 20개 파일을 순서대로 검사합니다.</p></article>
+          <article class="step"><span class="step-num">붙여넣기</span><h3>Ctrl + V</h3><p>화면 캡처(Win+Shift+S)나 복사한 이미지를 페이지에서 바로 붙여넣습니다. 입력창 안에서도 이미지 붙여넣기를 지원합니다.</p></article>
+          <article class="step"><span class="step-num">업로드</span><h3>이미지 선택</h3><p>입력창 왼쪽 + 버튼으로 파일을 고릅니다. 한 번에 최대 20개, 이미지당 15MB까지 검사합니다.</p></article>
         </div>
       </section>
 
@@ -301,8 +302,8 @@
           <details><summary>처음 실행할 때 오래 걸립니다.</summary><p>처음에는 약 41MB 모델을 내려받고 준비합니다. 상단 진행 표시가 끝날 때까지 기다려 주세요. 다운로드가 실패하면 네트워크 연결을 확인하고 새로고침하세요. 분석 시간은 기기 성능과 파일 수에 따라 달라집니다.</p></details>
           <details><summary>이미지 주소를 가져올 수 없습니다.</summary><p>원본 사이트가 외부 접근을 막거나 로그인을 요구할 수 있습니다. 가져올 수 있는 이미지라면 파일로 저장한 뒤 업로드하세요. 웹페이지 주소 대신 이미지 파일 주소가 필요하며 blob:·data: 주소는 지원하지 않습니다.</p></details>
           <details><summary>HEIC·GIF 이미지가 열리지 않습니다.</summary><p>현재 파일 업로드는 JPG·PNG·WEBP를 지원합니다. 지원 형식으로 내보내거나 저장한 뒤 다시 선택하세요. 파일 이름의 확장자만 바꾸면 변환되지 않습니다. 변환한 파일은 원본과 다를 수 있습니다.</p></details>
-          <details><summary>파일 일부만 분석됐습니다.</summary><p>목록에는 최대 20장을 넣을 수 있고 파일 하나는 15MB 이하여야 합니다. 초과·형식 오류·읽기 실패 안내를 확인하세요. 성공한 파일은 유지되므로 실패한 파일만 다시 선택하면 됩니다.</p></details>
-          <details><summary>붙여넣기 버튼이 작동하지 않습니다.</summary><p>브라우저가 클립보드 접근을 허용하지 않을 수 있습니다. 이미지를 복사한 뒤 Ctrl+V 또는 macOS의 ⌘V를 사용하거나, 파일 선택으로 올리세요. 글을 복사한 경우 이미지 분석을 시작하지 않습니다.</p></details>
+          <details><summary>파일 일부만 분석됐습니다.</summary><p>여러 파일을 넣으면 최대 20개 파일을 순서대로 검사합니다. 이미지는 15MB 이하여야 합니다. 다음 파일은 다시 검사로 입력하세요.</p></details>
+          <details><summary>이미지를 붙여넣을 수 없습니다.</summary><p>브라우저가 클립보드 접근을 허용하지 않을 수 있습니다. 이미지를 복사한 뒤 Ctrl+V 또는 macOS의 ⌘V를 사용하거나, 파일 선택으로 올리세요. 글을 복사한 경우 이미지 분석을 시작하지 않습니다.</p></details>
           <details><summary>로그인 버튼이 ‘준비 중’입니다.</summary><p>해당 제공자의 연동 설정이 완료되지 않은 상태입니다. 이미지 분석과 이 브라우저의 기록 기능은 로그인 없이 이용할 수 있습니다.</p></details>
         </div>
       </section>
@@ -334,7 +335,7 @@
         <section class="block">
           <h2>로드맵</h2>
           <ul class="roadmap">
-            <li class="done"><b>이미지 탐지</b><span>여러 장 동시 판별 · 기록 · 사용 가능</span></li>
+            <li class="done"><b>이미지 탐지</b><span>통합 입력 · 이미지 판별 · 기기 내 기록</span></li>
             <li><b>추가 형식</b><span>글 또는 영상 분석 모델 검토 중 · 현재 미지원</span></li>
             <li><b>계정 연동</b><span>카카오 · 네이버 · 구글 간편 로그인 · 서비스별 설정 후 사용 가능</span></li>
           </ul>
@@ -444,9 +445,9 @@
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
   <script src="ui.js"></script>
-  <script src="lens.js"></script>
+
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
   <script type="module" src="app.js"></script>
-  <script type="module" src="image-import.js"></script>
+  <script type="module" src="lens.js"></script>
 </body>
 </html>

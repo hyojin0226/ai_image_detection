@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: fakit-integrated
+    runtime: node
+    plan: free
+    region: singapore
+    branch: codex/fakit-integrated-site
+    buildCommand: node --test tests/*.test.mjs
+    startCommand: node server.mjs
+    healthCheckPath: /api/auth
+    envVars:
+      - key: NODE_VERSION
+        value: 24.11.0
+      - key: HOST
+        value: 0.0.0.0
+      - key: KAKAO_CLIENT_ID
+        sync: false
+      - key: KAKAO_CLIENT_SECRET
+        sync: false
+      - key: NAVER_CLIENT_ID
+        sync: false
+      - key: NAVER_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false

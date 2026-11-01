@@ -2,7 +2,7 @@
 
 기준 소스: `feature/html-site`의 `1c1263f25389fe6811585dba0c7f25b9953e7614` (최신 Fakit 화면). 기존 다중 이미지 분석, 기록, 가이드, 모델 페이지를 유지하고 실제 서버 인증 및 확장 프로그램 URL 가져오기를 통합했습니다.
 
-## 임시판 구성
+## 통합 사이트 구성
 
 - 보라색 렌즈 효과가 파일 입력 영역에 적용됩니다. 포인터를 따라 선명한 영역이 이동하고 업로드 후 실제 이미지와 처리 상태를 표시합니다.
 - 이미지·영상·문서 유형을 같은 입력창에서 구분합니다. 현재 실제 분석은 얼굴 이미지 모델만 지원합니다. 글 입력창은 모델 연결 전입니다.
@@ -27,6 +27,14 @@
 | `extension.zip` | 개발 모드로 설치하는 Chrome 확장 프로그램 소스 |
 | `model/model.json`, `model/group1-shard*.bin` | TF.js로 변환한 모델 (float16, 약 41MB) |
 | `model/inference_config.json` | 입력 크기, threshold 등 (원본과 동일) |
+
+## 팀 공유용 통합본
+
+`codex/fakit-integrated-site` 브랜치에는 최신 렌즈 UI, 최대 20장 이미지 순차 분석, 카카오·네이버·구글 OAuth 서버, 크롬 확장 프로그램이 함께 있습니다. 비밀 키는 각 실행 환경에 별도로 설정합니다.
+
+루트의 `render.yaml`로 무료 단일 인스턴스 Web Service를 생성할 수 있습니다. Render의 공개 주소는 서버가 `RENDER_EXTERNAL_URL`에서 읽습니다. 사용자 지정 도메인은 `APP_ORIGIN`으로 설정하세요. 각 제공자 콘솔에 실제 공개 주소의 `/auth/kakao/callback`, `/auth/naver/callback`, `/auth/google/callback`을 등록해야 외부 로그인까지 동작합니다.
+
+구현·확인 범위: [통합 입력 문서](../docs/unified-input.md).
 
 ## 로컬에서 실행
 

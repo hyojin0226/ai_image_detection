@@ -446,73 +446,39 @@ document.addEventListener("fakit:route", (e) => {
   if (e.detail.route === "history") renderHistoryPage();
 });
 
-// ── Inputs: file picker, drag & drop, paste ────────────────────────────
-els.input.addEventListener("change", (e) => { addFiles(e.target.files); e.target.value = ""; });
-els.inputMore.addEventListener("change", (e) => { addFiles(e.target.files); e.target.value = ""; });
-els.addMore.addEventListener("click", () => els.inputMore.click());
-els.clearQueue.addEventListener("click", clearQueue);
-els.dropzone.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); els.input.click(); }
-});
-
-// Files can be dropped anywhere on the page (any route), or pasted.
-const hasFiles = (e) => e.dataTransfer && [...e.dataTransfer.types].includes("Files");
-["dragenter", "dragover"].forEach((t) => document.addEventListener(t, (e) => {
-  if (!hasFiles(e)) return;
-  e.preventDefault();
-  if (routeName() !== "home") go("home");
-  els.dropzone.classList.add("drag");
-}));
-document.addEventListener("dragleave", (e) => {
-  if (!e.relatedTarget) els.dropzone.classList.remove("drag");   // left the window
-});
-document.addEventListener("drop", (e) => {
-  if (!hasFiles(e)) return;
-  e.preventDefault();
-  els.dropzone.classList.remove("drag");
-  addFiles(e.dataTransfer.files);
-});
-
-// Ctrl+V anywhere on the page: a screen capture (Win+Shift+S, PrtSc), an image copied from a
-// browser or app, or image files copied in Explorer.
-const NO_CLIPBOARD_IMAGE = "클립보드에 이미지가 없습니다. 화면을 캡처(Win+Shift+S)하거나 이미지를 복사한 뒤 다시 붙여넣어 주세요.";
-const isEditable = (el) => el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName));
-document.addEventListener("paste", (e) => {
-  if (isEditable(e.target)) return;
-  const data = e.clipboardData;
-  if (!data) return;
-  // Some browsers only expose a capture through items, not files.
-  let files = [...data.files].filter((f) => f.type.startsWith("image/"));
-  if (!files.length) files = [...data.items].filter((i) => i.kind === "file" && i.type.startsWith("image/")).map((i) => i.getAsFile()).filter(Boolean);
-  e.preventDefault();
-  if (files.length) addFiles(files, { pasted: true });
-  else { if (routeName() !== "home") go("home"); showError(data.getData("text/plain") ? "글이 붙여넣어졌습니다. 글 분석은 아직 지원하지 않습니다." : NO_CLIPBOARD_IMAGE); }
-});
-
-// Button alternative for when the keyboard shortcut isn't handy (needs localhost/https).
-els.pasteBtn.hidden = !navigator.clipboard?.read;
-els.pasteBtn.addEventListener("click", async (e) => {
-  e.preventDefault();   // the button sits inside the dropzone <label>; don't open the file picker
-  e.stopPropagation();
-  els.error.hidden = true;
+// Unified UI bridge. Model preprocessing, predict, threshold and history are unchanged.
+window.Fakit.analyzeImage = async (file, { signal, onState = () => {} } = {}) => {
+  signal?.throwIfAborted();
+  onState('loading', '이미지 분석을 준비하고 있어요.');
+  if (els.status.classList.contains('failed')) { els.status.classList.remove('failed'); loadResources(); }
+  await modelReady;
+  signal?.throwIfAborted();
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  let item;
+  const cancel = () => { if (item && state.items.includes(item)) removeItem(item); };
   try {
-    const files = [];
-    for (const item of await navigator.clipboard.read()) {
-      const type = item.types.find((t) => t.startsWith("image/"));
-      if (!type) continue;
-      files.push(new File([await item.getType(type)], "clipboard", { type }));
-    }
-    if (files.length) addFiles(files, { pasted: true });
-    else showError(NO_CLIPBOARD_IMAGE);
-  } catch (err) {
-    console.error(err);
-    showError(err.name === "NotAllowedError"
-      ? "클립보드 접근이 거부되었습니다. 브라우저 권한을 허용하거나 Ctrl+V로 붙여넣어 주세요."
-      : NO_CLIPBOARD_IMAGE);
+    img.src = url;
+    await img.decode();
+    signal?.throwIfAborted();
+    item = { id: state.nextId++, name: file.name, url, img, status: 'analyzing', real: null, fake: null, verdict: null, at: Date.now() };
+    state.items.push(item);
+    mountItem(item);
+    signal?.addEventListener('abort', cancel, { once: true });
+    onState('analyzing', '이미지를 검사하고 있어요.');
+    await analyzeItem(item);
+    signal?.throwIfAborted();
+    if (item.status !== 'done') throw new Error('이미지를 분석하지 못했어요. 다시 시도해 주세요.');
+    return { status: 'result', real: item.real, fake: item.fake, verdict: item.verdict };
+  } finally {
+    signal?.removeEventListener('abort', cancel);
+    cancel();
+    URL.revokeObjectURL(url);
+    img.removeAttribute('src');
+    $('process-original').removeAttribute('src');
+    const canvas = $('process-input'); canvas.width = canvas.height = 1;
   }
-});
-
+};
 refreshHistoryViews();
-if (routeName() === "history") renderHistoryPage();
-window.Fakit.addFiles = addFiles;
+if (routeName() === 'history') renderHistoryPage();
 loadResources();

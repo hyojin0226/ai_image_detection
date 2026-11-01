@@ -21,7 +21,7 @@ test('rejects unsafe URL protocols and embedded credentials before fetching', as
 });
 
 test('rejects non-images, upstream errors, and bounded streaming overflow', async () => {
-  await assert.rejects(fetchImageFile('https://example.com/a', { fetchImpl: async () => new Response('not an image', { headers: { 'Content-Type': 'text/html' } }) }), /Unsupported image/);
+  await assert.rejects(fetchImageFile('https://example.com/a', { fetchImpl: async () => new Response('not an image', { headers: { 'Content-Type': 'text/html' } }) }), { code: 'PAGE' });
   await assert.rejects(fetchImageFile('https://example.com/a', { fetchImpl: async () => new Response('', { status: 403 }) }), /Image request failed/);
   await assert.rejects(fetchImageFile('https://example.com/a', { maxBytes: 2, fetchImpl: async () => new Response(new Uint8Array(3), { headers: { 'Content-Type': 'image/png' } }) }), /Image too large/);
   await assert.rejects(fetchImageFile('https://example.com/a', { maxBytes: 2, fetchImpl: async () => new Response('', { headers: { 'Content-Type': 'image/png', 'Content-Length': '3' } }) }), /Image too large/);
