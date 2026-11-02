@@ -326,7 +326,7 @@ function tick(now) {
   const dt=Math.min(.04,Math.max(.001,(now-(lastTime||now-16))/1000)); lastTime=now;
   if(document.hidden || document.body.dataset.route!=='home')return;
   if(!introDone && !current) {
-    const t=Math.min((now-introStart)/1100,1);
+    const t=Math.min((now-introStart)/1800,1);
     const a=t<.35 ? t/.35 : (t-.35)/.65;
     x=t<.35 ? width*.91+(width*.23-width*.91)*a : width*.23+(width*.5-width*.23)*a;
     y=height*.5; draw(x,y,radius*Math.min(1,.09+t*3));
