@@ -113,6 +113,13 @@
           <div class="lens-feedback"><p id="lens-message" role="status" aria-live="polite" aria-atomic="true"></p><button type="button" id="cancel-analysis" hidden>취소</button><button type="button" id="retry-analysis" hidden>다시 시도</button><button type="button" id="reset-analysis" hidden>다시 검사</button></div>
         </div>
       </section>
+      <section class="recent" id="recent-strip" hidden aria-label="최근 검사 기록">
+        <div class="section-head">
+          <h2>최근 검사 기록</h2>
+          <a class="more-link" href="#/history" data-route="history">전체 보기 →</a>
+        </div>
+        <div class="recent-list" id="recent-list"></div>
+      </section>
       <div id="full-drop" hidden aria-hidden="true"><span>놓으면 바로 검사해요</span></div>
       <!-- Existing inference/history rendering targets remain private to the model bridge. -->
       <div hidden aria-hidden="true"><div id="model-status"><span id="status-text"></span><span id="loadbar-fill"></span></div><p id="model-error" hidden></p><div id="dropzone"></div><input id="file-input" type="file"><button id="paste-btn"></button><p id="error" hidden></p></div>
@@ -160,13 +167,6 @@
         <p class="small center" id="threshold-text"></p>
       </section>
 
-      <section class="recent" id="recent-strip" hidden aria-label="최근 기록">
-        <div class="section-head">
-          <h2>최근 기록</h2>
-          <a class="more-link" href="#/history" data-route="history">전체 보기 →</a>
-        </div>
-        <div class="recent-list" id="recent-list"></div>
-      </section>
 
       <nav class="task-links" aria-label="도움말"><a href="#/results">결과 읽는 법 ↗</a><a href="#/guide">업로드 문제 해결 ↗</a><a href="#/privacy">사진과 기록 관리 ↗</a></nav>
     </section>
