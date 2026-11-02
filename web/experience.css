@@ -203,3 +203,8 @@ body[data-route="home"] .foot .brand { display:none; }
 .unified-stage { scroll-margin-top:76px; }
 .deck-card.is-current { animation:card-to-lens .55s cubic-bezier(.22,.8,.2,1); }
 @keyframes card-to-lens { from { transform:translate(calc(-50% + var(--card-offset)*var(--deck-step,60px)),-70%) rotate(calc(var(--card-offset)*9deg)); } to { transform:translate(-50%,-30%) rotate(0deg) translateZ(35px); } }
+
+.extension-instructions li { margin-bottom:18px; line-height:1.7; }
+.extension-address { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:10px 0; }
+.extension-address .btn { min-height:36px; font-size:12px; }
+.extension-instructions details { margin:18px 0; }
