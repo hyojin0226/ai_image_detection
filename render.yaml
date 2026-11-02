@@ -4,7 +4,7 @@ services:
     runtime: node
     plan: free
     region: singapore
-    branch: codex/fakit-integrated-site
+    branch: fakit-priview
     buildCommand: node --test tests/*.test.mjs
     startCommand: node server.mjs
     healthCheckPath: /api/auth

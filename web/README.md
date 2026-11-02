@@ -30,7 +30,7 @@
 
 ## 팀 공유용 통합본
 
-`codex/fakit-integrated-site` 브랜치에는 최신 렌즈 UI, 최대 20장 이미지 순차 분석, 카카오·네이버·구글 OAuth 서버, 크롬 확장 프로그램이 함께 있습니다. 비밀 키는 각 실행 환경에 별도로 설정합니다.
+`fakit-priview` 브랜치에는 최신 렌즈 UI, 최대 20장 이미지 순차 분석, 카카오·네이버·구글 OAuth 서버, 크롬 확장 프로그램이 함께 있습니다. 비밀 키는 각 실행 환경에 별도로 설정합니다.
 
 루트의 `render.yaml`로 무료 단일 인스턴스 Web Service를 생성할 수 있습니다. Render의 공개 주소는 서버가 `RENDER_EXTERNAL_URL`에서 읽습니다. 사용자 지정 도메인은 `APP_ORIGIN`으로 설정하세요. 각 제공자 콘솔에 실제 공개 주소의 `/auth/kakao/callback`, `/auth/naver/callback`, `/auth/google/callback`을 등록해야 외부 로그인까지 동작합니다.
 
