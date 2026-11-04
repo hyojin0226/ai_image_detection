@@ -33,6 +33,7 @@ for (const provider of ['google', 'naver', 'kakao']) {
     const start = await request(`/auth/${provider}/login`);
     const pendingCookie = cookieOf(start);
     const target = new URL(start.headers.get('location'));
+    if (provider === 'kakao') assert.equal(target.searchParams.get('scope'), 'profile_nickname');
     assert.equal(target.searchParams.get('redirect_uri'), `http://localhost:8000/auth/${provider}/callback`);
     const callback = `/auth/${provider}/callback?code=test&state=${target.searchParams.get('state')}`;
     const wrong = await request(callback.replace(/state=.*/, 'state=wrong'), { headers: { Cookie: pendingCookie } });
