@@ -7,7 +7,7 @@ test('MIME wins over filename; short standalone links are distinguished from pro
   assert.equal(classifyInput(new File(['x'], 'photo.png', { type: 'video/mp4' })).kind, 'video');
   assert.equal(classifyInput('https://example.org/a').kind, 'url');
   assert.equal(classifyInput('이 주소를 봐요 https://example.org/a').kind, 'text');
-  assert.equal(classifyInput('https://example.org/' + 'a'.repeat(200)).kind, 'text');
+  assert.equal(classifyInput('https://example.org/' + 'a'.repeat(200)).kind, 'url');
 });
 test('absent models never call image inference or fabricate scores', async () => {
   for (const kind of ['text','video','unknown']) {
@@ -23,7 +23,7 @@ test('image payload is passed unchanged; existing score and verdict are retained
   assert.equal(result,score);
 });
 test('limits and abort stop inference', async () => {
-  await assert.rejects(analyze({kind:'text',value:'a'.repeat(LIMITS.textChars+1)}), /20,000/);
+  assert.equal((await analyze({kind:'text',value:'a'.repeat(20001)})).status, 'unsupported');
   await assert.rejects(analyze({kind:'image',file:{type:'image/png',size:LIMITS.imageBytes+1}}), /15MB/);
   const controller = new AbortController(); controller.abort();
   await assert.rejects(analyze({kind:'text',value:'a'},{signal:controller.signal}), {name:'AbortError'});

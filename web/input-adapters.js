@@ -1,11 +1,12 @@
 import { fetchImageFile } from './image-import.js';
+import { youtubeVideoId } from './media-links.js';
 
 export const LIMITS = Object.freeze({ imageBytes: 15 * 1024 * 1024, textChars: 20000 });
 export function classifyInput(payload, source = 'typed') {
   if (typeof payload === 'string') {
     const value = payload.trim();
     let kind = 'text';
-    if (value.length < 200 && /^https?:\/\/\S+$/i.test(value)) kind = 'url';
+    if (value.length <= 16384 && /^https?:\/\/\S+$/i.test(value)) kind = 'url';
     return { kind, value, source };
   }
   const kind = payload.type?.startsWith('image/') ? 'image' : payload.type?.startsWith('video/') ? 'video' : 'unknown';
@@ -17,11 +18,11 @@ export function classifyInput(payload, source = 'typed') {
 export async function analyze(input, { signal, onState = () => {}, onResolved = () => {}, imageAnalyzer = globalThis.Fakit?.analyzeImage, fetchImpl } = {}) {
   signal?.throwIfAborted();
   if (input.kind === 'text') {
-    if (input.value?.length > LIMITS.textChars) throw new Error('글은 20,000자까지 입력할 수 있어요.');
-    return { status: 'unsupported', message: '글 분석은 아직 지원하지 않아요. 모델을 준비하고 있어요.' };
+    return { status: 'unsupported', message: '글은 분석하지 않아요. 얼굴 사진이나 영상 링크를 넣어 주세요.' };
   }
   if (input.kind === 'video') return { status: 'unsupported', message: '영상 분석은 아직 지원하지 않아요. 모델을 준비하고 있어요.' };
   if (input.kind === 'url') {
+    if (youtubeVideoId(input.value)) return { status: 'unsupported', message: '유튜브 영상 링크를 확인했어요. 아직 영상 모델과 유튜브 가져오기 서비스가 연결되지 않아 검사할 수 없어요.' };
     onState('loading', '링크에서 파일을 확인하고 있어요.');
     try {
       const file = await fetchImageFile(input.value, { signal, fetchImpl });

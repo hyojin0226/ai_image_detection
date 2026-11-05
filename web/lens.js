@@ -5,7 +5,7 @@ const stage = $('composer'), art = $('lens-art'), surface = $('lens-stage'), len
 const field = $('unified-input'), submit = $('inspect-button');
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 const touch = matchMedia('(pointer: coarse)').matches;
-const labels = { image: '이미지', video: '영상', text: '글', url: '링크', unknown: '파일' };
+const labels = { image: '이미지', video: '영상', text: '지원하지 않는 입력', url: '링크', unknown: '파일' };
 let current = null, phase = 'idle', controller = null, generation = 0, previewUrl = null, video = null;
 let width = 1000, height = 440, radius = 130, x = 500, y = 220, tx = 500, ty = 220;
 let frame = 0, introStart = performance.now(), introDone = reduced.matches, dragging = 0, beforeDrag = 'idle';
@@ -41,7 +41,15 @@ async function thumbnail(input, token) {
     renderAttachments();
   } catch {} finally {URL.revokeObjectURL(url);img.removeAttribute('src');}
 }
+function renderExplanation(result) {
+  const panel=$('explanation-panel'), image=$('explanation-image');
+  panel.hidden=!result?.explanation && !result?.explanationError;
+  image.hidden=!result?.explanation;
+  if(result?.explanation) image.src=result.explanation.image; else image.removeAttribute('src');
+  $('explanation-message').textContent=result?.explanationError || '같은 사진 모델의 실제 기울기로 계산했어요. 원본 사진은 서버에 보내지 않아요.';
+}
 function showResult(result) {
+  renderExplanation(result);
   if(result.status!=='result') {delete stage.dataset.verdict;setState(result.status,result.message);return;}
   stage.dataset.verdict=result.verdict;
   $('lens-percent').textContent=(result.real*100).toFixed(1)+'%';
@@ -112,7 +120,7 @@ function releasePreview() {
 }
 function abortRun() { generation++; controller?.abort(); controller = null; }
 function reset() {
-  abortRun(); releasePreview(); clearAttachments(); morphText(false); current = null; detectedType = null;
+  renderExplanation(null); abortRun(); releasePreview(); clearAttachments(); morphText(false); current = null; detectedType = null;
   field.value = ''; field.style.height = ''; $('input-chip').hidden = true;
   $('input-note').textContent = ''; $('kind-menu').hidden = true; $('kind-button').setAttribute('aria-expanded','false');
   closeInput();
@@ -152,6 +160,7 @@ async function preview(input, token) {
   layout();
 }
 export async function handleInput(source, payload) {
+  renderExplanation(null);
   const isFiles=typeof payload!=='string';
   const retain=isFiles && attachments.length && phase!=='result' && attachments.every(item=>!item.result);
   abortRun(); releasePreview();
@@ -168,7 +177,7 @@ export async function handleInput(source, payload) {
   } else {
     if(!payload.trim()) {reset();openInput(true);return;}
     current=classifyInput(payload,source);field.value=payload;
-    $('input-note').textContent=''; morphText(current.kind==='text');
+    $('input-note').textContent=''; morphText(false);
   }
   detectedType=current.kind;openInput();delete stage.dataset.verdict;
   setState('detecting');renderChip();renderAttachments();
@@ -189,7 +198,7 @@ async function runBatch() {
       renderAttachments();
     }});
     if(token!==generation)return;
-    releasePreview();const successful=results.filter(r=>r.status==='result').length;
+    renderExplanation(null);releasePreview();const successful=results.filter(r=>r.status==='result').length;
     delete stage.dataset.verdict;
     $('lens-percent').textContent=successful+' / '+results.length;
     $('lens-verdict').textContent='검사 완료';$('score-caption').textContent='아래에서 사진별 결과 확인';
@@ -213,6 +222,7 @@ async function run() {
     if (token !== generation) return;
     releasePreview();
     if (result.status === 'unsupported') { morphText(false);setState('unsupported', result.message);return; }
+    renderExplanation(result);
     stage.dataset.verdict = result.verdict;
     $('lens-percent').textContent = `${(result.real * 100).toFixed(1)}%`;
     $('lens-verdict').textContent = result.verdict === 'real' ? '실제 사진으로 분류' : 'AI 생성으로 분류';
@@ -240,7 +250,7 @@ $('kind-menu').addEventListener('click', e => {
   if (!e.target.dataset.kind || !current) return;
   abortRun(); current.kind = e.target.dataset.kind; renderChip(); releasePreview();
   $('kind-menu').hidden = true; $('kind-button').setAttribute('aria-expanded','false');
-  morphText(current.kind==='text' && !current.file);setState('idle'); $('kind-button').focus();
+  morphText(false);setState('idle'); $('kind-button').focus();
 });
 $('pick-button').onclick = () => {
   if (!touch) { $('unified-file').click(); return; }

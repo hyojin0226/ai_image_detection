@@ -1,6 +1,7 @@
 // Detection: same model, preprocessing and threshold as streamlit_app.py, run in the browser with
 // TF.js. Images are queued and analysed one at a time; results are kept in a local history.
 import { classifyFile, supportedImageMime } from './file-types.js';
+import { computeGradcam, overlayGradcam } from './gradcam.js';
 const MODEL_URL = "model/model.json";
 const CONFIG_URL = "model/inference_config.json";
 const MAX_QUEUE = 20;                 // images per batch
@@ -481,7 +482,21 @@ window.Fakit.analyzeImage = async (file, { signal, onState = () => {} } = {}) =>
     await analyzeItem(item);
     signal?.throwIfAborted();
     if (item.status !== 'done') throw new Error('이미지를 분석하지 못했어요. 다시 시도해 주세요.');
-    return { status: 'result', real: item.real, fake: item.fake, verdict: item.verdict };
+    let explanation, explanationError;
+    onState('analyzing', 'AI 판정에 영향을 준 영역을 계산하고 있어요.');
+    await nextFrame();
+    let explainInput;
+    try {
+      explainInput = toInputTensor(img);
+      const map = await computeGradcam(tf, model, explainInput, item.real, { signal });
+      explanation = { image: overlayGradcam(img, map), target: map.target, layer: map.layer };
+    } catch (error) {
+      signal?.throwIfAborted();
+      explanationError = '판별 점수는 계산했지만 이 환경에서는 Grad-CAM을 표시하지 못했어요.';
+      console.warn('Grad-CAM unavailable:', error.message);
+    } finally { explainInput?.dispose(); }
+    signal?.throwIfAborted();
+    return { status: 'result', real: item.real, fake: item.fake, verdict: item.verdict, explanation, explanationError };
   } finally {
     signal?.removeEventListener('abort', cancel);
     cancel();

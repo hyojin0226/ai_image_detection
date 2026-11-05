@@ -106,7 +106,7 @@ export function createApp({ env = process.env, fetchImpl = fetch, now = Date.now
       if (!['GET', 'HEAD'].includes(req.method)) return send(405, { error: 'Method not allowed' });
       const pathname = decodeURIComponent(url.pathname);
       // Explicit public-file allowlist: repository files and credentials are never served.
-      if (!/^\/(?:|index\.html|extension-privacy\.html|(?:app|ui|lens|file-types|image-import|input-adapters|batch-input)\.js|(?:style|experience)\.css|icon\.(?:svg|ico)|extension\.zip|model\/[\w.-]+\.(?:json|bin))$/.test(pathname)) return send(404, { error: 'Not found' });
+      if (!/^\/(?:|index\.html|extension-privacy\.html|(?:app|ui|lens|file-types|image-import|input-adapters|batch-input|gradcam|media-links)\.js|(?:style|experience)\.css|icon\.(?:svg|ico)|extension\.zip|model\/[\w.-]+\.(?:json|bin))$/.test(pathname)) return send(404, { error: 'Not found' });
       const file = path.join(webRoot, pathname === '/' ? 'index.html' : pathname.slice(1));
       const content = await readFile(file);
       const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.bin': 'application/octet-stream', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.zip': 'application/zip' };

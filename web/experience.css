@@ -220,3 +220,8 @@ body[data-route="home"] .foot .brand { display:none; }
 #recent-strip .recent-name { font-size:12px; color:#14111f; }
 #recent-strip .recent-score { font-size:11px; color:#57515f; margin-top:4px; }
 #recent-strip .recent-item:focus-visible { outline:3px solid #5b2ee0; outline-offset:2px; }
+
+.explanation-panel {max-width:720px;margin:24px auto 40px;padding:0 20px;color:#14111f;}
+.explanation-panel h2{font-size:1.2rem;}
+.explanation-panel img{width:min(100%,320px);height:auto;display:block;margin:20px auto;border-radius:8px;}
+.explanation-panel img[hidden]{display:none;}
