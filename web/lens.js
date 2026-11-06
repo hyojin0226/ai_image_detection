@@ -105,7 +105,7 @@ function setState(next, message = '') {
   $('reset-analysis').hidden = next !== 'result';
   $('lens-readout').hidden = !['result','error','unsupported'].includes(next);
   if (['error','unsupported'].includes(next)) { $('lens-percent').textContent=''; $('lens-verdict').textContent=message; $('score-caption').textContent=''; }
-  submit.disabled = !current || busy() || next === 'result';
+  submit.disabled = !current || current.kind === 'text' || busy() || next === 'result';
   lens.setAttribute('aria-label', busy() ? '검사 취소' : current ? '입력 검사' : '파일 선택');
   stage.setAttribute('aria-busy', String(busy()));
   $('kind-button').disabled=busy();
@@ -175,9 +175,9 @@ export async function handleInput(source, payload) {
     current=attachments[0];field.value='';morphText(false);
     $('input-note').textContent=files.length>remaining?'최대 20장까지 검사해요. 초과한 파일은 제외했어요.':attachments.length>1?attachments.length+'개 파일을 순서대로 검사해요':current.name;
   } else {
-    if(!payload.trim()) {reset();openInput(true);return;}
+    if(!payload.trim()) {reset();openInput();morphText(true);field.focus({preventScroll:true});return;}
     current=classifyInput(payload,source);field.value=payload;
-    $('input-note').textContent=''; morphText(false);
+    $('input-note').textContent=current.kind==='text'?'사진이나 영상의 http 또는 https 링크를 입력해 주세요.':''; morphText(true);
   }
   detectedType=current.kind;openInput();delete stage.dataset.verdict;
   setState('detecting');renderChip();renderAttachments();
@@ -218,7 +218,7 @@ async function run() {
     if (input.file && input.kind !== detectedType) throw new Error('선택한 종류와 파일 형식이 달라요. 해당 종류의 파일을 다시 넣어 주세요.');
     if (!input.file && ['image','video'].includes(input.kind)) throw new Error('이미지·영상은 파일이나 직접 링크로 넣어 주세요.');
     setState('loading', '입력을 확인하고 있어요.');
-    const result = await analyze(input, { signal, onResolved: file => { if(token === generation) { current = classifyInput(file,'url'); detectedType='image'; renderChip(); preview(current,token); } }, onState: (state, message) => { if (token === generation) setState(state, message); } });
+    const result = await analyze(input, { signal, onResolved: file => { if(token === generation) { morphText(false); current = classifyInput(file,'url'); detectedType='image'; renderChip(); preview(current,token); } }, onState: (state, message) => { if (token === generation) setState(state, message); } });
     if (token !== generation) return;
     releasePreview();
     if (result.status === 'unsupported') { morphText(false);setState('unsupported', result.message);return; }
@@ -250,7 +250,7 @@ $('kind-menu').addEventListener('click', e => {
   if (!e.target.dataset.kind || !current) return;
   abortRun(); current.kind = e.target.dataset.kind; renderChip(); releasePreview();
   $('kind-menu').hidden = true; $('kind-button').setAttribute('aria-expanded','false');
-  morphText(false);setState('idle'); $('kind-button').focus();
+  morphText(!current.file);setState('idle'); $('kind-button').focus();
 });
 $('pick-button').onclick = () => {
   if (!touch) { $('unified-file').click(); return; }

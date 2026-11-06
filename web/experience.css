@@ -225,3 +225,5 @@ body[data-route="home"] .foot .brand { display:none; }
 .explanation-panel h2{font-size:1.2rem;}
 .explanation-panel img{width:min(100%,320px);height:auto;display:block;margin:20px auto;border-radius:8px;}
 .explanation-panel img[hidden]{display:none;}
+
+.research-table-wrap{overflow-x:auto;max-width:100%;margin:20px 0}.research-table{border-collapse:collapse;width:100%;min-width:680px;font-variant-numeric:tabular-nums}.research-table caption{text-align:left;margin-bottom:12px}.research-table th,.research-table td{padding:12px;border-bottom:1px solid #d9d5cf;text-align:left}.research-table thead{background:#ece8e1}
