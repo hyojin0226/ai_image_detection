@@ -2,6 +2,7 @@
 const $ = (id) => document.getElementById(id);
 let mode = "file", apiBase = "", online = false, busy = false, detailsRendered = false, result = null;
 let selectedFile = null, fileReady = false, previewUrl = "", selection = 0, connecting = false;
+let cloudMode = false;
 const availability = $("availability").textContent;
 function refreshButton() {
   $("analyze").disabled = !online || busy || (mode === "file" ? !fileReady : !$("video-url").value.trim());
@@ -28,7 +29,8 @@ async function connect() {
     const config = await response.json();
     if (!config.configured) throw new Error("분석 서버 연결 준비 중");
     apiBase = config.apiBase || "";
-    await api("/health", {signal:AbortSignal.timeout(12000)});
+    cloudMode = config.mode === "cloud";
+    await api(cloudMode ? "/api/service" : "/health", {signal:AbortSignal.timeout(20000)});
     online = true;
     $("connection").textContent = "● 분석 서버 연결됨";
     $("connection").className = "status online";
@@ -37,7 +39,7 @@ async function connect() {
     online = false;
     $("connection").textContent = "● 분석 서버 오프라인";
     $("connection").className = "status offline";
-    $("availability").textContent = "분석 서버가 연결되지 않았습니다. 운영자가 노트북 분석 서버를 실행하면 이용할 수 있습니다.";
+    $("availability").textContent = cloudMode ? "온라인 분석 서버에 연결하지 못했습니다. 잠시 후 다시 연결해 주세요. 무료 이용 한도를 넘으면 일시 중단될 수 있습니다." : "분석 서버가 연결되지 않았습니다. 운영자가 노트북 분석 서버를 실행하면 이용할 수 있습니다.";
   }
   connecting = false; $("reconnect").disabled = false; $("reconnect").hidden = online;
   refreshButton();
@@ -107,7 +109,8 @@ function frameCard(frame) {
   const button = document.createElement("button"); button.type = "button";
   button.setAttribute("aria-label", `${frame.index}번 프레임 ${frame.timestamp_sec.toFixed(3)}초 확대`);
   const image = document.createElement("img"); image.loading = "lazy";
-  image.src = apiBase + frame.comparison_url; image.alt = `${frame.index}번 프레임 원본과 Grad-CAM`;
+  const imageUrl = frame.comparison_url.startsWith("data:image/png;base64,") ? frame.comparison_url : apiBase + frame.comparison_url;
+  image.src = imageUrl; image.alt = `${frame.index}번 프레임 원본과 Grad-CAM`;
   button.append(image); card.append(button);
   const caption = document.createElement("div"); caption.className = "caption";
   const title = document.createElement("strong"); title.textContent = `${frame.index}번 · ${frame.timestamp_sec.toFixed(3)}초`;
@@ -118,7 +121,7 @@ function frameCard(frame) {
   card.append(caption);
   button.addEventListener("click", () => {
     $("zoom-title").textContent = `${frame.index}번 · ${frame.timestamp_sec.toFixed(3)}초 · 원본 / Grad-CAM`;
-    $("zoom-image").src = apiBase + frame.comparison_url;
+    $("zoom-image").src = imageUrl;
     $("zoom-note").textContent = `${frame.target_class === "fake" ? "AI 생성" : "실제 촬영"} 판단을 지지하는 양의 신호입니다. 합성 위치의 확정 표시가 아닙니다.`;
     $("zoom").showModal();
   });
@@ -149,6 +152,50 @@ $("details").addEventListener("toggle", () => {
   const byId = new Map(result.frames.map(frame => [frame.index, frame]));
   $("detail-frames").replaceChildren(...result.detail_frame_indices.map(id => frameCard(byId.get(id))));
 });
+async function cloudAnalysis(input) {
+  let payload;
+  if (input.file) {
+    status("비공개 임시 저장소에 영상을 전송하고 있습니다.");
+    const {upload} = await import(apiBase + "/blob-client.js");
+    const pathname = `inputs/${Date.now()}-${crypto.randomUUID().replaceAll("-", "")}.mp4`;
+    const blob = await upload(pathname, input.file, {
+      access:"private", handleUploadUrl:apiBase + "/api/upload",
+      contentType:input.file.type || "application/octet-stream", multipart:input.file.size > 4 * 1024 ** 2,
+      onUploadProgress:progress => status(`비공개 파일 전송 ${Math.round(progress.percentage)}%`)
+    });
+    payload = {kind:"file", pathname:blob.pathname};
+  } else payload = {kind:"youtube", url:input.url};
+  const response = await fetch(apiBase + "/api/service", {
+    method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload),
+    signal:AbortSignal.timeout(330000)
+  });
+  if (!response.ok || !response.body) {
+    const text = await response.text();
+    let message = "온라인 서버가 요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.";
+    try { message = JSON.parse(text).error || message; } catch {}
+    throw new Error(message);
+  }
+  const reader = response.body.getReader(), decoder = new TextDecoder();
+  let pending = "", completed = null;
+  function receive(line) {
+    if (!line.trim()) return;
+    const packet = JSON.parse(line);
+    if (packet.type === "error") throw new Error(packet.message);
+    if (packet.type === "progress") status(packet.message);
+    if (packet.type === "result") completed = packet.result;
+  }
+  try {
+    while (true) {
+      const {done,value} = await reader.read();
+      pending += decoder.decode(value || new Uint8Array(), {stream:!done});
+      let newline;
+      while ((newline = pending.indexOf("\n")) >= 0) { receive(pending.slice(0,newline)); pending = pending.slice(newline + 1); }
+      if (done) { if (pending.trim()) receive(pending); break; }
+    }
+  } finally { await reader.cancel().catch(() => {}); }
+  if (!completed) throw new Error("온라인 서버의 응답이 중단됐습니다. 잠시 후 다시 시도해 주세요.");
+  return completed;
+}
 $("analysis-form").addEventListener("submit", async (event) => {
   event.preventDefault(); if (busy || !online) return;
   error("");
@@ -172,6 +219,10 @@ $("analysis-form").addEventListener("submit", async (event) => {
     timer = setInterval(() => { $("elapsed").textContent = `경과 ${Math.floor((Date.now() - started) / 1000)}초 · 대기 시간을 포함합니다.`; }, 1000);
     for (const id of ["video-file", "video-url", "remove-file", "file-tab", "url-tab"]) $(id).disabled = true;
     $("progress-title").textContent = "64프레임 분석"; status(mode === "file" ? "영상을 분석 서버로 전송하고 있습니다." : "공개 영상 주소를 확인하고 있습니다.");
+    if (cloudMode) {
+      const value = await cloudAnalysis(mode === "file" ? {file:selectedFile} : {url:JSON.parse(options.body).url});
+      display(value); return;
+    }
     const job = await api(path, options);
     const deadline = Date.now() + 15 * 60 * 1000;
     while (Date.now() < deadline) {

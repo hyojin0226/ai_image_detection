@@ -7,5 +7,5 @@ module.exports = function handler(request, response) {
     if (url.protocol === "https:" && !url.username && !url.password && url.pathname === "/" && !url.search && !url.hash) apiBase = url.origin;
   } catch { /* Missing configuration stays offline; no mock prediction. */ }
   response.setHeader("Cache-Control", "no-store");
-  response.status(200).json({apiBase, configured:Boolean(apiBase)});
+  response.status(200).json({apiBase, configured:Boolean(apiBase), mode:apiBase === "https://duhyeon-ai-video-cloud.vercel.app" ? "cloud" : "notebook"});
 };

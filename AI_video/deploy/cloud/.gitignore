@@ -1,0 +1,11 @@
+.vercel/
+node_modules/
+__pycache__/
+frozen/
+vendor/
+blob-client.js
+public/
+.env
+.env.*
+
+.env*
