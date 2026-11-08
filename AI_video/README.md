@@ -8,17 +8,21 @@
 
 현재 노트북: **`start_64frame_model.bat`을 파일 탐색기에서 더블클릭 → 주소 또는 영상 파일 입력 → 분석 시작**. 기존 `test_latest_model.bat`도 같은 화면을 연다.
 
-다른 컴퓨터에서는 Python 3.12와 별도 가중치 묶음이 필요하다.
+다른 컴퓨터에서도 이 브랜치의 코드를 내려받으면 포함된 가중치로 실행할 수 있다. Python 3.12를 설치한 뒤 `AI_video` 폴더에서 아래 명령을 실행한다.
+
+GitHub의 Download ZIP으로 받거나, Git 사용 시 아래처럼 줄바꿈 자동 변환을 끄고 받는다. 가중치·코드의 무결성 해시를 보존하기 위한 설정이다.
 
 ```powershell
+git clone --config core.autocrlf=false --branch study/KongDuHyun https://github.com/hyojin0226/ai_image_detection.git
+cd ai_image_detection/AI_video
 python -m venv .venv
 .venv\Scripts\python -m pip install -r requirements.txt
-# final_research_v1.zip을 models 폴더 안에 압축 해제한다.
+# 학습된 가중치는 models/final_research_v1/에 이미 포함되어 있다.
 .venv\Scripts\python tools/release.py check
 .venv\Scripts\python src/analysis64_window.py
 ```
 
-코드만 내려받으면 실행되지 않는다. 가중치는 `models/final_research_v1/`에 둔다. 로컬 가중치 묶음은 `distribution/final_research_v1.zip`이며 공개 다운로드 주소는 아직 없다. 로컬 파일 분석은 인터넷 없이 동작한다. YouTube 입력은 공개 세로 영상의 다운로드가 가능한 경우 지원하며 인터넷과 Node.js가 필요할 수 있다.
+최종 이미지 모델과 영상 분류 가중치 18개 파일은 [`models/final_research_v1/`](models/final_research_v1/)에 포함되어 있다. 별도 다운로드나 재학습은 필요하지 않다. `tools/release.py check`로 코드와 가중치 파일의 무결성을 확인할 수 있다. 로컬 파일 분석은 인터넷 없이 동작한다. YouTube 입력은 공개 세로 영상의 다운로드가 가능한 경우 지원하며 인터넷과 Node.js가 필요할 수 있다.
 
 ## 동작과 결과
 
@@ -50,11 +54,12 @@ AI_video/
 ├── tools/release.py            # 파일 검사·가중치 ZIP 생성
 ├── tests/                      # 분할·점수·Grad-CAM 검사
 ├── requirements.txt
+├── models/final_research_v1/    # 실행에 필요한 학습된 가중치 포함
 └── data/sample/                # train / valid / test → real / fake
 ```
 
 학습: 실제 500개·AI 500개 / 검증: 실제 100개·AI 100개 / 기존 시험: 실제 500개·AI 500개이다. `data/sample/*.csv`에 배정 목록을 기록했다. 시험 자료는 학습에 사용하지 않았다.
 
-영상·캐시·가중치·분석 결과·개인 환경은 GitHub 업로드에서 제외한다. 분석 결과는 `.local/analyzed_frames64/`에 저장된다. 과거 코드는 `archive/`에 로컬 보관하며, 오래된 안내 문서는 삭제했다. `start_final_model.bat`은 종전 8프레임 호환 실행 파일로 보존한다.
+원본 영상·캐시·과거 가중치·분석 결과·개인 환경은 GitHub 업로드에서 제외한다. 실행에 필요한 최종 가중치만 포함한다. 분석 결과는 `.local/analyzed_frames64/`에 저장된다. 과거 코드는 `archive/`에 로컬 보관하며, 오래된 안내 문서는 삭제했다. `start_final_model.bat`은 종전 8프레임 호환 실행 파일로 보존한다.
 
-코드는 상위 프로젝트의 MIT 라이선스를 따른다. 데이터·가중치에는 별도의 재배포 조건이 적용될 수 있으므로 MIT를 일괄 적용하지 않는다. GitHub 공개 시 코드는 저장소에, 배포 가능한 가중치 묶음은 Release 첨부로 제공한다. 이 정리 작업은 원격 업로드를 실행하지 않는다.
+코드는 상위 프로젝트의 MIT 라이선스를 따른다. 데이터·가중치에는 별도의 재배포 조건이 적용될 수 있으므로 MIT를 일괄 적용하지 않는다. 이 브랜치에는 실행 코드와 최종 가중치를 함께 제공한다. 원본 학습·시험 영상은 재배포하지 않는다.

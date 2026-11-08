@@ -1,0 +1,132 @@
+{
+  "release": "final_research_v1",
+  "confirmed_at_utc": "2026-11-08T07:04:36.521913+00:00",
+  "decision": "user_confirmed_research_project_release",
+  "source_candidate": "development_improved_v2",
+  "research_version_confirmed": true,
+  "production_gate_passed": false,
+  "independent_final_test": false,
+  "no_new_training_or_evaluation_on_finalization": true,
+  "architecture": "Frozen EfficientNetV2S -> eight 257-d frame features -> 772-d temporal statistics -> equal average of two RBF kernel ridge classifiers; no GRU in final head",
+  "threshold": 0.5,
+  "prediction_rule": "score >= 0.5 means fake",
+  "score_is_calibrated_probability": false,
+  "input_contract": {
+    "min_seconds": 3,
+    "max_seconds": 40,
+    "max_bytes": 94371840,
+    "frames": 8,
+    "size": 256,
+    "sampling": "uniform center timestamps",
+    "resize": "aspect-preserving square black padding",
+    "rgb_range": [
+      0,
+      255
+    ]
+  },
+  "validation": {
+    "n": 200,
+    "accuracy": 0.9,
+    "confusion_rows_real_fake": [
+      [
+        91,
+        9
+      ],
+      [
+        11,
+        89
+      ]
+    ],
+    "used_for_selection": true
+  },
+  "reused_test_reference": {
+    "n": 1000,
+    "real": 500,
+    "fake": 500,
+    "accuracy": 0.815,
+    "real_false_positive_rate": 0.116,
+    "confusion_rows_real_fake": [
+      [
+        442,
+        58
+      ],
+      [
+        127,
+        373
+      ]
+    ],
+    "independent": false,
+    "numerical_gate_passed": false
+  },
+  "limitations": [
+    "All AI is Sora; no cross-generator claim",
+    "No AI over 30s; 30-40s paired performance unverified",
+    "Per-person capture IDs and Sora prompts not available; source-group proxy and perceptual checks do not prove all event independence",
+    "347 real clips come from a single HDR camera collection and deterministic SDR conversion; source/processing bias must be reported",
+    "This Test was already evaluated before v2 improvement; the v2 score is a reference comparison only",
+    "Eight uniform frames can miss brief events. Scores are not calibrated probabilities.",
+    "Research confirmation is a project version decision, not certification of high accuracy."
+  ],
+  "entry_point": "start_final_model.bat",
+  "previous_gui": "test_latest_model.bat remains a different, unchanged model; its Grad-CAM is not evidence for this release",
+  "standalone_distribution_package": false,
+  "requires": "Project source files and the existing local Python environment",
+  "python_packages": {
+    "tensorflow": "2.21.0",
+    "keras": "3.14.1",
+    "numpy": "1.26.1",
+    "Pillow": "12.2.0",
+    "imageio-ffmpeg": null,
+    "yt-dlp": null
+  },
+  "release_files_sha256": {
+    "frozen.json": "161fb2cadea1ec8a1dcc3222481ce97d077bad45262ab550756f859d13101610",
+    "image_model/group1-shard10of10.bin": "56403071b67bf3d91fdb2422d491e7f66de77d1f9c28d83e882d56637de4ca97",
+    "image_model/group1-shard1of10.bin": "39ed954002bcefe7486d58240c87e562f647ca0091ecd60994eb6a3787ef776c",
+    "image_model/group1-shard2of10.bin": "3d5c4ce2b356a4b377d7a90c819a3230db995f008ea3f9a7be14a47aef6b57b0",
+    "image_model/group1-shard3of10.bin": "a04440ee5de14d04eecdf543a1c11e19b794f6baf8a352ddde7ec1561d06edaa",
+    "image_model/group1-shard4of10.bin": "7592755f1d92e54a574857088e8e6750239753746db9b4e294e978eeca776f76",
+    "image_model/group1-shard5of10.bin": "2ec29084e292f8be2c44c7395e6640a3ab11d88e30f3bd44e5a49fb8f988275c",
+    "image_model/group1-shard6of10.bin": "720b3e4dbf680738221ac8081395e2e96eb6951b18654f1a937b7ed5520d9681",
+    "image_model/group1-shard7of10.bin": "197c564e2f7ae6343f422367994f416fdfd718400ba0d81d9b41bbc6cae4f842",
+    "image_model/group1-shard8of10.bin": "2d075791d1137d657eff7e0b219979e2a52ec5b1b4e57c2147f7e79281018474",
+    "image_model/group1-shard9of10.bin": "98f859c11ba3ad1825806c49669f15de89a97cdbe33863fee4362e35a9451491",
+    "image_model/inference_config.json": "93cb1433e1bf577c8539d367bef388cc32a6c379b639d67b0cb1e28bc4ccb283",
+    "image_model/model.json": "4c98a4fbf1238bbe53cdfa552d4cbb41ae4fc3a2b2676761aae404079e8eec94",
+    "release_lock.json": "417df711a9290ba39075309f4129c8accddafe5a3ac2c25f9eafc962ec0c71d5",
+    "temporal_rbf_01_02.npz": "c2763a4b7412c6a1cbf34a8601d71a72cba7060423176bbd560d73ee3617816c",
+    "temporal_rbf_1_02.npz": "817f16971843d8397acd96a796ed6349c7f73ccf4223cbbe69e7a461ff78539b"
+  },
+  "project_runtime_sha256": {
+    "src/baseline_common.py": "3c2759b5802b894d28f09027fa4f523b7dbb5af73f45a858263be27c1b582f2a",
+    "src/data_paths.py": "7248a3bbc1ca09f599c02cdc3ab88e357008c29aca4f8310674972b2e499efd9",
+    "src/development_video_data.py": "9ed5977da1ee7b3b8fc9a17598d5e23e5ea89f29342a6741537912ca76b8d215",
+    "src/image_model_backbone.py": "b5291304d46792832f27e475b3523cd90013248246e0c0078bf4614207bf20cc",
+    "src/improve_existing_features.py": "2bb4a8f08755a8089f65c197ce57cd58caa63b6ee9fab2bc50746448a6e15641",
+    "src/predict_final_research.py": "210d1a57e969eba6adac1a7347350db85815d0c4bc24e6368eaab44db11ac61d",
+    "src/predict_improved_candidate.py": "94096786575b61e462e35a427cc35c9a131605171c1ab2b71ae4be04dc99aa2f",
+    "src/shorts_worker.py": "a8c10e0cbfe712a0f14dbf04f49ee4027f9f9a1dbdd92d35e8d3476a761b7650",
+    "src/train_development_gru.py": "6366485ef3ee2f2db1eed17fa215284dada76f74630bda552d9b3eada8ffc184",
+    "src/video_pipeline.py": "09ed3dd3128ca2ef289a7753b20ea39f210f3f00d4bed3b6e82d1b5f68ec66b8",
+    "start_final_model.bat": "cb6b49c25cf375107697890b2cfa755de47c02bc7377bfd77b0ba628d8a04c88"
+  },
+  "evidence_sha256": {
+    "reports/evaluation/improved_v2_test1000_reference/results.json": "19d9c4546cbffc31c07c9d30c94c53938730bd223f38687660f2486a82d55de2",
+    "reports/evaluation/improved_v2_test1000_reference/predictions.csv": "0bdc64cd96037bca439dcd0191aedc102453659b50ba54cba0fff56e6aacc820",
+    "reports/evaluation/improved_v2_test1000_reference/completion_lock.json": "b24939c0d94b414bfce725833192d04575de96f563e0c6120ef9b1a05d69bb15",
+    "checkpoints/existing_features_improvement_v2/runtime_checks.json": "a883f14b318bb71b99dd552f8496920076f80353d7b35eef93ece1dcff4dfba0"
+  },
+  "protected_artifacts_unchanged": {
+    "data/sample/train.csv": "d4cc699190afbad9d391d51be87abe7f722556cb147f85a49cdbf9b3559a958a",
+    "data/sample/valid.csv": "8a72f27fbc87202c2a43f7548a683b3ceb1444ae5e6f771b989eff15f3eb2887",
+    "data/sample/test.csv": "5571472833960e46d0bb92801f846be34f9fa645f1dbe0e97bf633414bb6d748",
+    "models/pretest_selected_v1/frozen.json": "2bb928563a074b26713309f5df1b11b4691c179a628609bc961081e300df9861",
+    "models/pretest_selected_v1/video_head.keras": "ffdbbddd1de275d8cb4752dc232261111de1edb734e70423710dfae386a5c739",
+    "models/pretest_selected_v1/release_lock.json": "43b0d496e529eb3eeced6d7e7a71fd3ed9692097ad74119fa8641bd3eacc0b19",
+    "test_latest_model.bat": "e63842ab8d458add23fe11284dd460d6dd55cc5fcda517bd5d07ec821001d724",
+    "checkpoints/adoption_augmented_v1/residual.keras": "a9d3f4c2f7550e359bc126bfb7a78fd9e0bc6224cb0d608706b4455bfc8a26d0",
+    "reports/evaluation/frozen_test1000_v1/results.json": "68ca7ad9105e2125fe418ba43bee580869211874d34fe49c0d45d4bdb06ce2f7",
+    "reports/evaluation/frozen_test1000_v1/completion_lock.json": "9e9de1a052809209da77d7dcc6821b4fef4956661c10b397a60d4e52fc7ab4ec",
+    "reports/evaluation/frozen_test1000_v1/predictions.csv": "62914f6c3a2eaa8ceb3224ce01e49c72c45df09e58fb00e5b9a2f6cde1a8f000"
+  }
+}
