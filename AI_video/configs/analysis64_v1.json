@@ -1,0 +1,33 @@
+{
+  "mode": "segmented64_v1",
+  "weights_release": "final_research_v1",
+  "weights_manifest_sha256": "b43c66f51a1591e1516744930d56d91627b9c51196252e3d2b80c883e3c86178",
+  "threshold": 0.5,
+  "duration_seconds": [
+    3,
+    40
+  ],
+  "segments": 8,
+  "frames_per_segment": 8,
+  "planned_total_frames": 64,
+  "main_frames": 8,
+  "aggregation": "equal_mean_of_valid_segment_scores",
+  "skip_only_black": true,
+  "black_criterion": "all padded RGB pixel values <=3; dark scenes/text retained",
+  "replacement_sampling": "16 shifted candidates inside a segment when black samples exist; choose 8 unique nonblack times; otherwise explicitly skip segment",
+  "gradcam_target": "selected overall video class through exact RBF head and EfficientNet spatial activations",
+  "ranking": "absolute change in final mean score after mean-feature substitution within the segment",
+  "accuracy_validated": false,
+  "old_eight_frame_release_preserved": true,
+  "entry_point": "start_64frame_model.bat",
+  "default_previous_gui_redirected": true,
+  "runtime_sha256": {
+    "src/analyze_64frames.py": "f51e12ad00e468c334810ca811082f5534ef6fed064b9ba32ddc0711b78d37d3",
+    "src/analysis64_window.py": "3ef86bb11048bbf0a784e6dddd3d7456ab35687b882d351aa20ecedfd8db3365",
+    "src/test_model_window.py": "d459baf55ad2b5a9d3c5bf7a8a7d63d4e283cae0acd9c5dc0b639ca7a8f5fa90",
+    "src/video_explanation.py": "0797e40338bb17134f3390f57405f7ae230dd1ef44cfb8aebbc3fe97abf5c98b",
+    "start_64frame_model.bat": "80b51db42f288b8f9194185bdbd511fb4e582060203e6921d3d60c69ea60ee55"
+  },
+  "project_version": "1.0.0",
+  "project_finalized": true
+}

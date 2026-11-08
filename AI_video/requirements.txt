@@ -1,0 +1,8 @@
+# Final desktop runtime, verified in the existing Python 3.12 environment.
+tensorflow==2.21.0
+keras==3.14.1
+numpy==1.26.1
+Pillow==12.2.0
+imageio-ffmpeg==0.6.0
+yt-dlp==2026.10.26
+yt-dlp-ejs==0.8.0

@@ -1,0 +1,15 @@
+{
+  "release": "final_research_v1",
+  "manifest": "models/final_research_v1/finalization.json",
+  "manifest_sha256": "b43c66f51a1591e1516744930d56d91627b9c51196252e3d2b80c883e3c86178",
+  "entry_point": "start_final_model.bat",
+  "scope": "research_project",
+  "production_gate_passed": false,
+  "active_visualization_mode": "segmented64_v1",
+  "active_visualization_entry_point": "start_64frame_model.bat",
+  "active_visualization_accuracy_validated": false,
+  "project_version": "1.0.0",
+  "project_finalized": true,
+  "final_entry_point": "start_64frame_model.bat",
+  "release_manifest": "releases/v1.0.0.json"
+}
