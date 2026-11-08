@@ -1,23 +1,24 @@
 <!doctype html>
 <html lang="ko">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>AI 영상 분류 · 64프레임</title><link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="description" content="짧은 영상의 AI 생성 여부를 분석하고, 주요 프레임과 Grad-CAM으로 모델의 판단 신호를 확인하세요."><title>FRAME · AI 영상 분석</title><link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script></head>
 <body>
 <header><a class="brand" href="/">FRAME<span>AI 영상 분류</span></a><span class="tag">RESEARCH v1.0.0</span></header>
 <main>
-<section class="hero"><p class="eyebrow">64 FRAMES. A CLOSER LOOK.</p><h1>영상의 순간을 나누고,<br><span>판단의 근거를 살펴보세요.</span></h1><p>3~40초 영상을 64개 시점으로 분석합니다.<br>주요 프레임과 Grad-CAM으로 모델의 판단 신호를 확인하세요.</p></section>
-<section class="panel" aria-labelledby="input-title"><div class="heading"><h2 id="input-title">영상 분석</h2><span id="connection" class="status" role="status">서버 확인 중</span></div>
+<section class="hero"><p class="eyebrow">64 FRAMES. A CLOSER LOOK.</p><h1>이 영상은,<br><span>AI가 만들었을까요?</span></h1><p>짧은 영상 하나로 시작하세요.<br>64개 시점을 분석하고, 모델이 주목한 부분을 함께 보여드립니다.</p><div class="specs"><span>3~40초 영상</span><span>최대 90 MB</span><span>주요 8개 + 세부 56개 프레임</span></div></section>
+<section class="panel" aria-labelledby="input-title"><div class="heading"><h2 id="input-title">영상 분석</h2><div class="connection-tools"><span id="connection" class="status" role="status">서버 확인 중</span><button id="reconnect" type="button" class="text-button" hidden>다시 연결</button></div></div>
 <div class="tabs" role="tablist" aria-label="입력 방식"><button type="button" role="tab" aria-selected="true" id="file-tab" aria-controls="file-panel">영상 파일</button><button type="button" role="tab" aria-selected="false" id="url-tab" aria-controls="url-panel">YouTube Shorts 주소</button></div>
-<form id="analysis-form"><div id="file-panel" role="tabpanel" aria-labelledby="file-tab"><label class="drop" for="video-file"><span class="upload-icon">↥</span><strong>분석할 영상 파일을 선택하세요</strong><span>3~40초 · 최대 90 MB · MP4, MOV, WEBM 등</span><input id="video-file" type="file" accept="video/*"><span id="filename">선택한 파일이 없습니다.</span></label></div>
+<form id="analysis-form"><div id="file-panel" role="tabpanel" aria-labelledby="file-tab"><label class="drop" id="drop-zone" for="video-file"><span class="upload-icon">↥</span><strong>영상을 놓거나 파일을 선택하세요</strong><span>MP4, MOV, WEBM 등 · 한 번에 영상 1개</span><input id="video-file" type="file" accept="video/*"><span id="filename">선택한 파일이 없습니다.</span></label><div id="preview" class="preview" hidden><video id="video-preview" controls playsinline preload="metadata"></video><div><strong id="preview-name"></strong><p id="preview-meta" class="help"></p><button id="remove-file" class="text-button" type="button">선택 취소</button></div></div></div>
 <div id="url-panel" role="tabpanel" aria-labelledby="url-tab" hidden><label for="video-url">공개 YouTube Shorts 주소</label><input id="video-url" type="url" placeholder="https://www.youtube.com/shorts/…" autocomplete="off"><p class="help">다운로드가 허용되는 공개 세로 영상만 지원합니다. 접근 제한이 있으면 영상 파일로 입력해 주세요.</p></div>
 <div class="actions"><p class="help">분석을 위해 영상이 운영자의 노트북 분석 서버로 전송됩니다.<br>업로드 원본은 분석 후 삭제하며 결과는 최대 1시간 보관합니다.</p><button class="primary" id="analyze" type="submit" disabled>분석 시작 <span>↗</span></button></div></form>
-<div id="progress" class="progress" role="status" hidden><span class="spinner"></span><div><strong id="progress-title">분석 준비 중</strong><p id="progress-message">잠시 기다려 주세요.</p></div></div>
+<div id="progress" class="progress" role="status" aria-live="polite" hidden><span class="spinner"></span><div class="progress-body"><strong id="progress-title">분석 준비 중</strong><p id="progress-message">잠시 기다려 주세요.</p><progress id="frame-progress" max="64" value="0" aria-label="Grad-CAM 계산이 완료된 프레임 수" hidden></progress><span id="elapsed" class="help"></span></div></div>
 <p id="error" class="error" role="alert" hidden></p><p id="availability" class="help">무료 시연 서비스로, 운영자의 노트북과 분석 서버가 켜져 있을 때 이용할 수 있습니다.</p>
 </section>
 <section id="result" hidden aria-labelledby="result-title"><div class="panel result-summary"><div><p class="eyebrow">ANALYSIS RESULT</p><h2 id="result-title"></h2><p id="result-meta"></p></div><div class="score"><span>AI 점수</span><strong id="score"></strong><span>분류 기준 0.5 · 정답 확률이 아닙니다.</span></div></div>
 <div class="section-title"><div><h2>주요 프레임 8개</h2><p>프레임 정보를 구간 평균으로 바꿨을 때 최종 점수 변화가 큰 순서입니다.</p></div><span class="tag" id="target-label"></span></div>
 <p class="help">왼쪽 원본 / 오른쪽 Grad-CAM · 이미지를 누르면 확대됩니다.</p><div id="main-frames" class="grid"></div>
 <details id="details" class="panel"><summary id="details-title">세부사항 · 나머지 프레임</summary><h3>구간별 AI 점수</h3><div id="segments" class="segments"></div><p class="help">나머지 프레임은 시간순입니다. 점수 영향 +는 AI 점수를 높인 정보, −는 낮춘 정보입니다.</p><div id="detail-frames" class="grid"></div></details></section>
-<aside class="notice"><strong>판별 결과를 해석할 때</strong><p>현재 64프레임 방식의 정확도는 아직 별도 검증 전입니다. Grad-CAM은 선택한 분류를 지지하는 영역이며, AI 생성 사실이나 합성 위치의 증명이 아닙니다. 색은 프레임마다 정규화되므로 프레임끼리 색의 진하기를 비교할 수 없습니다.</p></aside>
+<section class="how-it-works" aria-label="분석 과정"><div><span>01</span><h3>영상 입력</h3><p>파일이나 공개 Shorts 주소를 입력합니다.</p></div><div><span>02</span><h3>64개 시점 분석</h3><p>8개 구간을 나누고 장면의 특징을 읽습니다.</p></div><div><span>03</span><h3>판단 신호 확인</h3><p>주요 프레임과 Grad-CAM을 함께 살펴봅니다.</p></div></section>
+<aside class="notice"><strong>결과는 모델의 추정입니다</strong><p>현재 64프레임 방식의 정확도는 아직 별도 검증 전입니다. Grad-CAM은 선택한 분류를 지지하는 영역이며, AI 생성 사실이나 합성 위치의 증명이 아닙니다. 색은 프레임마다 정규화되므로 프레임끼리 색의 진하기를 비교할 수 없습니다.</p></aside>
 </main><footer>EfficientNetV2S · 8개 구간 × 8프레임 · 고정 임계값 0.5</footer>
 <dialog id="zoom"><button id="close-zoom" type="button" aria-label="확대 보기 닫기">×</button><h2 id="zoom-title"></h2><img id="zoom-image" alt="원본과 Grad-CAM 확대"><p id="zoom-note"></p></dialog>
 </body></html>
