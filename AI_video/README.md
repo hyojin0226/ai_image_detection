@@ -4,7 +4,23 @@
 
 3~40초 영상의 실제 촬영 / AI 생성을 추정하는 프로그램이다. 기존 EfficientNetV2S를 고정하고, 영상 특징을 집계하는 RBF 분류기 2개의 평균 점수를 사용한다. 최종 영상 분류 부분은 GRU가 아니다. 임계값은 **0.5**이다.
 
-## 실행
+## 클릭해서 실행하기 · Windows
+
+**GitHub에서 이 브랜치를 pull한 뒤 `AI_video/실행.exe`를 더블클릭하면 된다. 별도 다운로드 링크, Python 설치, 명령어 입력, 모델 학습은 필요 없다.**
+
+1. `study/KongDuHyun` 브랜치의 폴더 전체를 clone 또는 pull한다. Download ZIP으로 받았다면 압축을 푼다.
+2. `AI_video` 폴더 안의 **`실행.exe`**를 더블클릭한다. 처음 한 번은 함께 포함된 실행 환경을 자동으로 준비한다.
+3. **영상 파일 선택** 또는 **YouTube Shorts 주소 입력** → **분석 시작**을 누른다.
+4. 주요 프레임 8개의 원본·Grad-CAM을 확인한다. **세부사항**에서 나머지 프레임을 확인한다.
+
+Windows 10/11 **Intel·AMD 64비트**용이다. 필요한 Python·모델·영상 처리 도구·Node.js는 `desktop/runtime/`에 함께 들어 있다. 실행 시 인터넷에서 프로그램을 추가로 받지 않는다. **`실행.exe`와 `desktop` 폴더를 분리하거나 `desktop/runtime` 파일을 지우지 않는다.** 로컬 파일은 인터넷 없이 분석할 수 있고, Shorts 주소는 인터넷과 YouTube의 정상적인 공개 다운로드 접근이 필요하다. 다른 사람이 자신의 컴퓨터에서 실행하면 제작자의 노트북은 켜 두지 않아도 된다.
+
+전체 실행 환경은 약 506 MB이다. GitHub 파일 크기 제한에 맞춰 하위 폴더에 나누어 보관했으며, 사용자가 이 파일들을 직접 열거나 합칠 필요는 없다.
+
+첫 실행에 준비된 파일과 분석 결과는 `%LOCALAPPDATA%\AI-Video-Classifier\`에 저장한다. 수 GB의 여유 공간이 필요하며, 첫 준비가 끝난 뒤에는 같은 실행 파일을 클릭해 다시 연다. 실행 파일은 서명되지 않아 Windows에서 실행 확인을 표시할 수 있다.
+
+<details>
+<summary>개발자용: 소스 코드에서 실행하기</summary>
 
 현재 노트북: **`start_64frame_model.bat`을 파일 탐색기에서 더블클릭 → 주소 또는 영상 파일 입력 → 분석 시작**. 기존 `test_latest_model.bat`도 같은 화면을 연다.
 
@@ -23,6 +39,8 @@ python -m venv .venv
 ```
 
 최종 이미지 모델과 영상 분류 가중치 18개 파일은 [`models/final_research_v1/`](models/final_research_v1/)에 포함되어 있다. 별도 다운로드나 재학습은 필요하지 않다. `tools/release.py check`로 코드와 가중치 파일의 무결성을 확인할 수 있다. 로컬 파일 분석은 인터넷 없이 동작한다. YouTube 입력은 공개 세로 영상의 다운로드가 가능한 경우 지원하며 인터넷과 Node.js가 필요할 수 있다.
+
+</details>
 
 ## 동작과 결과
 
@@ -46,9 +64,12 @@ python -m venv .venv
 
 ```text
 AI_video/
+├── 실행.exe                    # 사용자는 이 파일만 더블클릭
 ├── start_64frame_model.bat       # 실행
 ├── AI_video.code-workspace      # VS Code 실행·파일 검사
 ├── src/                        # 화면·64프레임 분석·필수 연결 모듈
+├── desktop/                    # 실행 환경과 Windows 실행 파일 제작 소스
+│   └── runtime/                # 포함된 실행 환경. 직접 열지 않음
 ├── configs/                    # 최종 설정
 ├── releases/v1.0.0.json         # 고정한 코드·가중치 해시와 모델 규격
 ├── tools/release.py            # 파일 검사·가중치 ZIP 생성
