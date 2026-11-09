@@ -1,0 +1,11 @@
+aug: strong
+batch_size: 32
+best_valid_auc: 0.9978014399999999
+epochs: 4
+holdout: gan
+limit: null
+lr: 0.0001
+model: convnext_tiny
+threshold: 0.13
+valid_macro_f1: 0.9724943753748204
+view: face_crop_x2.0

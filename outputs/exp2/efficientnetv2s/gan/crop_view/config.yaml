@@ -1,0 +1,10 @@
+aug: none
+batch_size: 32
+epochs: 4
+holdout: gan
+limit: null
+lr: 0.0001
+model: efficientnetv2s
+threshold: 0.31000000000000005
+valid_macro_f1: 0.9639987889192593
+view: face_crop_x2.0

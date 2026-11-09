@@ -1,0 +1,11 @@
+aug: strong
+batch_size: 32
+best_valid_auc: 0.9944045
+epochs: 4
+holdout: diffusion
+limit: null
+lr: 0.0001
+model: efficientnetv2s
+threshold: 0.18000000000000005
+valid_macro_f1: 0.9636962966592222
+view: full_image

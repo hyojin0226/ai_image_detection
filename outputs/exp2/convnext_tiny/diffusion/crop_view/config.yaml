@@ -1,0 +1,10 @@
+aug: none
+batch_size: 32
+epochs: 4
+holdout: diffusion
+limit: null
+lr: 0.0001
+model: convnext_tiny
+threshold: 0.25000000000000006
+valid_macro_f1: 0.9743939272637898
+view: face_crop_x2.0

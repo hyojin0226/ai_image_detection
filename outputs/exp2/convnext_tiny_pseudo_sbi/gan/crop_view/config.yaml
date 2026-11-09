@@ -1,0 +1,12 @@
+aug: none
+batch_size: 32
+best_valid_auc: 0.99667606
+epochs: 4
+holdout: gan
+limit: null
+lr: 0.0001
+model: convnext_tiny
+pseudo: sbi
+threshold: 0.22000000000000003
+valid_macro_f1: 0.9620942652413884
+view: face_crop_x2.0
