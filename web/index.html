@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
   <link rel="stylesheet" href="/style.css">
-  <link rel="stylesheet" href="/experience.css?v=mist-local">
+  <link rel="stylesheet" href="/experience.css?v=daylight-2">
   <script>document.documentElement.classList.add("js");</script>
 </head>
 <body data-route="home">
@@ -28,6 +28,11 @@
         <img class="brand-mark" src="/icon.svg" alt="" width="30" height="30">
         <span class="brand-name">Fakit<b>.</b></span>
       </a>
+
+      <nav class="classifier-switch" aria-label="검사 유형 전환">
+        <a href="/image" data-route="image">사진 검사</a>
+        <a href="/video" data-route="video">영상 검사</a>
+      </nav>
 
       <nav class="menu" aria-label="주요 메뉴">
         <a class="menu-item" href="/" data-route="home">파일 탐지</a>
@@ -74,9 +79,9 @@
             <feGaussianBlur stdDeviation="5"/>
           </filter>
           <linearGradient id="mist-colors" x2="0%" y2="100%">
-            <stop stop-color="#b583ff" stop-opacity="0"/>
-            <stop offset=".25" stop-color="#b583ff" stop-opacity=".56"/>
-            <stop offset=".63" stop-color="#d7baff" stop-opacity=".35"/>
+            <stop stop-color="#9b76dd" stop-opacity="0"/>
+            <stop offset=".25" stop-color="#9d7bd4" stop-opacity=".53"/>
+            <stop offset=".63" stop-color="#988bd5" stop-opacity=".46"/>
             <stop offset="1" stop-color="#9877ff" stop-opacity="0"/>
           </linearGradient>
         </defs>
@@ -104,13 +109,7 @@
       <a class="landing-next" href="/image">검사 시작 <span aria-hidden="true">↓</span></a>
     </section>
     <section class="page" data-page="classifier">
-      <div class="classifier-heading">
-        <div><a href="/" class="more-link">← 검사 유형 선택</a><h1 id="classifier-title">파일 검사</h1></div>
-        <nav class="classifier-switch" aria-label="검사 유형 전환">
-          <a href="/image" data-route="image">사진 검사</a>
-          <a href="/video" data-route="video">영상 검사</a>
-        </nav>
-      </div>
+      <h1 id="classifier-title" class="classifier-title">파일 검사</h1>
       <section id="composer" class="unified-stage" data-state="idle" aria-label="통합 검사">
         <div class="lens-stage" id="lens-stage">
           <div id="text-frame" aria-label="링크 입력 영역"></div>
