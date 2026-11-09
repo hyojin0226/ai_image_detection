@@ -123,6 +123,7 @@
   function renderUser() {
     const user = getUser();
     $("login-btn").hidden = !!user;
+    $("landing-login").textContent = user ? "내 기록" : "로그인";
     $("user-chip").hidden = !user;
     $("dock-login-label").textContent = user ? "내 계정" : "로그인";
     if (user) {

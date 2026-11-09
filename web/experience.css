@@ -287,14 +287,6 @@ body[data-route="home"] .foot .brand { display:none; }
   background: radial-gradient(ellipse at 18% 45%, #29183f, transparent 61%),
     radial-gradient(ellipse at 91% 47%, #1a2446, transparent 58%), #110e1b;
 }
-.classifier-landing::before {
-  content: "";
-  position: absolute;
-  inset: 0 auto 0 50%;
-  z-index: -1;
-  width: 1px;
-  background: linear-gradient(transparent 4%, #e5dbff24 32%, #e5dbff30 74%, transparent);
-}
 .landing-mist {
   position: absolute;
   inset: 0;
@@ -318,14 +310,6 @@ body[data-route="home"] .foot .brand { display:none; }
   text-shadow: 0 8px 48px #0d081b82;
 }
 .landing-wordmark h1 span { color: #c6a4ff; }
-.landing-wordmark p { margin: 26px 0 0; font-size: clamp(14px, 1.5vw, 18px); color: #ded5ec; }
-.classifier-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: clamp(20px, 7vw, 100px);
-  max-width: 950px;
-  margin: clamp(54px, 9vh, 100px) auto 0;
-}
 .classifier-choice {
   --choice-color: #d8bbff;
   display: grid;
@@ -340,7 +324,6 @@ body[data-route="home"] .foot .brand { display:none; }
   transition: border-color .2s, color .2s;
 }
 .classifier-choice-video { --choice-color: #b8c8ff; }
-.classifier-choice svg { width: clamp(20px, 3vw, 30px); color: var(--choice-color); }
 .classifier-choice strong { display: block; font-size: clamp(19px, 3vw, 36px); line-height: 1.2; }
 .classifier-choice small { display: block; margin-top: 6px; color: #c9c0d7; font-size: clamp(10px, 1vw, 13px); letter-spacing: .07em; }
 .classifier-arrow { color: var(--choice-color); font-size: clamp(20px, 3vw, 36px); transition: transform .2s; }
@@ -351,7 +334,7 @@ body[data-route="home"] .foot .brand { display:none; }
   .landing-mist { animation: none; }
   .classifier-choice, .classifier-arrow { transition: none; }
 }
-.classifier-heading { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 14px 20px; max-width: 1040px; margin: 0 auto; padding: 24px 20px 0; }
+.classifier-heading { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 14px 20px; max-width: 1040px; margin: 0 auto; padding: 24px 20px 0; }
 .classifier-heading h1 { margin: 8px 0 0; font-size: clamp(1.25rem, 4vw, 2rem); }
 .classifier-switch { display: inline-flex; gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); }
 .classifier-switch a { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 15px; border-radius: inherit; color: var(--body); font-size: 14px; font-weight: 700; white-space: nowrap; text-decoration: none; }
@@ -372,14 +355,78 @@ body[data-route="home"] .foot .brand { display:none; }
 #gradcam-frame { max-width: 100%; padding: 8px; }
 @media (max-width: 600px) {
   .gradcam-grid { grid-template-columns: 1fr; }
-  .classifier-landing { min-height: 480px; padding-inline: 18px; border-radius: 16px; }
-  .classifier-grid { gap: 22px; }
-  .classifier-choice { gap: 7px; grid-template-columns: minmax(0, 1fr) auto; }
-  .classifier-choice svg { grid-column: 1 / -1; }
-  .classifier-choice small { letter-spacing: 0; }
+  .classifier-heading { grid-template-columns: 1fr; }
+  .classifier-switch { justify-self: center; }
   .gradcam-grid figure { width: min(100%, 300px); margin: 0 auto; }
 }
 #history-list .history-card .recent-item { height: auto; min-height: 82px; }
 #history-list .history-card .recent-item b { position: static; width: fit-content; border-radius: 5px; background: #14111f; padding: 3px 7px; }
 #history-list .history-card .recent-item img { width: 100%; height: 110px; border-radius: 6px; object-fit: cover; }
 #recent-strip .history-card small { margin-inline: 8px; font-size: 10px; }
+/* The landing is its own full-screen scene. */
+body[data-route="home"] { background: #110e1b; }
+body[data-route="home"] main { max-width: none; padding: 0; }
+body[data-route="home"] .nav { position: absolute; inset: 0 0 auto; }
+body[data-route="home"] #login-btn,
+body[data-route="home"] #recent-strip,
+body[data-route="home"] .foot,
+body[data-route="home"] .dock { display: none; }
+.classifier-landing.page.is-active {
+  display: grid;
+  grid-template-columns: 22% minmax(0, 1fr) 22%;
+  align-items: center;
+  max-width: none;
+  min-height: 100svh;
+  padding: 82px 0 96px;
+  border-radius: 0;
+}
+.landing-wordmark h1 { font-size: clamp(65px, 15vw, 235px); }
+.landing-login, .landing-next {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 22px;
+  border: 1px solid #e9d9ff59;
+  border-radius: 999px;
+  background: #1c1529;
+  color: #faf7ff;
+  font: inherit;
+  font-size: 14px;
+  text-decoration: none;
+  cursor: pointer;
+}
+.landing-login { margin-top: clamp(24px, 5vw, 56px); }
+.landing-next { position: absolute; left: 50%; bottom: max(26px, env(safe-area-inset-bottom)); transform: translateX(-50%); }
+.landing-login:hover, .landing-next:hover { background: #36264e; }
+.landing-login:focus-visible, .landing-next:focus-visible { outline: 2px solid #c6a4ff; outline-offset: 4px; }
+.classifier-choice {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  min-height: 180px;
+  padding: 16px 6px;
+  border: 0;
+  text-align: center;
+}
+.classifier-choice small { margin: 0; }
+.classifier-choice:hover .classifier-arrow { transform: translateX(-4px); }
+.classifier-choice-video:hover .classifier-arrow { transform: translateX(4px); }
+@media (max-width: 600px) {
+  .landing-choice-detail, .classifier-choice small { display: none; }
+  .classifier-choice strong { font-size: 16px; }
+}
+@view-transition { navigation: auto; }
+::view-transition-old(root), ::view-transition-new(root) { animation: none; }
+@media (prefers-reduced-motion: no-preference) {
+  html:has(body:is([data-route="image"], [data-route="video"]))::view-transition-old(root) {
+    animation: intro-out 420ms cubic-bezier(.25,.7,.25,1) both;
+  }
+  html:has(body:is([data-route="image"], [data-route="video"]))::view-transition-new(root) {
+    animation: intro-in 420ms cubic-bezier(.25,.7,.25,1) both;
+  }
+}
+@keyframes intro-out { to { transform: translateY(-14%); opacity: 0; } }
+@keyframes intro-in { from { transform: translateY(18%); opacity: 0; } }
