@@ -2,9 +2,10 @@
 const $=id=>document.getElementById(id);
 let mode="file",ready=false,busy=false,connecting=false,selectedFile=null,fileReady=false,previewUrl="",selection=0,result=null,detailsRendered=false,abort=null;
 let enginePromise=null;
+let youtubeCheck=null,youtubeRetry=false;
 const engine=()=>enginePromise||(enginePromise=import('/browser-engine.js'));
 function error(message){$("error").textContent=message;$("error").hidden=!message;}
-function refresh(){ $("analyze").disabled=!ready||busy||(mode==="file"?!fileReady:!$("video-url").value.trim()); }
+function refresh(){ $("analyze").disabled=!ready||busy||(mode==="file"?!fileReady:!$("video-url").value.trim());$("youtube-check-retry").disabled=!ready||busy||!youtubeCheck; }
 function status(message){$("progress-message").textContent=message;const m=message.match(/Grad-CAM\s+(\d+)\/(\d+)/);if(m){$("frame-progress").hidden=false;$("frame-progress").max=Number(m[2]);$("frame-progress").value=Number(m[1]);}}
 async function connect(){
   if(connecting)return;connecting=true;$("reconnect").hidden=true;
@@ -36,7 +37,8 @@ function chooseFile(file){
 }
 $("video-file").addEventListener("change",()=>chooseFile($("video-file").files[0]));
 $("remove-file").addEventListener("click",()=>{$("video-file").value="";chooseFile(null);});
-$("video-url").addEventListener("input",refresh);
+function resetYoutubeCheck(){youtubeCheck=null;youtubeRetry=false;$("youtube-check").hidden=true;$("youtube-check-link").removeAttribute("href");refresh();}
+$("video-url").addEventListener("input",resetYoutubeCheck);
 for(const name of ["dragenter","dragover"])$("drop-zone").addEventListener(name,event=>{event.preventDefault();if(!busy)$("drop-zone").classList.add("dragging");});
 for(const name of ["dragleave","drop"])$("drop-zone").addEventListener(name,event=>{event.preventDefault();$("drop-zone").classList.remove("dragging");});
 $("drop-zone").addEventListener("drop",event=>{if(busy)return;if(event.dataTransfer.files.length!==1){error("영상을 한 개씩 선택하세요.");return;}chooseFile(event.dataTransfer.files[0]);});
@@ -65,27 +67,58 @@ function youtubeURL(value){
  const id=url.hostname==="youtu.be"?url.pathname.slice(1):url.pathname.startsWith("/shorts/")?url.pathname.slice(8).replace(/\/$/,""):url.pathname==="/watch"?url.searchParams.get("v"):"";
  if(!/^[\w-]{11}$/.test(id||""))throw Error("개별 YouTube 영상 주소를 입력하세요.");return `https://www.youtube.com/watch?v=${id}`;
 }
+function requireYoutubeCheck(url,retried){
+ youtubeCheck={url,armed:false,left:false};
+ $("youtube-check-link").href=url;
+ $("youtube-check-status").textContent=retried?
+  "원본을 다시 요청했지만 YouTube가 서버 접근을 계속 거절했습니다. 영상 원본을 받지 못해 분석은 시작되지 않았습니다.":
+  "YouTube가 원본 요청을 거절했습니다. 공식 페이지에서 영상 접근 상태를 확인한 뒤 다시 요청할 수 있습니다.";
+ $("youtube-check").hidden=false;
+}
+$("youtube-check-link").addEventListener("click",()=>{
+ if(youtubeCheck){youtubeCheck.armed=true;youtubeCheck.left=false;$("youtube-check-status").textContent="열리는 YouTube 공식 페이지에서 확인한 뒤 이 사이트로 돌아오세요. 원본 연결을 실제로 다시 확인합니다.";}
+});
+function retryYoutubeSource(){
+ if(!youtubeCheck||busy||!ready||mode!=="url")return;
+ let current;try{current=youtubeURL($("video-url").value.trim());}catch{return;}
+ if(current!==youtubeCheck.url){resetYoutubeCheck();return;}
+ youtubeCheck.armed=false;youtubeRetry=true;$("analysis-form").requestSubmit();
+}
+$("youtube-check-retry").addEventListener("click",retryYoutubeSource);
+document.addEventListener("visibilitychange",()=>{
+ if(!youtubeCheck?.armed)return;
+ if(document.hidden)youtubeCheck.left=true;
+ else if(youtubeCheck.left){youtubeCheck.armed=false;retryYoutubeSource();}
+});
+window.addEventListener("blur",()=>{if(youtubeCheck?.armed)youtubeCheck.left=true;});
+window.addEventListener("focus",()=>{if(youtubeCheck?.armed&&youtubeCheck.left){youtubeCheck.armed=false;retryYoutubeSource();}});
 async function youtubeFile(url,signal){
  status("YouTube에서 공개 영상 원본을 요청하고 있습니다. 이 단계에서 접근이 거절될 수 있습니다.");
  const response=await fetch('https://duhyeon-ai-video-cloud.vercel.app/api/source',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url}),signal});
- if(!response.ok){let message="YouTube 원본을 가져오지 못해 주소 자동 분석을 시작하지 못했습니다.";try{message=(await response.json()).error||message;}catch{}throw Error(message);}
+ if(!response.ok){let message="YouTube 원본을 가져오지 못해 주소 자동 분석을 시작하지 못했습니다.",code="youtube_source_failed";try{const body=await response.json();message=body.error||message;code=body.code||code;}catch{}const cause=new Error(message);cause.code=code;cause.youtubeURL=url;throw cause;}
  const blob=await response.blob();if(!blob.size||blob.size>90*1024**2)throw Error("YouTube 영상의 크기를 확인할 수 없습니다.");
  return new File([blob],blob.type.includes('webm')?'YouTube-Shorts.webm':'YouTube-Shorts.mp4',{type:blob.type});
 }
 $("cancel-analysis").addEventListener("click",()=>abort?.abort());
 $("analysis-form").addEventListener("submit",async event=>{
- event.preventDefault();if(busy||!ready)return;error("");let timer;
+ event.preventDefault();if(busy||!ready)return;error("");let timer;const retried=youtubeRetry;youtubeRetry=false;
  try{
   if(mode==="file"&&(!selectedFile||!fileReady))throw Error("지원하는 영상 파일을 선택하세요.");
   const url=mode==="url"?youtubeURL($("video-url").value.trim()):null;
   busy=true;abort=new AbortController();refresh();$("result").hidden=true;$("progress").hidden=false;$("cancel-analysis").hidden=false;$("frame-progress").hidden=true;
+  if(url&&youtubeCheck){youtubeCheck.armed=false;$("youtube-check-status").textContent="원본 연결을 실제로 확인하고 있습니다. 확인 결과를 기다려 주세요.";}
   for(const id of ["video-file","video-url","remove-file","file-tab","url-tab"])$(id).disabled=true;
   $("progress-title").textContent="이 브라우저에서 64프레임 분석";$("elapsed").textContent="분석을 준비하고 있습니다.";const start=performance.now();
   timer=setInterval(()=>{$("elapsed").textContent=`경과 ${Math.floor((performance.now()-start)/1000)}초 · 분석 중에는 이 탭을 열어 두세요.`;},1000);
   const file=url?await youtubeFile(url,abort.signal):selectedFile;
+  if(url){youtubeCheck=null;$("youtube-check").hidden=true;status("YouTube 원본 수신을 확인했습니다. 브라우저에서 프레임 분석을 시작합니다.");}
   const value=await(await engine()).analyzeFile(file,{progress:status,signal:abort.signal});
   if(url)value.source={kind:'youtube',url,title:'YouTube Shorts'};display(value);
- }catch(cause){error(cause.name==="AbortError"?"분석을 취소했습니다.":cause.message||"분석하지 못했습니다.");}
+ }catch(cause){
+  if(cause.code==="youtube_access_restricted")requireYoutubeCheck(cause.youtubeURL,retried);
+  else if(youtubeCheck){youtubeCheck.armed=false;$("youtube-check-status").textContent=cause.name==="AbortError"?"원본 연결 확인을 취소했습니다.":"원본 연결을 확인하지 못했습니다. 아래 오류 내용을 확인해 주세요.";}
+  error(cause.name==="AbortError"?"분석을 취소했습니다.":cause.message||"분석하지 못했습니다.");
+ }
  finally{clearInterval(timer);busy=false;abort=null;$("progress").hidden=true;$("cancel-analysis").hidden=true;for(const id of ["video-file","video-url","remove-file","file-tab","url-tab"])$(id).disabled=false;refresh();}
 });
 connect();
