@@ -351,8 +351,13 @@ body[data-route="home"] .foot .brand { display:none; }
   .landing-mist { animation: none; }
   .classifier-choice, .classifier-arrow { transition: none; }
 }
-.classifier-heading { max-width: 1040px; margin: 0 auto; padding: 24px 20px 0; }
+.classifier-heading { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 14px 20px; max-width: 1040px; margin: 0 auto; padding: 24px 20px 0; }
 .classifier-heading h1 { margin: 8px 0 0; font-size: clamp(1.25rem, 4vw, 2rem); }
+.classifier-switch { display: inline-flex; gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); }
+.classifier-switch a { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 15px; border-radius: inherit; color: var(--body); font-size: 14px; font-weight: 700; white-space: nowrap; text-decoration: none; }
+.classifier-switch a:hover { background: var(--purple-tint); color: var(--purple-ink); }
+.classifier-switch a[aria-current="page"] { background: #5b2ee0; color: #fff; }
+.classifier-switch a:focus-visible { outline: 2px solid #5b2ee0; outline-offset: 2px; }
 .history-card { position: relative; min-width: 0; }
 .history-card .recent-item { width: 100%; display: grid; text-align: left; padding: 14px; white-space: normal; }
 .history-card .recent-name { overflow-wrap: anywhere; }

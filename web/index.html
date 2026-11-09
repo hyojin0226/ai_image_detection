@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
   <link rel="stylesheet" href="/style.css">
-  <link rel="stylesheet" href="/experience.css?v=mist">
+  <link rel="stylesheet" href="/experience.css?v=classifier-switch">
   <script>document.documentElement.classList.add("js");</script>
 </head>
 <body data-route="home">
@@ -103,7 +103,13 @@
       </div>
     </section>
     <section class="page" data-page="classifier">
-      <div class="classifier-heading"><a href="/" class="more-link">← 검사 유형 선택</a><h1 id="classifier-title">파일 검사</h1></div>
+      <div class="classifier-heading">
+        <div><a href="/" class="more-link">← 검사 유형 선택</a><h1 id="classifier-title">파일 검사</h1></div>
+        <nav class="classifier-switch" aria-label="검사 유형 전환">
+          <a href="/image" data-route="image">사진 검사</a>
+          <a href="/video" data-route="video">영상 검사</a>
+        </nav>
+      </div>
       <section id="composer" class="unified-stage" data-intro="true" data-state="idle" aria-label="통합 검사">
         <div class="lens-stage" id="lens-stage">
           <div id="text-frame" aria-label="링크 입력 영역"></div>
