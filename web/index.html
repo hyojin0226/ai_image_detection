@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
   <link rel="stylesheet" href="/style.css">
-  <link rel="stylesheet" href="/experience.css?v=night">
+  <link rel="stylesheet" href="/experience.css?v=mist-local">
   <script>document.documentElement.classList.add("js");</script>
 </head>
 <body data-route="home">
@@ -81,8 +81,14 @@
           </linearGradient>
         </defs>
         <g fill="none" stroke="url(#mist-colors)" filter="url(#mist-warp)">
-          <path stroke-width="30" opacity=".45" d="M221 -40C282 108 181 157 217 287S272 435 207 690 M786 -40C742 108 839 193 789 327S754 512 802 690"/>
-          <path stroke-width="10" d="M207 -40C257 114 201 175 229 305S242 464 210 690 M797 -40C756 106 810 190 782 321S778 526 805 690"/>
+          <g data-mist-stream>
+            <path stroke-width="30" opacity=".45" d="M221 -40C282 108 181 157 217 287S272 435 207 690"/>
+            <path stroke-width="10" d="M207 -40C257 114 201 175 229 305S242 464 210 690"/>
+          </g>
+          <g data-mist-stream>
+            <path stroke-width="30" opacity=".45" d="M786 -40C742 108 839 193 789 327S754 512 802 690"/>
+            <path stroke-width="10" d="M797 -40C756 106 810 190 782 321S778 526 805 690"/>
+          </g>
         </g>
       </svg>
       <a class="classifier-choice classifier-choice-photo" href="/image">
@@ -452,7 +458,7 @@
     <p id="gradcam-message" role="status"></p><div id="gradcam-images" class="gradcam-grid"></div>
     <p class="small">Grad-CAM은 모델의 판단에 기여한 영역을 보여줍니다. 색의 강도는 이 시각화 안에서의 상대적 기여도이며 조작 여부를 확정하는 증거가 아닙니다.</p>
   </dialog>
-  <script src="/ui.js?v=night"></script>
+  <script src="/ui.js?v=mist-local"></script>
 
   <script src="/diagnostics.js"></script>
   <script type="module" src="/classifier-entry.js?v=night"></script>

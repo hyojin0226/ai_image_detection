@@ -276,40 +276,101 @@ document.getElementById('copy-extension-address')?.addEventListener('click', asy
   }
 });
 
-// Ease the mist toward the pointer; stop drawing when it settles.
+// Bend only the section of each mist stream within reach of the pointer.
 (() => {
   const landing = document.querySelector('.classifier-landing');
-  const mist = landing.querySelector('.landing-mist');
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
-  let frame = 0, x = 0, y = 0, targetX = 0, targetY = 0;
+  const radius = 90;
+  let streams, bounds, pointer, frame = 0, previousTime = 0;
 
-  function tick() {
-    frame = 0;
-    x += (targetX - x) * .12;
-    y += (targetY - y) * .12;
-    mist.style.setProperty('--mist-x', x.toFixed(2) + 'px');
-    mist.style.setProperty('--mist-y', y.toFixed(2) + 'px');
-    mist.style.setProperty('--mist-tilt', (x / 24).toFixed(2) + 'deg');
-    if (Math.hypot(targetX - x, targetY - y) > .05) schedule();
+  function sampleStreams() {
+    return Array.from(landing.querySelectorAll('[data-mist-stream]'), stream =>
+      Array.from(stream.querySelectorAll('path'), path => {
+        const length = path.getTotalLength();
+        const points = Array.from({ length: 65 }, (_, index) => {
+          const { x, y } = path.getPointAtLength(length * index / 64);
+          return { x, y, offset: 0, velocity: 0 };
+        });
+        return { path, original: path.getAttribute('d'), points, bent: false };
+      }));
   }
+
+  function draw({ path, points }) {
+    const x = point => (point.x + point.offset).toFixed(2);
+    let curve = 'M' + x(points[0]) + ' ' + points[0].y.toFixed(2);
+    for (let i = 1; i < points.length - 1; i++) {
+      const point = points[i], next = points[i + 1];
+      const midX = (point.x + point.offset + next.x + next.offset) / 2;
+      curve += 'Q' + x(point) + ' ' + point.y.toFixed(2) + ' ' +
+        midX.toFixed(2) + ' ' + ((point.y + next.y) / 2).toFixed(2);
+    }
+    const end = points.at(-1);
+    path.setAttribute('d', curve + 'L' + x(end) + ' ' + end.y.toFixed(2));
+  }
+
+  function tick(now) {
+    frame = 0;
+    const dt = previousTime ? Math.min((now - previousTime) / 1000, .04) : 1 / 60;
+    previousTime = now;
+    const scaleX = bounds.width / 1000, scaleY = bounds.height / 650;
+    const spring = 14, decay = Math.exp(-spring * dt);
+    let unsettled = false;
+
+    for (const stream of streams) {
+      let direction = 0;
+      if (pointer) {
+        const spine = stream[0].points;
+        const closest = spine.reduce((a, b) =>
+          Math.abs(a.y * scaleY - pointer.y) < Math.abs(b.y * scaleY - pointer.y) ? a : b);
+        direction = closest.x * scaleX < pointer.x ? -1 : 1;
+      }
+      for (const stroke of stream) {
+        let bent = false;
+        for (const point of stroke.points) {
+          const distance = pointer ? Math.hypot(point.x * scaleX - pointer.x, point.y * scaleY - pointer.y) : radius;
+          const falloff = Math.max(0, 1 - (distance / radius) ** 2);
+          const target = direction * 36 * falloff ** 2 / scaleX;
+          const error = point.offset - target;
+          const momentum = point.velocity + spring * error;
+          point.offset = target + (error + momentum * dt) * decay;
+          point.velocity = (point.velocity - spring * momentum * dt) * decay;
+          bent ||= Math.abs(point.offset * scaleX) > .08;
+          unsettled ||= Math.abs((point.offset - target) * scaleX) > .08 || Math.abs(point.velocity * scaleX) > .5;
+        }
+        if (bent) draw(stroke);
+        else if (stroke.bent) stroke.path.setAttribute('d', stroke.original);
+        stroke.bent = bent;
+      }
+    }
+    if (unsettled) schedule();
+    else previousTime = 0;
+  }
+
   function schedule() {
     if (!frame && !motion.matches) frame = requestAnimationFrame(tick);
   }
+
   landing.addEventListener('pointermove', event => {
     if (event.pointerType !== 'mouse' || motion.matches) return;
-    const bounds = landing.getBoundingClientRect();
-    targetX = ((event.clientX - bounds.left) / bounds.width - .5) * 60;
-    targetY = ((event.clientY - bounds.top) / bounds.height - .5) * 38;
+    bounds = landing.getBoundingClientRect();
+    if (!bounds.width || !bounds.height) return;
+    streams ??= sampleStreams();
+    pointer = { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
     schedule();
   });
-  landing.addEventListener('pointerleave', () => {
-    targetX = targetY = 0;
+  const releasePointer = () => {
+    if (!pointer) return;
+    pointer = null;
     schedule();
-  });
+  };
+  landing.addEventListener('pointerleave', releasePointer);
+  addEventListener('resize', releasePointer);
   motion.addEventListener('change', () => {
-    if (!motion.matches) return;
+    if (!motion.matches || !streams) return;
     cancelAnimationFrame(frame);
-    frame = x = y = targetX = targetY = 0;
-    for (const property of ['--mist-x', '--mist-y', '--mist-tilt']) mist.style.removeProperty(property);
+    frame = previousTime = 0;
+    pointer = null;
+    for (const stroke of streams.flat()) stroke.path.setAttribute('d', stroke.original);
+    streams = undefined;
   });
 })();
