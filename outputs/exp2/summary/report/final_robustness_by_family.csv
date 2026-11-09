@@ -1,0 +1,289 @@
+model,view,perturbation,eval_set,family,n,fake_recall
+VAE + SBI,face_crop,none,held_out,diffusion,2818,0.9968062455642299
+VAE + SBI,face_crop,none,held_out,gan,4466,0.9946260635915808
+VAE + SBI,face_crop,none,held_out,manip,2716,0.8140648011782032
+VAE + SBI,face_crop,none,test_id,diffusion,1196,0.995819397993311
+VAE + SBI,face_crop,none,test_id,gan,1367,0.9941477688368691
+VAE + SBI,face_crop,none,test_id,manip,437,0.7894736842105263
+VAE + SBI,face_crop,jpeg_q90,held_out,diffusion,2818,0.9982256919801278
+VAE + SBI,face_crop,jpeg_q90,held_out,gan,4466,0.9957456336766681
+VAE + SBI,face_crop,jpeg_q90,held_out,manip,2716,0.8291605301914581
+VAE + SBI,face_crop,jpeg_q90,test_id,diffusion,1196,0.995819397993311
+VAE + SBI,face_crop,jpeg_q90,test_id,gan,1367,0.9934162399414777
+VAE + SBI,face_crop,jpeg_q90,test_id,manip,437,0.8100686498855835
+VAE + SBI,face_crop,jpeg_q70,held_out,diffusion,2818,0.9946770759403832
+VAE + SBI,face_crop,jpeg_q70,held_out,gan,4466,0.9932825794894761
+VAE + SBI,face_crop,jpeg_q70,held_out,manip,2716,0.780559646539028
+VAE + SBI,face_crop,jpeg_q70,test_id,diffusion,1196,0.995819397993311
+VAE + SBI,face_crop,jpeg_q70,test_id,gan,1367,0.9897585954645208
+VAE + SBI,face_crop,jpeg_q70,test_id,manip,437,0.7688787185354691
+VAE + SBI,face_crop,jpeg_q50,held_out,diffusion,2818,0.9925479063165366
+VAE + SBI,face_crop,jpeg_q50,held_out,gan,4466,0.9827586206896551
+VAE + SBI,face_crop,jpeg_q50,held_out,manip,2716,0.9002209131075111
+VAE + SBI,face_crop,jpeg_q50,test_id,diffusion,1196,0.9908026755852842
+VAE + SBI,face_crop,jpeg_q50,test_id,gan,1367,0.9795171909290417
+VAE + SBI,face_crop,jpeg_q50,test_id,manip,437,0.8832951945080092
+VAE + SBI,face_crop,resize_0.75,held_out,diffusion,2818,0.9907735982966643
+VAE + SBI,face_crop,resize_0.75,held_out,gan,4466,0.906627854903717
+VAE + SBI,face_crop,resize_0.75,held_out,manip,2716,0.790500736377025
+VAE + SBI,face_crop,resize_0.75,test_id,diffusion,1196,0.9874581939799331
+VAE + SBI,face_crop,resize_0.75,test_id,gan,1367,0.9202633504023409
+VAE + SBI,face_crop,resize_0.75,test_id,manip,437,0.7574370709382151
+VAE + SBI,face_crop,resize_0.5,held_out,diffusion,2818,0.9950319375443577
+VAE + SBI,face_crop,resize_0.5,held_out,gan,4466,0.64576802507837
+VAE + SBI,face_crop,resize_0.5,held_out,manip,2716,0.8696612665684831
+VAE + SBI,face_crop,resize_0.5,test_id,diffusion,1196,0.9908026755852842
+VAE + SBI,face_crop,resize_0.5,test_id,gan,1367,0.6737381126554499
+VAE + SBI,face_crop,resize_0.5,test_id,manip,437,0.8627002288329519
+VAE + SBI,face_crop,blur_0.5,held_out,diffusion,2818,0.9918381831085876
+VAE + SBI,face_crop,blur_0.5,held_out,gan,4466,0.996641289744738
+VAE + SBI,face_crop,blur_0.5,held_out,manip,2716,0.7522091310751104
+VAE + SBI,face_crop,blur_0.5,test_id,diffusion,1196,0.9866220735785953
+VAE + SBI,face_crop,blur_0.5,test_id,gan,1367,0.9963423555230432
+VAE + SBI,face_crop,blur_0.5,test_id,manip,437,0.7139588100686499
+VAE + SBI,face_crop,blur_1.0,held_out,diffusion,2818,0.9776437189496097
+VAE + SBI,face_crop,blur_1.0,held_out,gan,4466,0.7366771159874608
+VAE + SBI,face_crop,blur_1.0,held_out,manip,2716,0.7831369661266568
+VAE + SBI,face_crop,blur_1.0,test_id,diffusion,1196,0.9690635451505016
+VAE + SBI,face_crop,blur_1.0,test_id,gan,1367,0.7344550109729334
+VAE + SBI,face_crop,blur_1.0,test_id,manip,437,0.7505720823798627
+VAE + SBI,full_image,none,held_out,diffusion,2818,0.9982256919801278
+VAE + SBI,full_image,none,held_out,gan,4466,0.9964173757277206
+VAE + SBI,full_image,none,held_out,manip,2716,0.7547864506627393
+VAE + SBI,full_image,none,test_id,diffusion,1196,0.9983277591973244
+VAE + SBI,full_image,none,test_id,gan,1367,0.9948792977322605
+VAE + SBI,full_image,none,test_id,manip,437,0.7505720823798627
+VAE + SBI,full_image,jpeg_q90,held_out,diffusion,2818,0.9985805535841022
+VAE + SBI,full_image,jpeg_q90,held_out,gan,4466,0.9968652037617555
+VAE + SBI,full_image,jpeg_q90,held_out,manip,2716,0.7569955817378498
+VAE + SBI,full_image,jpeg_q90,test_id,diffusion,1196,0.9983277591973244
+VAE + SBI,full_image,jpeg_q90,test_id,gan,1367,0.9963423555230432
+VAE + SBI,full_image,jpeg_q90,test_id,manip,437,0.7528604118993135
+VAE + SBI,full_image,jpeg_q70,held_out,diffusion,2818,0.9982256919801278
+VAE + SBI,full_image,jpeg_q70,held_out,gan,4466,0.9948499776085983
+VAE + SBI,full_image,jpeg_q70,held_out,manip,2716,0.7260677466863034
+VAE + SBI,full_image,jpeg_q70,test_id,diffusion,1196,0.9983277591973244
+VAE + SBI,full_image,jpeg_q70,test_id,gan,1367,0.991953182150695
+VAE + SBI,full_image,jpeg_q70,test_id,manip,437,0.7208237986270023
+VAE + SBI,full_image,jpeg_q50,held_out,diffusion,2818,0.9996451383960255
+VAE + SBI,full_image,jpeg_q50,held_out,gan,4466,0.9896999552171966
+VAE + SBI,full_image,jpeg_q50,held_out,manip,2716,0.8954344624447718
+VAE + SBI,full_image,jpeg_q50,test_id,diffusion,1196,0.9974916387959866
+VAE + SBI,full_image,jpeg_q50,test_id,gan,1367,0.9868324798829554
+VAE + SBI,full_image,jpeg_q50,test_id,manip,437,0.9176201372997712
+VAE + SBI,full_image,resize_0.75,held_out,diffusion,2818,0.9982256919801278
+VAE + SBI,full_image,resize_0.75,held_out,gan,4466,0.9408866995073891
+VAE + SBI,full_image,resize_0.75,held_out,manip,2716,0.7746686303387335
+VAE + SBI,full_image,resize_0.75,test_id,diffusion,1196,0.9974916387959866
+VAE + SBI,full_image,resize_0.75,test_id,gan,1367,0.9495245062179956
+VAE + SBI,full_image,resize_0.75,test_id,manip,437,0.7665903890160183
+VAE + SBI,full_image,resize_0.5,held_out,diffusion,2818,0.9982256919801278
+VAE + SBI,full_image,resize_0.5,held_out,gan,4466,0.7487684729064039
+VAE + SBI,full_image,resize_0.5,held_out,manip,2716,0.8446244477172312
+VAE + SBI,full_image,resize_0.5,test_id,diffusion,1196,0.9949832775919732
+VAE + SBI,full_image,resize_0.5,test_id,gan,1367,0.7673738112655449
+VAE + SBI,full_image,resize_0.5,test_id,manip,437,0.8535469107551488
+VAE + SBI,full_image,blur_0.5,held_out,diffusion,2818,0.9989354151880766
+VAE + SBI,full_image,blur_0.5,held_out,gan,4466,0.9984326018808778
+VAE + SBI,full_image,blur_0.5,held_out,manip,2716,0.7882916053019146
+VAE + SBI,full_image,blur_0.5,test_id,diffusion,1196,0.9974916387959866
+VAE + SBI,full_image,blur_0.5,test_id,gan,1367,0.9970738844184345
+VAE + SBI,full_image,blur_0.5,test_id,manip,437,0.7894736842105263
+VAE + SBI,full_image,blur_1.0,held_out,diffusion,2818,0.9971611071682044
+VAE + SBI,full_image,blur_1.0,held_out,gan,4466,0.8105687416032243
+VAE + SBI,full_image,blur_1.0,held_out,manip,2716,0.8100147275405007
+VAE + SBI,full_image,blur_1.0,test_id,diffusion,1196,0.9949832775919732
+VAE + SBI,full_image,blur_1.0,test_id,gan,1367,0.817117776152158
+VAE + SBI,full_image,blur_1.0,test_id,manip,437,0.7803203661327232
+VAE + SBI + degrade,face_crop,none,held_out,diffusion,2818,0.9950319375443577
+VAE + SBI + degrade,face_crop,none,held_out,gan,4466,0.9973130317957905
+VAE + SBI + degrade,face_crop,none,held_out,manip,2716,0.790500736377025
+VAE + SBI + degrade,face_crop,none,test_id,diffusion,1196,0.9899665551839465
+VAE + SBI + degrade,face_crop,none,test_id,gan,1367,0.9970738844184345
+VAE + SBI + degrade,face_crop,none,test_id,manip,437,0.7528604118993135
+VAE + SBI + degrade,face_crop,jpeg_q90,held_out,diffusion,2818,0.9964513839602555
+VAE + SBI + degrade,face_crop,jpeg_q90,held_out,gan,4466,0.997089117778773
+VAE + SBI + degrade,face_crop,jpeg_q90,held_out,manip,2716,0.8085419734904271
+VAE + SBI + degrade,face_crop,jpeg_q90,test_id,diffusion,1196,0.9916387959866221
+VAE + SBI + degrade,face_crop,jpeg_q90,test_id,gan,1367,0.9970738844184345
+VAE + SBI + degrade,face_crop,jpeg_q90,test_id,manip,437,0.7711670480549199
+VAE + SBI + degrade,face_crop,jpeg_q70,held_out,diffusion,2818,0.9914833215046132
+VAE + SBI + degrade,face_crop,jpeg_q70,held_out,gan,4466,0.9930586654724586
+VAE + SBI + degrade,face_crop,jpeg_q70,held_out,manip,2716,0.7415316642120766
+VAE + SBI + degrade,face_crop,jpeg_q70,test_id,diffusion,1196,0.9874581939799331
+VAE + SBI + degrade,face_crop,jpeg_q70,test_id,gan,1367,0.9868324798829554
+VAE + SBI + degrade,face_crop,jpeg_q70,test_id,manip,437,0.6933638443935927
+VAE + SBI + degrade,face_crop,jpeg_q50,held_out,diffusion,2818,0.9918381831085876
+VAE + SBI + degrade,face_crop,jpeg_q50,held_out,gan,4466,0.9809673085535154
+VAE + SBI + degrade,face_crop,jpeg_q50,held_out,manip,2716,0.845360824742268
+VAE + SBI + degrade,face_crop,jpeg_q50,test_id,diffusion,1196,0.9841137123745819
+VAE + SBI + degrade,face_crop,jpeg_q50,test_id,gan,1367,0.9765910753474762
+VAE + SBI + degrade,face_crop,jpeg_q50,test_id,manip,437,0.8146453089244852
+VAE + SBI + degrade,face_crop,resize_0.75,held_out,diffusion,2818,0.99361249112846
+VAE + SBI + degrade,face_crop,resize_0.75,held_out,gan,4466,0.9964173757277206
+VAE + SBI + degrade,face_crop,resize_0.75,held_out,manip,2716,0.7441089837997055
+VAE + SBI + degrade,face_crop,resize_0.75,test_id,diffusion,1196,0.9933110367892977
+VAE + SBI + degrade,face_crop,resize_0.75,test_id,gan,1367,0.9956108266276518
+VAE + SBI + degrade,face_crop,resize_0.75,test_id,manip,437,0.7162471395881007
+VAE + SBI + degrade,face_crop,resize_0.5,held_out,diffusion,2818,0.9953867991483322
+VAE + SBI + degrade,face_crop,resize_0.5,held_out,gan,4466,0.987012987012987
+VAE + SBI + degrade,face_crop,resize_0.5,held_out,manip,2716,0.8460972017673049
+VAE + SBI + degrade,face_crop,resize_0.5,test_id,diffusion,1196,0.9908026755852842
+VAE + SBI + degrade,face_crop,resize_0.5,test_id,gan,1367,0.9853694220921726
+VAE + SBI + degrade,face_crop,resize_0.5,test_id,manip,437,0.8123569794050344
+VAE + SBI + degrade,face_crop,blur_0.5,held_out,diffusion,2818,0.9904187366926899
+VAE + SBI + degrade,face_crop,blur_0.5,held_out,gan,4466,0.9982086878638603
+VAE + SBI + degrade,face_crop,blur_0.5,held_out,manip,2716,0.7337997054491899
+VAE + SBI + degrade,face_crop,blur_0.5,test_id,diffusion,1196,0.9807692307692307
+VAE + SBI + degrade,face_crop,blur_0.5,test_id,gan,1367,0.9978054133138259
+VAE + SBI + degrade,face_crop,blur_0.5,test_id,manip,437,0.7048054919908466
+VAE + SBI + degrade,face_crop,blur_1.0,held_out,diffusion,2818,0.988999290276792
+VAE + SBI + degrade,face_crop,blur_1.0,held_out,gan,4466,0.997089117778773
+VAE + SBI + degrade,face_crop,blur_1.0,held_out,manip,2716,0.7315905743740795
+VAE + SBI + degrade,face_crop,blur_1.0,test_id,diffusion,1196,0.9832775919732442
+VAE + SBI + degrade,face_crop,blur_1.0,test_id,gan,1367,0.9941477688368691
+VAE + SBI + degrade,face_crop,blur_1.0,test_id,manip,437,0.7025171624713958
+VAE + SBI + degrade,full_image,none,held_out,diffusion,2818,0.9989354151880766
+VAE + SBI + degrade,full_image,none,held_out,gan,4466,0.9973130317957905
+VAE + SBI + degrade,full_image,none,held_out,manip,2716,0.7002945508100147
+VAE + SBI + degrade,full_image,none,test_id,diffusion,1196,0.9983277591973244
+VAE + SBI + degrade,full_image,none,test_id,gan,1367,0.9978054133138259
+VAE + SBI + degrade,full_image,none,test_id,manip,437,0.6842105263157895
+VAE + SBI + degrade,full_image,jpeg_q90,held_out,diffusion,2818,0.9989354151880766
+VAE + SBI + degrade,full_image,jpeg_q90,held_out,gan,4466,0.9973130317957905
+VAE + SBI + degrade,full_image,jpeg_q90,held_out,manip,2716,0.7021354933726067
+VAE + SBI + degrade,full_image,jpeg_q90,test_id,diffusion,1196,0.9983277591973244
+VAE + SBI + degrade,full_image,jpeg_q90,test_id,gan,1367,0.9978054133138259
+VAE + SBI + degrade,full_image,jpeg_q90,test_id,manip,437,0.6864988558352403
+VAE + SBI + degrade,full_image,jpeg_q70,held_out,diffusion,2818,0.9978708303761533
+VAE + SBI + degrade,full_image,jpeg_q70,held_out,gan,4466,0.9935064935064936
+VAE + SBI + degrade,full_image,jpeg_q70,held_out,manip,2716,0.6634756995581738
+VAE + SBI + degrade,full_image,jpeg_q70,test_id,diffusion,1196,0.9974916387959866
+VAE + SBI + degrade,full_image,jpeg_q70,test_id,gan,1367,0.9875640087783467
+VAE + SBI + degrade,full_image,jpeg_q70,test_id,manip,437,0.6430205949656751
+VAE + SBI + degrade,full_image,jpeg_q50,held_out,diffusion,2818,0.9968062455642299
+VAE + SBI + degrade,full_image,jpeg_q50,held_out,gan,4466,0.9818629646215853
+VAE + SBI + degrade,full_image,jpeg_q50,held_out,manip,2716,0.7676730486008837
+VAE + SBI + degrade,full_image,jpeg_q50,test_id,diffusion,1196,0.995819397993311
+VAE + SBI + degrade,full_image,jpeg_q50,test_id,gan,1367,0.9773226042428675
+VAE + SBI + degrade,full_image,jpeg_q50,test_id,manip,437,0.7574370709382151
+VAE + SBI + degrade,full_image,resize_0.75,held_out,diffusion,2818,0.9975159687721789
+VAE + SBI + degrade,full_image,resize_0.75,held_out,gan,4466,0.9968652037617555
+VAE + SBI + degrade,full_image,resize_0.75,held_out,manip,2716,0.688880706921944
+VAE + SBI + degrade,full_image,resize_0.75,test_id,diffusion,1196,0.9974916387959866
+VAE + SBI + degrade,full_image,resize_0.75,test_id,gan,1367,0.9963423555230432
+VAE + SBI + degrade,full_image,resize_0.75,test_id,manip,437,0.665903890160183
+VAE + SBI + degrade,full_image,resize_0.5,held_out,diffusion,2818,0.9992902767920511
+VAE + SBI + degrade,full_image,resize_0.5,held_out,gan,4466,0.9892521271831617
+VAE + SBI + degrade,full_image,resize_0.5,held_out,manip,2716,0.7227540500736377
+VAE + SBI + degrade,full_image,resize_0.5,test_id,diffusion,1196,0.9991638795986622
+VAE + SBI + degrade,full_image,resize_0.5,test_id,gan,1367,0.9868324798829554
+VAE + SBI + degrade,full_image,resize_0.5,test_id,manip,437,0.7070938215102975
+VAE + SBI + degrade,full_image,blur_0.5,held_out,diffusion,2818,0.9989354151880766
+VAE + SBI + degrade,full_image,blur_0.5,held_out,gan,4466,0.9982086878638603
+VAE + SBI + degrade,full_image,blur_0.5,held_out,manip,2716,0.7017673048600883
+VAE + SBI + degrade,full_image,blur_0.5,test_id,diffusion,1196,0.9974916387959866
+VAE + SBI + degrade,full_image,blur_0.5,test_id,gan,1367,0.9978054133138259
+VAE + SBI + degrade,full_image,blur_0.5,test_id,manip,437,0.6842105263157895
+VAE + SBI + degrade,full_image,blur_1.0,held_out,diffusion,2818,0.9978708303761533
+VAE + SBI + degrade,full_image,blur_1.0,held_out,gan,4466,0.9973130317957905
+VAE + SBI + degrade,full_image,blur_1.0,held_out,manip,2716,0.6796759941089838
+VAE + SBI + degrade,full_image,blur_1.0,test_id,diffusion,1196,0.9966555183946488
+VAE + SBI + degrade,full_image,blur_1.0,test_id,gan,1367,0.9941477688368691
+VAE + SBI + degrade,full_image,blur_1.0,test_id,manip,437,0.6498855835240275
+VAE + degrade (deployed),face_crop,none,held_out,diffusion,2818,0.9964513839602555
+VAE + degrade (deployed),face_crop,none,held_out,gan,4466,0.9986565158978952
+VAE + degrade (deployed),face_crop,none,held_out,manip,2716,0.7750368188512519
+VAE + degrade (deployed),face_crop,none,test_id,diffusion,1196,0.9966555183946488
+VAE + degrade (deployed),face_crop,none,test_id,gan,1367,0.9978054133138259
+VAE + degrade (deployed),face_crop,none,test_id,manip,437,0.7597254004576659
+VAE + degrade (deployed),face_crop,jpeg_q90,held_out,diffusion,2818,0.9968062455642299
+VAE + degrade (deployed),face_crop,jpeg_q90,held_out,gan,4466,0.9988804299149127
+VAE + degrade (deployed),face_crop,jpeg_q90,held_out,manip,2716,0.8008100147275405
+VAE + degrade (deployed),face_crop,jpeg_q90,test_id,diffusion,1196,0.9983277591973244
+VAE + degrade (deployed),face_crop,jpeg_q90,test_id,gan,1367,0.9985369422092173
+VAE + degrade (deployed),face_crop,jpeg_q90,test_id,manip,437,0.7803203661327232
+VAE + degrade (deployed),face_crop,jpeg_q70,held_out,diffusion,2818,0.99361249112846
+VAE + degrade (deployed),face_crop,jpeg_q70,held_out,gan,4466,0.9952978056426333
+VAE + degrade (deployed),face_crop,jpeg_q70,held_out,manip,2716,0.7334315169366715
+VAE + degrade (deployed),face_crop,jpeg_q70,test_id,diffusion,1196,0.9933110367892977
+VAE + degrade (deployed),face_crop,jpeg_q70,test_id,gan,1367,0.991953182150695
+VAE + degrade (deployed),face_crop,jpeg_q70,test_id,manip,437,0.7276887871853547
+VAE + degrade (deployed),face_crop,jpeg_q50,held_out,diffusion,2818,0.9932576295244855
+VAE + degrade (deployed),face_crop,jpeg_q50,held_out,gan,4466,0.9917151813703537
+VAE + degrade (deployed),face_crop,jpeg_q50,held_out,manip,2716,0.8420471281296024
+VAE + degrade (deployed),face_crop,jpeg_q50,test_id,diffusion,1196,0.9891304347826086
+VAE + degrade (deployed),face_crop,jpeg_q50,test_id,gan,1367,0.9882955376737381
+VAE + degrade (deployed),face_crop,jpeg_q50,test_id,manip,437,0.8352402745995423
+VAE + degrade (deployed),face_crop,resize_0.75,held_out,diffusion,2818,0.9968062455642299
+VAE + degrade (deployed),face_crop,resize_0.75,held_out,gan,4466,0.9959695476936856
+VAE + degrade (deployed),face_crop,resize_0.75,held_out,manip,2716,0.7367452135493373
+VAE + degrade (deployed),face_crop,resize_0.75,test_id,diffusion,1196,0.9983277591973244
+VAE + degrade (deployed),face_crop,resize_0.75,test_id,gan,1367,0.9963423555230432
+VAE + degrade (deployed),face_crop,resize_0.75,test_id,manip,437,0.7368421052631579
+VAE + degrade (deployed),face_crop,resize_0.5,held_out,diffusion,2818,0.9932576295244855
+VAE + degrade (deployed),face_crop,resize_0.5,held_out,gan,4466,0.9876847290640394
+VAE + degrade (deployed),face_crop,resize_0.5,held_out,manip,2716,0.7209131075110456
+VAE + degrade (deployed),face_crop,resize_0.5,test_id,diffusion,1196,0.9966555183946488
+VAE + degrade (deployed),face_crop,resize_0.5,test_id,gan,1367,0.9890270665691295
+VAE + degrade (deployed),face_crop,resize_0.5,test_id,manip,437,0.7185354691075515
+VAE + degrade (deployed),face_crop,blur_0.5,held_out,diffusion,2818,0.9957416607523066
+VAE + degrade (deployed),face_crop,blur_0.5,held_out,gan,4466,0.9993282579489476
+VAE + degrade (deployed),face_crop,blur_0.5,held_out,manip,2716,0.7522091310751104
+VAE + degrade (deployed),face_crop,blur_0.5,test_id,diffusion,1196,0.9941471571906354
+VAE + degrade (deployed),face_crop,blur_0.5,test_id,gan,1367,0.9978054133138259
+VAE + degrade (deployed),face_crop,blur_0.5,test_id,manip,437,0.7391304347826086
+VAE + degrade (deployed),face_crop,blur_1.0,held_out,diffusion,2818,0.9946770759403832
+VAE + degrade (deployed),face_crop,blur_1.0,held_out,gan,4466,0.9955217196596506
+VAE + degrade (deployed),face_crop,blur_1.0,held_out,manip,2716,0.7227540500736377
+VAE + degrade (deployed),face_crop,blur_1.0,test_id,diffusion,1196,0.9916387959866221
+VAE + degrade (deployed),face_crop,blur_1.0,test_id,gan,1367,0.9956108266276518
+VAE + degrade (deployed),face_crop,blur_1.0,test_id,manip,437,0.7208237986270023
+VAE + degrade (deployed),full_image,none,held_out,diffusion,2818,0.9996451383960255
+VAE + degrade (deployed),full_image,none,held_out,gan,4466,0.9986565158978952
+VAE + degrade (deployed),full_image,none,held_out,manip,2716,0.7315905743740795
+VAE + degrade (deployed),full_image,none,test_id,diffusion,1196,1.0
+VAE + degrade (deployed),full_image,none,test_id,gan,1367,0.9978054133138259
+VAE + degrade (deployed),full_image,none,test_id,manip,437,0.7276887871853547
+VAE + degrade (deployed),full_image,jpeg_q90,held_out,diffusion,2818,0.9996451383960255
+VAE + degrade (deployed),full_image,jpeg_q90,held_out,gan,4466,0.9988804299149127
+VAE + degrade (deployed),full_image,jpeg_q90,held_out,manip,2716,0.740058910162003
+VAE + degrade (deployed),full_image,jpeg_q90,test_id,diffusion,1196,1.0
+VAE + degrade (deployed),full_image,jpeg_q90,test_id,gan,1367,0.9985369422092173
+VAE + degrade (deployed),full_image,jpeg_q90,test_id,manip,437,0.7391304347826086
+VAE + degrade (deployed),full_image,jpeg_q70,held_out,diffusion,2818,0.9992902767920511
+VAE + degrade (deployed),full_image,jpeg_q70,held_out,gan,4466,0.9952978056426333
+VAE + degrade (deployed),full_image,jpeg_q70,held_out,manip,2716,0.7083946980854198
+VAE + degrade (deployed),full_image,jpeg_q70,test_id,diffusion,1196,1.0
+VAE + degrade (deployed),full_image,jpeg_q70,test_id,gan,1367,0.991953182150695
+VAE + degrade (deployed),full_image,jpeg_q70,test_id,manip,437,0.7048054919908466
+VAE + degrade (deployed),full_image,jpeg_q50,held_out,diffusion,2818,0.9992902767920511
+VAE + degrade (deployed),full_image,jpeg_q50,held_out,gan,4466,0.9917151813703537
+VAE + degrade (deployed),full_image,jpeg_q50,held_out,manip,2716,0.8865979381443299
+VAE + degrade (deployed),full_image,jpeg_q50,test_id,diffusion,1196,0.9991638795986622
+VAE + degrade (deployed),full_image,jpeg_q50,test_id,gan,1367,0.9882955376737381
+VAE + degrade (deployed),full_image,jpeg_q50,test_id,manip,437,0.8993135011441648
+VAE + degrade (deployed),full_image,resize_0.75,held_out,diffusion,2818,0.9992902767920511
+VAE + degrade (deployed),full_image,resize_0.75,held_out,gan,4466,0.9959695476936856
+VAE + degrade (deployed),full_image,resize_0.75,held_out,manip,2716,0.7150220913107511
+VAE + degrade (deployed),full_image,resize_0.75,test_id,diffusion,1196,1.0
+VAE + degrade (deployed),full_image,resize_0.75,test_id,gan,1367,0.9963423555230432
+VAE + degrade (deployed),full_image,resize_0.75,test_id,manip,437,0.7139588100686499
+VAE + degrade (deployed),full_image,resize_0.5,held_out,diffusion,2818,0.9992902767920511
+VAE + degrade (deployed),full_image,resize_0.5,held_out,gan,4466,0.9876847290640394
+VAE + degrade (deployed),full_image,resize_0.5,held_out,manip,2716,0.7050810014727541
+VAE + degrade (deployed),full_image,resize_0.5,test_id,diffusion,1196,1.0
+VAE + degrade (deployed),full_image,resize_0.5,test_id,gan,1367,0.9890270665691295
+VAE + degrade (deployed),full_image,resize_0.5,test_id,manip,437,0.7093821510297483
+VAE + degrade (deployed),full_image,blur_0.5,held_out,diffusion,2818,0.9996451383960255
+VAE + degrade (deployed),full_image,blur_0.5,held_out,gan,4466,0.9993282579489476
+VAE + degrade (deployed),full_image,blur_0.5,held_out,manip,2716,0.7290132547864506
+VAE + degrade (deployed),full_image,blur_0.5,test_id,diffusion,1196,0.9991638795986622
+VAE + degrade (deployed),full_image,blur_0.5,test_id,gan,1367,0.9978054133138259
+VAE + degrade (deployed),full_image,blur_0.5,test_id,manip,437,0.7254004576659039
+VAE + degrade (deployed),full_image,blur_1.0,held_out,diffusion,2818,0.9989354151880766
+VAE + degrade (deployed),full_image,blur_1.0,held_out,gan,4466,0.9955217196596506
+VAE + degrade (deployed),full_image,blur_1.0,held_out,manip,2716,0.7157584683357879
+VAE + degrade (deployed),full_image,blur_1.0,test_id,diffusion,1196,0.9991638795986622
+VAE + degrade (deployed),full_image,blur_1.0,test_id,gan,1367,0.9956108266276518
+VAE + degrade (deployed),full_image,blur_1.0,test_id,manip,437,0.7254004576659039

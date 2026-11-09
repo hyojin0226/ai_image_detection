@@ -1,0 +1,37 @@
+run,model,phase,generator,n_fake,ood_auc,fake_recall
+efficientnetv2s,EfficientNetV2S,P3 baseline,flux_dev,1066,0.6389424953095685,0.0009380863039399625
+efficientnetv2s,EfficientNetV2S,P3 baseline,flux_pro,483,0.6241226708074534,0.0
+efficientnetv2s,EfficientNetV2S,P3 baseline,sd,690,0.8821521739130436,0.008695652173913044
+efficientnetv2s,EfficientNetV2S,P3 baseline,sdxl,7761,0.732928340420049,0.00901945625563716
+efficientnetv2s_aug,EfficientNetV2S + strong aug,P5,flux_dev,1066,0.5544384615384615,0.01125703564727955
+efficientnetv2s_aug,EfficientNetV2S + strong aug,P5,flux_pro,483,0.5737675983436853,0.018633540372670808
+efficientnetv2s_aug,EfficientNetV2S + strong aug,P5,sd,690,0.8219176811594202,0.059420289855072465
+efficientnetv2s_aug,EfficientNetV2S + strong aug,P5,sdxl,7761,0.6886506378044067,0.03247004252029378
+convnext_tiny,ConvNeXt-T,P3 baseline,flux_dev,1066,0.7704343339587243,0.001876172607879925
+convnext_tiny,ConvNeXt-T,P3 baseline,flux_pro,483,0.7434605590062112,0.0
+convnext_tiny,ConvNeXt-T,P3 baseline,sd,690,0.9582049275362319,0.02318840579710145
+convnext_tiny,ConvNeXt-T,P3 baseline,sdxl,7761,0.8860636000515398,0.010050251256281407
+convnext_tiny_aug,ConvNeXt-T + strong aug,P5,flux_dev,1066,0.45295333020637896,0.0009380863039399625
+convnext_tiny_aug,ConvNeXt-T + strong aug,P5,flux_pro,483,0.46036708074534166,0.002070393374741201
+convnext_tiny_aug,ConvNeXt-T + strong aug,P5,sd,690,0.8912901449275361,0.013043478260869565
+convnext_tiny_aug,ConvNeXt-T + strong aug,P5,sdxl,7761,0.7094406197654941,0.009277155005798222
+convnext_tiny_pseudo_vae,ConvNeXt-T + VAE,P6,flux_dev,1066,0.9182813789868668,0.11538461538461539
+convnext_tiny_pseudo_vae,ConvNeXt-T + VAE,P6,flux_pro,483,0.8773861283643892,0.07453416149068323
+convnext_tiny_pseudo_vae,ConvNeXt-T + VAE,P6,sd,690,0.9874851449275361,0.36231884057971014
+convnext_tiny_pseudo_vae,ConvNeXt-T + VAE,P6,sdxl,7761,0.9574804406648628,0.21659579951037236
+convnext_tiny_pseudo_sbi,ConvNeXt-T + SBI,P6,flux_dev,1066,0.9522051594746717,0.38367729831144465
+convnext_tiny_pseudo_sbi,ConvNeXt-T + SBI,P6,flux_pro,483,0.956581884057971,0.40993788819875776
+convnext_tiny_pseudo_sbi,ConvNeXt-T + SBI,P6,sd,690,0.9459014492753623,0.3739130434782609
+convnext_tiny_pseudo_sbi,ConvNeXt-T + SBI,P6,sdxl,7761,0.9227723167117641,0.18812008761757507
+convnext_tiny_pseudo_vae_sbi,ConvNeXt-T + VAE + SBI,P6,flux_dev,1066,0.9452679643527204,0.4803001876172608
+convnext_tiny_pseudo_vae_sbi,ConvNeXt-T + VAE + SBI,P6,flux_pro,483,0.9423577639751552,0.474120082815735
+convnext_tiny_pseudo_vae_sbi,ConvNeXt-T + VAE + SBI,P6,sd,690,0.9807992753623189,0.7710144927536232
+convnext_tiny_pseudo_vae_sbi,ConvNeXt-T + VAE + SBI,P6,sdxl,7761,0.9677788236052056,0.5901301378688313
+convnext_tiny_pseudo_vae_sbi_deg,ConvNeXt-T + VAE + SBI + degrade,P7,flux_dev,1066,0.9413176829268293,0.1622889305816135
+convnext_tiny_pseudo_vae_sbi_deg,ConvNeXt-T + VAE + SBI + degrade,P7,flux_pro,483,0.9408593167701864,0.17598343685300208
+convnext_tiny_pseudo_vae_sbi_deg,ConvNeXt-T + VAE + SBI + degrade,P7,sd,690,0.9814180434782609,0.6144927536231884
+convnext_tiny_pseudo_vae_sbi_deg,ConvNeXt-T + VAE + SBI + degrade,P7,sdxl,7761,0.9506390155907745,0.22741914701713697
+convnext_tiny_pseudo_vae_deg,ConvNeXt-T + VAE + degrade,P7b,flux_dev,1066,0.8806790806754221,0.08161350844277673
+convnext_tiny_pseudo_vae_deg,ConvNeXt-T + VAE + degrade,P7b,flux_pro,483,0.8039035196687371,0.043478260869565216
+convnext_tiny_pseudo_vae_deg,ConvNeXt-T + VAE + degrade,P7b,sd,690,0.9869081884057971,0.3855072463768116
+convnext_tiny_pseudo_vae_deg,ConvNeXt-T + VAE + degrade,P7b,sdxl,7761,0.9335120087617574,0.13825537946140962
