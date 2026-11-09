@@ -3,6 +3,7 @@ import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { sessionCodec } from './session-cookie.mjs';
 
 const webRoot = fileURLToPath(new URL('./web/', import.meta.url));
 const providers = {
@@ -23,6 +24,14 @@ export function createApp({ env = process.env, fetchImpl = fetch, now = Date.now
   const secure = origin.protocol === 'https:';
   const cookieName = secure ? '__Host-session' : 'session';
   const sessions = new Map();
+  if (env.VERCEL && !env.SESSION_SECRET) throw new Error('SESSION_SECRET is required on Vercel.');
+  const codec = env.SESSION_SECRET ? sessionCodec(env.SESSION_SECRET, origin.origin, now) : null;
+  const saveSession = value => {
+    if (codec) return codec.seal(value);
+    const id = random();
+    sessions.set(id, value);
+    return id;
+  };
   const credentials = (name) => ({ id: env[`${name.toUpperCase()}_CLIENT_ID`], secret: env[`${name.toUpperCase()}_CLIENT_SECRET`] });
   const enabled = (name) => { const c = credentials(name); return Boolean(c.id && (name === 'kakao' || c.secret)); };
   const cookie = (id, age) => `${cookieName}=${id}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${age}${secure ? '; Secure' : ''}`;
@@ -49,7 +58,7 @@ export function createApp({ env = process.env, fetchImpl = fetch, now = Date.now
         res.setHeader('Cache-Control', 'no-store');
         for (const [key, value] of sessions) if (value.expires <= now()) sessions.delete(key);
         const sid = req.headers.cookie?.split(';').map(s => s.trim()).find(s => s.startsWith(`${cookieName}=`))?.slice(cookieName.length + 1);
-        const session = sessions.get(sid);
+        const session = codec ? codec.open(sid) : sessions.get(sid);
         if (req.method === 'GET' && url.pathname === '/api/auth') {
           return send(200, { user: session?.user || null, csrf: session?.csrf || null, providers: Object.keys(providers).map(id => ({ id, enabled: enabled(id) })) });
         }
@@ -68,11 +77,10 @@ export function createApp({ env = process.env, fetchImpl = fetch, now = Date.now
         const callback = `${origin.origin}/auth/${name}/callback`;
         if (action === 'login') {
           if (sessions.size >= 10000) return send(503, { error: 'Please try again later' });
-          const id = random();
           const state = random();
           // A fresh browser-bound transaction also prevents session fixation.
           sessions.delete(sid);
-          sessions.set(id, { expires: now() + 10 * 60 * 1000, pending: { name, state } });
+          const id = saveSession({ expires: now() + 10 * 60 * 1000, pending: { name, state } });
           res.setHeader('Set-Cookie', cookie(id, 600));
           const target = new URL(p.authorize);
           target.search = new URLSearchParams({ response_type: 'code', client_id: c.id, redirect_uri: callback, state, ...(p.scope ? { scope: p.scope } : {}) }).toString();
@@ -93,8 +101,7 @@ export function createApp({ env = process.env, fetchImpl = fetch, now = Date.now
           const id = name === 'google' ? value?.sub : value?.id;
           if (!id || (name === 'naver' && profile.resultcode !== '00')) throw new Error('Missing identity');
           const displayName = name === 'kakao' ? value.kakao_account?.profile?.nickname || value.properties?.nickname : value.name || value.nickname;
-          const newSid = random();
-          sessions.set(newSid, { expires: now() + sessionTTL, csrf: random(), user: { id: `${name}:${id}`, provider: name, name: typeof displayName === 'string' ? displayName.slice(0, 100) : '사용자' } });
+          const newSid = saveSession({ expires: now() + sessionTTL, csrf: random(), user: { id: `${name}:${id}`, provider: name, name: typeof displayName === 'string' ? displayName.slice(0, 100) : '사용자' } });
           res.setHeader('Set-Cookie', cookie(newSid, sessionTTL / 1000));
           return redirect('/');
         } catch (error) {

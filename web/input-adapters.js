@@ -2,6 +2,8 @@ import { fetchImageFile } from './image-import.js';
 import { youtubeVideoId } from './media-links.js';
 
 export const LIMITS = Object.freeze({ imageBytes: 15 * 1024 * 1024, textChars: 20000 });
+export const VIDEO_SERVICE = 'https://duhyeon-ai-video.vercel.app/';
+const videoHandoff = () => ({ status: 'unsupported', serviceUrl: VIDEO_SERVICE, message: '영상은 팀 영상 분석기에서 검사할 수 있어요. 아래 버튼으로 이동해 파일이나 유튜브 Shorts 주소를 입력해 주세요.' });
 export function classifyInput(payload, source = 'typed') {
   if (typeof payload === 'string') {
     const value = payload.trim();
@@ -20,9 +22,9 @@ export async function analyze(input, { signal, onState = () => {}, onResolved = 
   if (input.kind === 'text') {
     return { status: 'unsupported', message: '글은 분석하지 않아요. 얼굴 사진이나 영상 링크를 넣어 주세요.' };
   }
-  if (input.kind === 'video') return { status: 'unsupported', message: '영상 분석은 아직 지원하지 않아요. 모델을 준비하고 있어요.' };
+  if (input.kind === 'video') return videoHandoff();
   if (input.kind === 'url') {
-    if (youtubeVideoId(input.value)) return { status: 'unsupported', message: '유튜브 영상 링크를 확인했어요. 아직 영상 모델과 유튜브 가져오기 서비스가 연결되지 않아 검사할 수 없어요.' };
+    if (youtubeVideoId(input.value)) return videoHandoff();
     onState('loading', '링크에서 파일을 확인하고 있어요.');
     try {
       const file = await fetchImageFile(input.value, { signal, fetchImpl });
@@ -30,7 +32,7 @@ export async function analyze(input, { signal, onState = () => {}, onResolved = 
       onResolved(file);
       return analyze({ kind: 'image', file, source: 'url' }, { signal, onState, imageAnalyzer });
     } catch (error) {
-      if (error.code === 'VIDEO') return { status: 'unsupported', message: '영상 링크예요. 영상 분석은 아직 지원하지 않아요.' };
+      if (error.code === 'VIDEO') return videoHandoff();
       if (error.code === 'PAGE') return { status: 'unsupported', message: '웹페이지 분석은 아직 지원하지 않아요. 이미지 파일의 직접 주소를 넣어 주세요.' };
       throw error;
     }

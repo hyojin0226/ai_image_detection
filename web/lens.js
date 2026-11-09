@@ -102,6 +102,7 @@ function setState(next, message = '') {
   $('lens-message').textContent = message;
   $('cancel-analysis').hidden = !['loading', 'analyzing', 'detecting'].includes(next);
   $('retry-analysis').hidden = !['error', 'unsupported'].includes(next);
+  $('video-service-link').hidden = true;
   $('reset-analysis').hidden = next !== 'result';
   $('lens-readout').hidden = !['result','error','unsupported'].includes(next);
   if (['error','unsupported'].includes(next)) { $('lens-percent').textContent=''; $('lens-verdict').textContent=message; $('score-caption').textContent=''; }
@@ -221,7 +222,7 @@ async function run() {
     const result = await analyze(input, { signal, onResolved: file => { if(token === generation) { morphText(false); current = classifyInput(file,'url'); detectedType='image'; renderChip(); preview(current,token); } }, onState: (state, message) => { if (token === generation) setState(state, message); } });
     if (token !== generation) return;
     releasePreview();
-    if (result.status === 'unsupported') { morphText(false);setState('unsupported', result.message);return; }
+    if (result.status === 'unsupported') { morphText(false);setState('unsupported', result.message); if (result.serviceUrl) $('video-service-link').hidden=false; return; }
     renderExplanation(result);
     stage.dataset.verdict = result.verdict;
     $('lens-percent').textContent = `${(result.real * 100).toFixed(1)}%`;
