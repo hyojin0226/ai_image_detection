@@ -1,0 +1,34 @@
+{
+  "model_name": "convnext_tiny_pseudo_vae_deg",
+  "timm_name": "convnext_tiny.fb_in22k_ft_in1k",
+  "weights": "convnext_tiny_fake_face.pt",
+  "output": "logit of P(real); fake=0, real=1",
+  "input_size": 256,
+  "mean": [
+    0.485,
+    0.456,
+    0.406
+  ],
+  "std": [
+    0.229,
+    0.224,
+    0.225
+  ],
+  "eval_jpeg_quality": 90,
+  "decision_threshold_real": {
+    "face": 0.16,
+    "full": 0.16
+  },
+  "threshold_note": "valid Macro F1 기준. face = 얼굴 crop x2.0 보기, full = 이미지 전체 보기",
+  "training_run": "WSL outputs/exp2/convnext_tiny_pseudo_vae_deg/all (scripts/32_train_cnn.py --model convnext_tiny --holdout all --pseudo vae --degrade)",
+  "test_metrics_face_crop": {
+    "test_id_auc": 0.998,
+    "held_out_test_auc": 0.99,
+    "held_out_fake_recall": 0.938,
+    "held_out_real_recall": 0.954,
+    "held_out_auc_resize_0.5": 0.989,
+    "held_out_auc_blur_1.0": 0.99,
+    "edited_fake_rate_skin_smooth_mid": 0.048,
+    "edited_fake_rate_beauty_mid": 0.062
+  }
+}
