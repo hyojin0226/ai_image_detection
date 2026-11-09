@@ -1,3 +1,4 @@
+import {MODEL_BASE} from './web/model-release.js';
 import http from 'node:http';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
@@ -113,11 +114,14 @@ export function createApp({ env = process.env, fetchImpl = fetch, now = Date.now
       if (!['GET', 'HEAD'].includes(req.method)) return send(405, { error: 'Method not allowed' });
       const pathname = decodeURIComponent(url.pathname);
       // Explicit public-file allowlist: repository files and credentials are never served.
-      if (!/^\/(?:|index\.html|extension-privacy\.html|(?:app|ui|lens|file-types|image-import|input-adapters|batch-input|gradcam|media-links)\.js|(?:style|experience)\.css|icon\.(?:svg|ico)|extension\.zip|model\/[\w.-]+\.(?:json|bin))$/.test(pathname)) return send(404, { error: 'Not found' });
-      const file = path.join(webRoot, pathname === '/' ? 'index.html' : pathname.slice(1));
+      if (!/^\/(?:|index\.html|extension-privacy\.html|(?:model-release|inference-client|inference-worker|diagnostics|app|ui|lens|file-types|image-import|input-adapters|batch-input|gradcam|media-links|video-analysis|browser-engine|video-math)\.js|(?:style|experience)\.css|icon\.(?:svg|ico)|extension\.zip|model\/(?:r-[a-f0-9]{20}\/)?[\w.-]+\.(?:json|bin))$/.test(pathname)) return send(404, { error: 'Not found' });
+      if(pathname.startsWith('/model/r-')&&!pathname.startsWith(MODEL_BASE))return send(404,{error:'Model release not found'});
+      const publicPath=pathname.startsWith(MODEL_BASE)?pathname.replace(MODEL_BASE,'/model/'):pathname;
+      const file = path.join(webRoot, publicPath === '/' ? 'index.html' : publicPath.slice(1));
       const content = await readFile(file);
       const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.bin': 'application/octet-stream', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.zip': 'application/zip' };
-      res.writeHead(200, { 'Content-Type': types[path.extname(file)] });
+      const cache=pathname.startsWith(MODEL_BASE)?'public, max-age=604800, immutable':/\.(js|css)$/.test(pathname)?'public, max-age=300, stale-while-revalidate=86400':'no-cache';
+      res.writeHead(200, { 'Content-Type': types[path.extname(file)], 'Cache-Control':cache });
       res.end(req.method === 'HEAD' ? undefined : content);
     } catch (error) {
       send(error.code === 'ENOENT' ? 404 : 400, { error: 'Request could not be completed' });

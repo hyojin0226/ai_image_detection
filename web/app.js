@@ -1,9 +1,8 @@
 // Detection: same model, preprocessing and threshold as streamlit_app.py, run in the browser with
 // TF.js. Images are queued and analysed one at a time; results are kept in a local history.
 import { classifyFile, supportedImageMime } from './file-types.js';
-import { computeGradcam, overlayGradcam } from './gradcam.js';
-const MODEL_URL = "model/model.json";
-const CONFIG_URL = "model/inference_config.json";
+import { overlayGradcam } from './gradcam.js';
+import { inference, metric } from './inference-client.js';
 const MAX_QUEUE = 20;                 // images per batch
 const MAX_BYTES = 15 * 1024 * 1024;   // per image
 const THUMB_SIZE = 160;               // history stores a small JPEG thumbnail, never the original
@@ -36,38 +35,27 @@ const state = { items: [], running: false, nextId: 1, filter: "all" };
 
 // ── Model ──────────────────────────────────────────────────────────────
 function loadResources() {
-  modelReady = (async () => {
-    try {
-      config = await (await fetch(CONFIG_URL)).json();
-      model = await tf.loadGraphModel(MODEL_URL, {
-        onProgress: (p) => {
-          const percent = Math.round(p * 100);
-          els.loadFill.style.width = `${percent}%`;
-          els.statusText.textContent = `모델 불러오는 중… ${percent}%`;
-        },
-      });
-      // Warm-up so the first real prediction isn't slowed by shader compilation.
-      const [h, w] = config.image_size;
-      tf.tidy(() => model.predict(tf.zeros([1, h, w, 3])));
-      els.status.classList.add("ready");
-      els.statusText.textContent = `모델 준비 완료 (${tf.getBackend()})`;
-      els.thresholdText.textContent = `REAL 확률이 기준선 ${threshold().toFixed(2)} 이상이면 REAL로 판정합니다. 결과는 참고용입니다.`;
-    } catch (err) {
-      console.error(err);
-      els.status.classList.add("failed");
-      els.statusText.textContent = "모델을 불러오지 못했습니다";
-      els.modelError.textContent = "네트워크 연결을 확인한 뒤 새로고침해 주세요.";
-      els.modelError.hidden = false;
-      throw err;
-    }
-  })();
-  modelReady.catch(() => {});
-  return modelReady;
+  if (modelReady) return modelReady;
+  metric('model-load-start');
+  els.status.classList.remove('failed'); els.modelError.hidden=true;
+  modelReady = inference('init').then(result => {
+    config=result.config; model=true;
+    els.status.classList.add('ready');els.statusText.textContent='분석 준비 완료';
+    metric('model-ready',{backend:result.backend});
+    return result;
+  }).catch(error=>{
+    modelReady=null;els.status.classList.add('failed');els.statusText.textContent='모델을 불러오지 못했습니다';
+    els.modelError.textContent='연결을 확인하고 다시 검사해 주세요.';els.modelError.hidden=false;throw error;
+  });
+  modelReady.catch(()=>{}); return modelReady;
 }
+document.addEventListener('fakit:metric',e=>{
+  if(e.detail.name==='model-progress')els.loadFill.style.width=Math.round(e.detail.data.progress*100)+'%';
+});
 const threshold = () => Number(config.decision_threshold_real);
 
-// Equivalent of PIL image.convert("RGB").resize(image_size) → float32 (0–255; the model's own
-// Rescaling layer normalises).
+// Same shape/range as PIL RGB resize; browser resampling is not pixel-identical to PIL.
+// Transparent input is flattened on black. The model's own Rescaling normalises 0–255.
 function inputCanvas(img) {
   const [h, w] = config.image_size;
   const canvas = document.createElement("canvas");
@@ -81,7 +69,12 @@ function inputCanvas(img) {
   ctx.drawImage(img, 0, 0, w, h);
   return canvas;
 }
-function toInputTensor(img) { return tf.tidy(() => tf.browser.fromPixels(inputCanvas(img), 3).toFloat().expandDims(0)); }
+function toInputRGB(img) {
+  const canvas=inputCanvas(img),rgba=canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height).data;
+  const rgb=new Uint8Array(canvas.width*canvas.height*3);
+  for(let i=0,j=0;i<rgba.length;i+=4){rgb[j++]=rgba[i];rgb[j++]=rgba[i+1];rgb[j++]=rgba[i+2];}
+  return rgb;
+}
 
 // requestAnimationFrame stalls in background tabs; never let that hold up a result.
 const nextFrame = () => new Promise((resolve) => {
@@ -158,7 +151,7 @@ async function pump() {
       renderItem(item);
       renderProcess(item, "waiting");
       try {
-        await modelReady;
+        await loadResources();
       } catch {
         state.items.filter((i) => i.status !== "done").forEach((i) => { i.status = "error"; i.error = "모델 없음"; renderItem(i); });
         renderProcess(item, "error");
@@ -178,10 +171,8 @@ async function analyzeItem(item) {
   renderProcess(item, "analyzing");
   await nextFrame();
   try {
-    const input = toInputTensor(item.img);
-    const output = model.predict(input);
-    const probabilityReal = (await output.data())[0];
-    tf.dispose([input, output]);
+    const probabilityReal = await inference('predict',{rgb:toInputRGB(item.img)});
+    if(!Number.isFinite(probabilityReal)||probabilityReal<0||probabilityReal>1)throw Error('잘못된 모델 출력');
     if (!state.items.includes(item)) return;   // removed while analysing
     item.real = probabilityReal;
     item.fake = 1 - probabilityReal;
@@ -463,8 +454,7 @@ document.addEventListener("fakit:route", (e) => {
 window.Fakit.analyzeImage = async (file, { signal, onState = () => {} } = {}) => {
   signal?.throwIfAborted();
   onState('loading', '이미지 분석을 준비하고 있어요.');
-  if (els.status.classList.contains('failed')) { els.status.classList.remove('failed'); loadResources(); }
-  await modelReady;
+  await loadResources();
   signal?.throwIfAborted();
   const url = URL.createObjectURL(file);
   const img = new Image();
@@ -485,17 +475,17 @@ window.Fakit.analyzeImage = async (file, { signal, onState = () => {} } = {}) =>
     let explanation, explanationError;
     onState('analyzing', 'AI 판정에 영향을 준 영역을 계산하고 있어요.');
     await nextFrame();
-    let explainInput;
     try {
-      explainInput = toInputTensor(img);
-      const map = await computeGradcam(tf, model, explainInput, item.real, { signal });
+      const map = await inference('explain',{rgb:toInputRGB(img),real:item.real});
+      signal?.throwIfAborted();
       explanation = { image: overlayGradcam(img, map), target: map.target, layer: map.layer };
     } catch (error) {
       signal?.throwIfAborted();
       explanationError = '판별 점수는 계산했지만 이 환경에서는 Grad-CAM을 표시하지 못했어요.';
       console.warn('Grad-CAM unavailable:', error.message);
-    } finally { explainInput?.dispose(); }
+    }
     signal?.throwIfAborted();
+    metric('image-result');
     return { status: 'result', real: item.real, fake: item.fake, verdict: item.verdict, explanation, explanationError };
   } finally {
     signal?.removeEventListener('abort', cancel);
@@ -508,4 +498,11 @@ window.Fakit.analyzeImage = async (file, { signal, onState = () => {} } = {}) =>
 };
 refreshHistoryViews();
 if (routeName() === 'history') renderHistoryPage();
-loadResources();
+window.Fakit.prepareImageModel = loadResources;
+requestAnimationFrame(()=>requestAnimationFrame(()=>{
+  setTimeout(()=>{
+    const start=()=>loadResources().catch(()=>{});
+    if('requestIdleCallback' in window)requestIdleCallback(start,{timeout:2000});else start();
+  },1800);
+}));
+metric('ui-ready');

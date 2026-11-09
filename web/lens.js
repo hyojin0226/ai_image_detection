@@ -1,5 +1,7 @@
 import { analyze, classifyInput, LIMITS } from './input-adapters.js';
 import { analyzeBatch, MAX_ATTACHMENTS } from './batch-input.js';
+import { analyzeVideo, renderVideoResult, updateVideoProgress } from './video-analysis.js';
+window.Fakit.analyzeVideo = analyzeVideo;
 const $ = id => document.getElementById(id);
 const stage = $('composer'), art = $('lens-art'), surface = $('lens-stage'), lens = $('lens-target');
 const field = $('unified-input'), submit = $('inspect-button');
@@ -42,6 +44,7 @@ async function thumbnail(input, token) {
   } catch {} finally {URL.revokeObjectURL(url);img.removeAttribute('src');}
 }
 function renderExplanation(result) {
+  renderVideoResult(result);
   const panel=$('explanation-panel'), image=$('explanation-image');
   panel.hidden=!result?.explanation && !result?.explanationError;
   image.hidden=!result?.explanation;
@@ -53,7 +56,7 @@ function showResult(result) {
   if(result.status!=='result') {delete stage.dataset.verdict;setState(result.status,result.message);return;}
   stage.dataset.verdict=result.verdict;
   $('lens-percent').textContent=(result.real*100).toFixed(1)+'%';
-  $('lens-verdict').textContent=result.verdict==='real'?'실제 사진으로 분류':'AI 생성으로 분류';
+  $('lens-verdict').textContent=result.verdict==='real'?(result.video?'실제 촬영 영상으로 분류':'실제 사진으로 분류'):'AI 생성으로 분류';
   $('score-caption').textContent='REAL 점수';
   setState('result','점수는 모델 출력이며 진위의 확정이나 정답률이 아니에요.');
 }
@@ -99,6 +102,7 @@ $('close-input').onclick=()=>{reset();lens.focus({preventScroll:true});};
 const busy = () => ['loading', 'analyzing'].includes(phase);
 function setState(next, message = '') {
   phase = next; stage.dataset.state = next;
+  if (!['loading','analyzing'].includes(next)) updateVideoProgress();
   $('lens-message').textContent = message;
   $('cancel-analysis').hidden = !['loading', 'analyzing', 'detecting'].includes(next);
   $('retry-analysis').hidden = !['error', 'unsupported'].includes(next);
@@ -137,8 +141,9 @@ function renderChip() {
 async function preview(input, token) {
   releasePreview();
   if (input.file && ['image','video'].includes(input.kind)) {
-    // Do not decode oversized images or videos when no video analyzer exists.
+    // Bound decoding before creating any preview resources.
     if (input.kind === 'image' && input.file.size > LIMITS.imageBytes) return;
+    if (input.kind === 'video' && input.file.size > LIMITS.videoBytes) return;
     previewUrl = URL.createObjectURL(input.file);
     if (input.kind === 'image') {
       $('lens-image').setAttribute('href', previewUrl);
@@ -169,11 +174,17 @@ export async function handleInput(source, payload) {
   if(!retain)clearAttachments();
   if(window.Fakit.routeName()!=='home')window.Fakit.go('home');
   if(isFiles) {
-    const files=payload instanceof Blob?[payload]:[...payload];
+    let files=payload instanceof Blob?[payload]:[...payload];
     if(!files.length)return;
+    if (attachments.some(item=>item.kind==='video') && !files.some(file=>file.type.startsWith('video/')))clearAttachments();
+    if (files.some(file=>file.type.startsWith('video/')) && (files.length>1 || attachments.length)) {
+      clearAttachments(); files=[files.find(file=>file.type.startsWith('video/'))];
+      window.Fakit.toast('영상은 한 번에 한 개씩 검사해요.');
+    }
     const remaining=MAX_ATTACHMENTS-attachments.length;
     attachments.push(...files.slice(0,remaining).map(file=>({...classifyInput(file,source),name:file.name||'붙여넣은 이미지'})));
     current=attachments[0];field.value='';morphText(false);
+    if(attachments.some(item=>item.kind==='image'))window.Fakit.prepareImageModel().catch(()=>{});
     $('input-note').textContent=files.length>remaining?'최대 20장까지 검사해요. 초과한 파일은 제외했어요.':attachments.length>1?attachments.length+'개 파일을 순서대로 검사해요':current.name;
   } else {
     if(!payload.trim()) {reset();openInput();morphText(true);field.focus({preventScroll:true});return;}
@@ -226,7 +237,7 @@ async function run() {
     renderExplanation(result);
     stage.dataset.verdict = result.verdict;
     $('lens-percent').textContent = `${(result.real * 100).toFixed(1)}%`;
-    $('lens-verdict').textContent = result.verdict === 'real' ? '실제 사진으로 분류' : 'AI 생성으로 분류';
+    $('lens-verdict').textContent = result.verdict === 'real' ? (result.video ? '실제 촬영 영상으로 분류' : '실제 사진으로 분류') : 'AI 생성으로 분류';
     $('score-caption').textContent = 'REAL 점수';
     setState('result', '검사가 끝났어요. 점수는 모델 출력이며 진위의 확정이나 정답률이 아니에요.');
     // Results/history keep only scores and the existing small local thumbnail.

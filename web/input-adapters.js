@@ -1,7 +1,7 @@
 import { fetchImageFile } from './image-import.js';
 import { youtubeVideoId } from './media-links.js';
 
-export const LIMITS = Object.freeze({ imageBytes: 15 * 1024 * 1024, textChars: 20000 });
+export const LIMITS = Object.freeze({ imageBytes: 15 * 1024 * 1024, videoBytes: 90 * 1024 * 1024, textChars: 20000 });
 export const VIDEO_SERVICE = 'https://duhyeon-ai-video.vercel.app/';
 const videoHandoff = () => ({ status: 'unsupported', serviceUrl: VIDEO_SERVICE, message: '영상은 팀 영상 분석기에서 검사할 수 있어요. 아래 버튼으로 이동해 파일이나 유튜브 Shorts 주소를 입력해 주세요.' });
 export function classifyInput(payload, source = 'typed') {
@@ -17,12 +17,17 @@ export function classifyInput(payload, source = 'typed') {
 
 /** Result: {status:'result', real, fake, verdict} | {status:'unsupported', message}.
  * Missing models deliberately return no scores, sentences, frames or progress. */
-export async function analyze(input, { signal, onState = () => {}, onResolved = () => {}, imageAnalyzer = globalThis.Fakit?.analyzeImage, fetchImpl } = {}) {
+export async function analyze(input, { signal, onState = () => {}, onResolved = () => {}, imageAnalyzer = globalThis.Fakit?.analyzeImage, videoAnalyzer = globalThis.Fakit?.analyzeVideo, fetchImpl } = {}) {
   signal?.throwIfAborted();
   if (input.kind === 'text') {
     return { status: 'unsupported', message: '글은 분석하지 않아요. 얼굴 사진이나 영상 링크를 넣어 주세요.' };
   }
-  if (input.kind === 'video') return videoHandoff();
+  if (input.kind === 'video') {
+    if (!videoAnalyzer) return videoHandoff();
+    if (!input.file?.type.startsWith('video/')) throw new Error('영상 파일을 선택해 주세요.');
+    if (input.file.size > LIMITS.videoBytes) throw new Error('영상은 90MB 이하만 검사할 수 있어요.');
+    return videoAnalyzer(input.file, { signal, onState });
+  }
   if (input.kind === 'url') {
     if (youtubeVideoId(input.value)) return videoHandoff();
     onState('loading', '링크에서 파일을 확인하고 있어요.');

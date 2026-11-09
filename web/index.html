@@ -105,12 +105,12 @@
           <input id="unified-file" type="file" accept="image/*,video/*" multiple hidden>
           <input id="camera-file" type="file" accept="image/*" capture="environment" hidden>
           <input id="album-file" type="file" accept="image/*,video/*" multiple hidden>
-          <p class="format-help">얼굴 사진 JPG·PNG·WEBP · 최대 20장 · 장당 15MB / 영상은 팀 분석기에서 검사</p>
-          <p class="privacy-note"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3M5 10h14v11H5Z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>사진은 서버로 올라가지 않아요. 기기 안에서만 분석해요.</span></p>
-          <p class="privacy-extra">영상은 별도 팀 분석기로 이동해 검사합니다. 사진 링크는 원본 사이트에 직접 요청해요.</p>
+          <p class="format-help">사진 JPG·PNG·WEBP · 20장, 장당 15MB / 영상 MP4·WebM · 1개, 3~40초·90MB</p>
+          <p class="privacy-note"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3M5 10h14v11H5Z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>사진과 영상 파일은 서버로 올라가지 않아요. 기기 안에서 분석해요.</span></p>
+          <p class="privacy-extra">사진 링크는 원본 사이트에 요청해요. YouTube 자동 가져오기는 아직 Fakit에 연결되지 않았어요.</p>
           </div>
           <div id="attachment-list" hidden aria-label="첨부 파일과 개별 결과"></div>
-          <div class="lens-feedback"><p id="lens-message" role="status" aria-live="polite" aria-atomic="true"></p><button type="button" id="cancel-analysis" hidden>취소</button><button type="button" id="retry-analysis" hidden>다시 시도</button><a id="video-service-link" href="https://duhyeon-ai-video.vercel.app/" target="_blank" rel="noopener noreferrer" hidden>영상 분석기 열기 ↗</a><button type="button" id="reset-analysis" hidden>다시 검사</button></div>
+          <progress id="video-progress" hidden max="64" value="0" aria-label="영상 분석 진행"></progress><div class="lens-feedback"><p id="lens-message" role="status" aria-live="polite" aria-atomic="true"></p><button type="button" id="cancel-analysis" hidden>취소</button><button type="button" id="retry-analysis" hidden>다시 시도</button><a id="video-service-link" href="https://duhyeon-ai-video.vercel.app/" target="_blank" rel="noopener noreferrer" hidden>영상 분석기 열기 ↗</a><button type="button" id="reset-analysis" hidden>다시 검사</button></div>
         </div>
       </section>
       <section class="recent" id="recent-strip" hidden aria-label="최근 검사 기록">
@@ -125,7 +125,15 @@
       <section id="explanation-panel" class="explanation-panel" hidden aria-labelledby="explanation-title"><h2 id="explanation-title">AI 판정에 영향을 준 영역</h2><img id="explanation-image" alt="AI 판정 기여도를 표시한 Grad-CAM" hidden><p id="explanation-message"></p><p class="small">Grad-CAM은 모델이 AI 범주로 판단할 때 참고한 영역입니다. 밝은 주황색일수록 상대적인 기여도가 높습니다. 위조 위치나 정확도를 뜻하지 않으며, 실제 사진 판정에서도 표시될 수 있습니다.</p></section>
       <div hidden aria-hidden="true"><div id="model-status"><span id="status-text"></span><span id="loadbar-fill"></span></div><p id="model-error" hidden></p><div id="dropzone"></div><input id="file-input" type="file"><button id="paste-btn"></button><p id="error" hidden></p></div>
 
-      <section class="extension-banner"><div><h2>영상 · YouTube Shorts</h2><p>64프레임 분석과 프레임별 Grad-CAM · 3~40초, 최대 90MB</p><p>별도 팀 분석기에서 검사합니다. 영상은 운영자 서버로 전송되며 원본은 분석 후 삭제, 결과는 최대 1시간 보관합니다.</p></div><a href="https://duhyeon-ai-video.vercel.app/" target="_blank" rel="noopener noreferrer">영상 분석기 열기 ↗</a></section><section class="extension-banner" aria-labelledby="extension-title">
+      <section id="video-result" class="video-result" hidden aria-labelledby="video-result-title">
+  <h2 id="video-result-title">영상의 판단 근거</h2><p id="video-meta"></p>
+  <h3>구간별 AI 점수</h3><div id="video-segments" class="video-segments"></div>
+  <h3>판정에 영향을 준 주요 프레임</h3><p>왼쪽은 원본, 오른쪽은 최종 분류에 기여한 영역입니다. 프레임을 누르면 확대합니다.</p>
+  <div id="video-main-frames" class="video-frame-grid"></div>
+  <details id="video-details"><summary id="video-details-title">나머지 프레임</summary><div id="video-detail-frames" class="video-frame-grid"></div></details>
+  <p id="video-limits" class="small"></p><p class="small">영상 결과와 프레임은 현재 화면에만 표시되며 검사 기록에는 저장하지 않습니다. 다시 검사하면 해제됩니다.</p>
+</section>
+<dialog id="video-zoom" class="video-zoom"><button id="video-zoom-close" type="button">닫기</button><h2 id="video-zoom-title"></h2><img id="video-zoom-image" alt="영상 프레임 원본과 Grad-CAM 비교"><p>Grad-CAM은 위조 위치나 정답의 증거가 아닙니다.</p></dialog><section class="extension-banner" aria-labelledby="extension-title">
         <div class="extension-symbol" aria-hidden="true">↗</div>
         <div><h2 id="extension-title">다른 방법</h2><p>Chrome에서 이미지를 우클릭해 가져오기</p></div>
         <details class="extension-install"><summary>무료로 설치하기 <span aria-hidden="true">↓</span></summary><div class="extension-instructions">
@@ -219,7 +227,7 @@
     <section class="page" data-page="results">
       <div class="page-head"><h1>결과 읽는 법</h1><p class="lead">분류 결과와 사진의 실제 출처는 다를 수 있습니다.</p></div>
       <section class="block"><h2>REAL과 AI는 모델의 분류입니다</h2><div class="two-col"><div><h3>REAL</h3><p class="body">실제 얼굴 사진 범주로 분류했다는 뜻입니다. 촬영 사실, 인물의 신원, 보정 여부까지 확인한 결과는 아닙니다.</p></div><div><h3>AI</h3><p class="body">AI 생성 얼굴 범주로 분류했다는 뜻입니다. 생성 프로그램이나 제작자를 알아낸 것은 아니며 실제 사진도 잘못 분류할 수 있습니다.</p></div></div></section>
-      <section class="block"><h2>왜 50%가 아닌 0.24를 기준으로 하나요?</h2><p class="body">현재 모델은 REAL 점수 하나를 출력합니다. 설정된 기준선 0.24 이상은 REAL, 미만은 AI로 표시합니다. 두 범주의 숫자 중 큰 값을 고르는 방식이 아닙니다.</p><div class="reading-example"><b>예: REAL 0.30 / AI 0.70 → REAL 분류</b><p>REAL 0.30이 기준선 0.24 이상이기 때문입니다. 설명을 위한 예시이며 업로드한 파일의 결과가 아닙니다.</p></div><p class="body">이 점수를 해당 사진에 대한 정답 확률로 해석하면 안 됩니다. 기준선과의 거리만으로 신뢰도 등급을 만들 수도 없습니다.</p></section>
+      <section class="block"><h2>영상은 어떻게 판단하나요?</h2><p class="body">3~40초 영상에서 최대 64프레임을 추출합니다. 이미지 모델의 특징을 영상 전용 분류기로 모아 판정하며, AI 점수가 0.5 이상이면 AI 생성으로 분류합니다. 사진의 REAL 기준값 0.24와는 다릅니다. 구간별 점수와 프레임의 Grad-CAM은 판단을 살펴보는 자료이며, 위조 위치나 정답의 증거가 아닙니다.</p></section><section class="block"><h2>왜 사진은 50%가 아닌 0.24를 기준으로 하나요?</h2><p class="body">현재 사진 모델은 REAL 점수 하나를 출력합니다. 설정된 기준선 0.24 이상은 REAL, 미만은 AI로 표시합니다. 두 범주의 숫자 중 큰 값을 고르는 방식이 아닙니다.</p><div class="reading-example"><b>예: REAL 0.30 / AI 0.70 → REAL 분류</b><p>REAL 0.30이 기준선 0.24 이상이기 때문입니다. 설명을 위한 예시이며 업로드한 파일의 결과가 아닙니다.</p></div><p class="body">이 점수를 해당 사진에 대한 정답 확률로 해석하면 안 됩니다. 기준선과의 거리만으로 신뢰도 등급을 만들 수도 없습니다.</p></section>
       <section class="block"><h2>예상과 다른 결과가 나왔다면</h2><ol class="action-list"><li><b>지원 대상을 확인하세요.</b><span>현재 모델은 얼굴 이미지용입니다. 풍경·사물·문서 사진에 나온 숫자를 진위 판정에 사용하지 마세요.</span></li><li><b>가능하면 원본으로 다시 확인하세요.</b><span>스크린샷, 재저장, 필터·보정에 따라 입력이 달라집니다. 원본과 편집본의 결과 차이 자체가 조작의 증거는 아닙니다.</span></li><li><b>최초 게시물과 제작 경로를 확인하세요.</b><span>게시 날짜, 원본 파일, 촬영·제작 설명 등 별도의 정보를 함께 확인하세요. 탐지 결과만으로 타인의 제작 과정을 단정하지 마세요.</span></li></ol><a class="btn btn-soft" href="#/">다른 파일 분석</a></section>
       <section class="block"><h2>분석 화면에서 볼 수 없는 것</h2><p class="body">분류 점수는 사진 전체에 대한 결과입니다. Grad-CAM은 AI 판정에 영향을 준 영역을 보여주지만 위조된 부위를 찾아낸 결과가 아닙니다. 사용한 생성기나 생성 시각은 알아낼 수 없고, REAL 판정도 부분 조작이 없다는 보장이 아닙니다.</p></section>
     </section>
@@ -248,7 +256,7 @@
       </section>
 
       <section class="block">
-        <h2>파일을 구분하는 방법</h2><p class="body">같은 입력창에서 파일 종류를 확인합니다. 현재 분석 가능한 파일은 JPG·PNG·WEBP 얼굴 이미지입니다. 영상·YouTube Shorts는 팀의 별도 영상 분석기로 연결합니다. 영상은 3~40초·90MB 이하이며 운영자의 분석 서버가 켜져 있어야 합니다. 글·PDF·DOCX는 분석 대상이 아닙니다.</p>
+        <h2>파일을 구분하는 방법</h2><p class="body">같은 입력창에서 파일 종류를 확인합니다. 사진은 JPG·PNG·WEBP 얼굴 이미지를 지원합니다. MP4·WebM 영상은 3~40초·90MB 이하를 브라우저에서 분석합니다. 영상은 한 번에 한 개만 검사합니다. YouTube 자동 가져오기는 아직 연결되지 않아 영상 파일을 직접 선택해야 합니다. 글·PDF·DOCX는 분석 대상이 아닙니다.</p>
       </section>
       <section class="block">
         <h2>문제가 생겼을 때</h2>
@@ -269,7 +277,7 @@
           <details><summary>사진이 서버로 전송되나요?</summary><p>아니요. 처음 한 번 모델(약 41MB)을 내려받은 뒤에는 모든 분석이 브라우저 안에서 이루어집니다. 업로드한 이미지는 어디로도 전송되지 않습니다.</p></details>
           <details><summary>기록은 어디에 저장되나요?</summary><p>이 브라우저의 저장소(localStorage)에 축소된 미리보기와 판정 결과만 저장됩니다. 기록 페이지에서 끄거나 모두 삭제할 수 있습니다.</p></details>
           <details><summary>로그인하면 무엇이 달라지나요?</summary><p>카카오·네이버·구글 계정으로 로그인할 수 있습니다. 현재 기록은 로그인 여부와 관계없이 이 브라우저에만 저장되며 기기 간 동기화는 제공하지 않습니다. 준비 중으로 표시된 로그인은 아직 사용할 수 없습니다.</p></details>
-          <details><summary>REAL 확률이 기준선 근처예요.</summary><p>0.24는 분류 기준입니다. 가까운 값은 출력이 조금만 달라져도 분류가 바뀔 수 있습니다. 이 거리만으로 모델의 확신 정도를 알 수는 없습니다. 원본과 출처를 함께 확인하세요.</p></details>
+          <details><summary>REAL 확률이 기준선 근처예요.</summary><p>사진 모델의 0.24는 분류 기준입니다. 가까운 값은 출력이 조금만 달라져도 분류가 바뀔 수 있습니다. 이 거리만으로 모델의 확신 정도를 알 수는 없습니다. 원본과 출처를 함께 확인하세요.</p></details>
         </div>
       </section>
     </section>
@@ -279,7 +287,7 @@
       <div class="page-head">
         <p class="eyebrow">About</p>
         <h1>Fakit 소개</h1>
-        <p class="lead">Fakit은 AI가 만든 콘텐츠를 가려내는 탐지 도구입니다. 현재 얼굴 사진 판별과 Grad-CAM 설명을 제공합니다. 얼굴 영상 분석은 모델 연결 후 제공할 예정입니다.</p>
+        <p class="lead">Fakit은 AI가 만든 콘텐츠를 가려내는 탐지 도구입니다. 현재 얼굴 사진 판별과 Grad-CAM 설명을 제공합니다. 영상 파일은 8개 구간의 64프레임을 브라우저에서 분석하고, 구간 점수와 Grad-CAM을 제공합니다.</p>
       </div>
       <div class="two-col">
         <section class="block">
@@ -290,7 +298,7 @@
           <h2>로드맵</h2>
           <ul class="roadmap">
             <li class="done"><b>이미지 탐지</b><span>통합 입력 · 이미지 판별 · 기기 내 기록</span></li>
-            <li><b>모델 검증</b><span>중복 제거 · 미학습 생성기 평가 · 3개 모델 비교 완료, 배포 모델 교체는 검토 중</span></li><li><b>추가 형식</b><span>얼굴 영상 · 유튜브 쇼츠 모델 연결 대기</span></li>
+            <li><b>모델 검증</b><span>중복 제거 · 미학습 생성기 평가 · 3개 모델 비교 완료, 배포 모델 교체는 검토 중</span></li><li><b>추가 형식</b><span>영상 파일 64프레임 분석 연결 · YouTube 자동 가져오기 미연결</span></li>
             <li><b>계정 연동</b><span>카카오 · 네이버 · 구글 간편 로그인 · 서비스별 설정 후 사용 가능</span></li>
           </ul>
         </section>
@@ -400,7 +408,7 @@
 
   <script src="ui.js"></script>
 
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+  <script src="diagnostics.js"></script>
   <script type="module" src="app.js"></script>
   <script type="module" src="lens.js"></script>
 </body>
