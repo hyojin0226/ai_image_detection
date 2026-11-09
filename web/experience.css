@@ -1,7 +1,13 @@
 /* A single stage: chromatic offset outside, a clear lens inside. */
-:root { --purple:#5B2EE0; --purple-deep:#4721b8; --ink:#14111F; --body:#393641; --muted:#68646d; --muted-dim:#68646d; --paper:#F6F4EF; --line:#dcd8d0; --shadow:none; --shadow-sm:none; }
+:root {
+  --purple:#5B2EE0; --purple-deep:#4721b8; --ink:#14111F; --body:#393641;
+  --muted:#68646d; --muted-dim:#68646d; --paper:#fff;
+  --line:#e9e4f0; --line-strong:#ddd4eb; --shadow:none; --shadow-sm:none;
+  --page-wash: radial-gradient(ellipse at 18% 26%, #f6f1ff, transparent 55%),
+    radial-gradient(ellipse at 92% 42%, #f1f5ff, transparent 53%), var(--paper);
+}
 body,html { background:var(--paper); }
-body { padding-bottom:0; }
+body { min-height:100vh; padding-bottom:0; background:var(--page-wash); }
 .backdrop,.brand-name,.dock { display:none; }
 .nav { background:var(--paper); backdrop-filter:none; box-shadow:none; border-bottom:1px solid var(--line); }
 .brand-mark { width:24px; height:24px; }
@@ -429,14 +435,12 @@ body[data-route="home"] .dock { display: none; }
 @keyframes intro-in { from { transform: translateY(18%); opacity: 0; } }
 
 
-/* Keep both entry screens on the same white and lavender palette. */
-body:is([data-route="image"], [data-route="video"]) {
-  --paper: #fff;
-  --surface: #fff;
-  --line: #e9e4f0;
-  background: radial-gradient(ellipse at 18% 26%, #f6f1ff, transparent 55%),
-    radial-gradient(ellipse at 92% 42%, #f1f5ff, transparent 53%), #fff;
-}
+/* Carry the daylight palette through the supporting pages. */
+.model-finding, .model-reading, .model-evidence, .model-detail, .research-table th, .research-table td { border-color: var(--line); }
+.research-table thead { background: var(--purple-tint); }
+[data-page="history"] .empty, #history-list .history-card .recent-item { background: var(--surface); }
+[data-page="history"] .chip.is-on { background: #eee6fb; border-color: var(--line-strong); color: #4d2993; box-shadow: none; }
+
 body:is([data-route="image"], [data-route="video"]) .nav-inner { justify-content: flex-start; gap: clamp(8px, 2vw, 24px); }
 body:is([data-route="image"], [data-route="video"]) .nav-right { margin-left: auto; }
 body:is([data-route="image"], [data-route="video"]) .classifier-switch { display: inline-flex; gap: 2px; }
