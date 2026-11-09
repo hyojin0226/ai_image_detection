@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
   <link rel="stylesheet" href="/style.css">
-  <link rel="stylesheet" href="/experience.css?v=intro">
+  <link rel="stylesheet" href="/experience.css?v=night">
   <script>document.documentElement.classList.add("js");</script>
 </head>
 <body data-route="home">
@@ -105,7 +105,7 @@
           <a href="/video" data-route="video">영상 검사</a>
         </nav>
       </div>
-      <section id="composer" class="unified-stage" data-intro="true" data-state="idle" aria-label="통합 검사">
+      <section id="composer" class="unified-stage" data-state="idle" aria-label="통합 검사">
         <div class="lens-stage" id="lens-stage">
           <div id="text-frame" aria-label="링크 입력 영역"></div>
           <div id="photo-deck" aria-hidden="true"></div>
@@ -118,11 +118,11 @@
             </defs>
             <g class="word-outside"><use href="#word-shape" class="rgb-red" x="-2"/><use href="#word-shape" class="rgb-blue" x="2"/><use href="#word-shape"/></g>
             <g clip-path="url(#lens-clip)" id="lens-interior">
-              <rect width="100%" height="100%" fill="#F6F4EF"/>
+              <rect width="100%" height="100%" fill="var(--paper)"/>
               <use href="#word-shape" id="clear-word"/>
               <g clip-path="url(#lens-core-clip)" id="core-layer"><use href="#word-shape" id="core-word"/></g>
               <image id="lens-image" preserveAspectRatio="xMidYMid slice" visibility="hidden"/>
-              <text id="lens-excerpt" text-anchor="middle" visibility="hidden" font-size="18" fill="#14111F"></text>
+              <text id="lens-excerpt" text-anchor="middle" visibility="hidden" font-size="18" fill="var(--ink)"></text>
             </g>
           </svg>
           <button id="lens-target" type="button" aria-label="파일 선택 또는 입력 검사"><span class="lens-optics" aria-hidden="true"><span class="lens-glint"></span></span><span id="lens-ready" class="lens-ready" aria-label="이미지 분석 준비 완료" hidden></span><span class="lens-scan" aria-hidden="true"></span><span id="lens-readout" hidden><strong id="lens-percent"></strong><span id="lens-verdict"></span><small id="score-caption"></small></span></button>
@@ -452,9 +452,9 @@
     <p id="gradcam-message" role="status"></p><div id="gradcam-images" class="gradcam-grid"></div>
     <p class="small">Grad-CAM은 모델의 판단에 기여한 영역을 보여줍니다. 색의 강도는 이 시각화 안에서의 상대적 기여도이며 조작 여부를 확정하는 증거가 아닙니다.</p>
   </dialog>
-  <script src="/ui.js?v=intro"></script>
+  <script src="/ui.js?v=night"></script>
 
   <script src="/diagnostics.js"></script>
-  <script type="module" src="/classifier-entry.js"></script>
+  <script type="module" src="/classifier-entry.js?v=night"></script>
 </body>
 </html>

@@ -15,12 +15,11 @@ const touch = matchMedia('(pointer: coarse)').matches;
 const labels = { image: '이미지', video: '영상', text: '지원하지 않는 입력', url: '링크', unknown: '파일' };
 let current = null, phase = 'idle', controller = null, generation = 0, previewUrl = null, video = null;
 let width = 1000, height = 440, radius = 130, x = 500, y = 220, tx = 500, ty = 220;
-let frame = 0, introStart = performance.now(), introDone = reduced.matches, dragging = 0, beforeDrag = 'idle';
+let frame = 0, dragging = 0, beforeDrag = 'idle';
 let displayedResult = null;
 let attachments = [], textMode=false;
 const inputForm=$('unified-form'), formHome=document.createComment('input form home');
 inputForm.before(formHome);
-stage.dataset.intro=reduced.matches?'false':'true';
 function morphText(enabled) {
   if(textMode===enabled)return;
   textMode=enabled;
@@ -177,7 +176,6 @@ export async function handleInput(source, payload) {
   const isFiles=typeof payload!=='string';
   const retain=isFiles && attachments.length && phase!=='result' && attachments.every(item=>!item.result);
   abortRun(); releasePreview();
-  introDone=true; stage.dataset.intro='false';
   if(!retain)clearAttachments();
   if(isFiles) {
     let files=payload instanceof Blob?[payload]:[...payload];
@@ -314,7 +312,7 @@ function layout() {
   if (phase==='dragover') radius=Math.min(radius*1.04,width*.45,height*.46);
   art.setAttribute('viewBox',`0 0 ${width} ${height}`);
   const word=$('word-shape'); word.setAttribute('x',width/2); word.setAttribute('y',active ? (mobile ? 70 : height*.46) : height*.63);
-  const logoSize=width*(active ? .30 : .36);
+  const logoSize=Math.min(width*(active ? .30 : .36), height*(active ? .53 : .68));
   word.removeAttribute('textLength');word.removeAttribute('lengthAdjust');
   word.setAttribute('font-size',logoSize);word.setAttribute('letter-spacing',-logoSize*.045);
   if (active || phase==='dragover' || reduced.matches) { tx=width/2; ty=active ? height-radius-12 : height/2; }
@@ -357,31 +355,23 @@ function tick(now) {
   frame=0;
   const dt=Math.min(.04,Math.max(.001,(now-(lastTime||now-16))/1000)); lastTime=now;
   if(document.hidden || document.body.dataset.route!==mode)return;
-  if(!introDone && !current) {
-    const t=Math.min((now-introStart)/1800,1);
-    const a=t<.35 ? t/.35 : (t-.35)/.65;
-    x=t<.35 ? width*.91+(width*.23-width*.91)*a : width*.23+(width*.5-width*.23)*a;
-    y=height*.5; draw(x,y,radius*Math.min(1,.09+t*3));
-    if(t===1) {introDone=true;stage.dataset.intro='false';openInput();}
-  } else {
-    if(touch && phase==='idle' && !current && !reduced.matches) {tx=width/2+Math.sin(now/1800)*9;ty=height/2+Math.cos(now/2100)*7;}
-    if(reduced.matches) {x=tx;y=ty;vx=vy=tiltX=tiltY=0;}
-    else {
-      // Critically damped spring, integrated in seconds: identical feel at 60/120 Hz.
-      const omega=12, decay=Math.exp(-omega*dt);
-      const dx=x-tx,dy=y-ty, ax=vx+omega*dx,ay=vy+omega*dy;
-      x=tx+(dx+ax*dt)*decay; y=ty+(dy+ay*dt)*decay;
-      vx=(vx-omega*ax*dt)*decay;vy=(vy-omega*ay*dt)*decay;
-      const ease=1-Math.exp(-9*dt);
-      tiltX+=(Math.max(-7,Math.min(7,-vy*.018))-tiltX)*ease;
-      tiltY+=(Math.max(-7,Math.min(7,vx*.018))-tiltY)*ease;
-    }
-    draw(x,y,radius);
+  if(touch && phase==='idle' && !current && !reduced.matches) {tx=width/2+Math.sin(now/1800)*9;ty=height/2+Math.cos(now/2100)*7;}
+  if(reduced.matches) {x=tx;y=ty;vx=vy=tiltX=tiltY=0;}
+  else {
+    // Critically damped spring, integrated in seconds: identical feel at 60/120 Hz.
+    const omega=12, decay=Math.exp(-omega*dt);
+    const dx=x-tx,dy=y-ty, ax=vx+omega*dx,ay=vy+omega*dy;
+    x=tx+(dx+ax*dt)*decay; y=ty+(dy+ay*dt)*decay;
+    vx=(vx-omega*ax*dt)*decay;vy=(vy-omega*ay*dt)*decay;
+    const ease=1-Math.exp(-9*dt);
+    tiltX+=(Math.max(-7,Math.min(7,-vy*.018))-tiltX)*ease;
+    tiltY+=(Math.max(-7,Math.min(7,vx*.018))-tiltY)*ease;
   }
-  if(!reduced.matches && (!introDone || touch || Math.abs(tx-x)+Math.abs(ty-y)+Math.abs(tiltX)+Math.abs(tiltY)>.03)) frame=requestAnimationFrame(tick);
+  draw(x,y,radius);
+  if(!reduced.matches && (touch || Math.abs(tx-x)+Math.abs(ty-y)+Math.abs(tiltX)+Math.abs(tiltY)>.03)) frame=requestAnimationFrame(tick);
 }
 function startMotion(){if(!frame && !document.hidden)frame=requestAnimationFrame(tick);}
-surface.addEventListener('pointermove',e=>{if(touch||current||phase!=='idle'||reduced.matches||!introDone)return;const b=surface.getBoundingClientRect();tx=Math.max(radius,Math.min(width-radius,e.clientX-b.left));ty=Math.max(radius,Math.min(height-radius,e.clientY-b.top));startMotion();});
+surface.addEventListener('pointermove',e=>{if(touch||current||phase!=='idle'||reduced.matches)return;const b=surface.getBoundingClientRect();tx=Math.max(radius,Math.min(width-radius,e.clientX-b.left));ty=Math.max(radius,Math.min(height-radius,e.clientY-b.top));startMotion();});
 surface.addEventListener('pointerleave',()=>{if(!current){tx=width/2;ty=height/2;startMotion();}});
 new ResizeObserver(()=>{layout();startMotion();}).observe(surface);
 document.addEventListener('visibilitychange',()=>{document.documentElement.dataset.paused=String(document.hidden);if(document.hidden){cancelAnimationFrame(frame);frame=0;lastTime=0;}else startMotion();});
@@ -395,7 +385,7 @@ document.addEventListener('fakit:user',()=>{
   }
   historyScope = next;
 });
-reduced.addEventListener('change',()=>{introDone=true;stage.dataset.intro='false';openInput();layout();startMotion();});
+reduced.addEventListener('change',()=>{layout();startMotion();});
 $('lens-ready').hidden=!$('model-status').classList.contains('ready');
 new MutationObserver(()=>{ $('lens-ready').hidden=!$('model-status').classList.contains('ready'); }).observe($('model-status'),{attributes:true,attributeFilter:['class']});
 addEventListener('pagehide',()=>{reset();releaseInference();cancelAnimationFrame(frame);frame=0;});
@@ -408,9 +398,9 @@ if(fragment.has('image')||fragment.has('import_error')) {
 }
 layout();startMotion();
 
-if(reduced.matches && !current)openInput();
+if (!current) openInput();
 $('result-gradcam').onclick = () => openGradcam(displayedResult);
-$('classifier-title').textContent = isVideo ? '영상 분류기' : '사진 분류기';
+$('classifier-title').textContent = isVideo ? '영상 검사' : '사진 검사';
 $('classifier-prompt').textContent = isVideo ? '영상을 놓거나 렌즈를 눌러보세요' : '사진을 놓거나 렌즈를 눌러보세요';
 $('classifier-formats').textContent = isVideo ? 'MP4·WebM · 1개, 3~40초 · 90MB' : 'JPG·PNG·WEBP · 최대 20장 · 장당 15MB';
 $('pick-file').textContent = isVideo ? '영상 선택' : '사진 선택';

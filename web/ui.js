@@ -22,8 +22,8 @@
   // ── Router (hash based: #/, #/history, #/model …) ────────────────────
   const TITLES = {
     home: "Fakit — AI 얼굴 탐지",
-    image: "사진 분류기 — Fakit",
-    video: "영상 분류기 — Fakit",
+    image: "사진 검사 — Fakit",
+    video: "영상 검사 — Fakit",
     history: "기록 — Fakit",
     model: "모델 — Fakit",
     results: "결과 읽는 법 — Fakit",
@@ -275,3 +275,41 @@ document.getElementById('copy-extension-address')?.addEventListener('click', asy
     status.textContent = '주소를 직접 선택해 복사해 주세요: chrome://extensions';
   }
 });
+
+// Ease the mist toward the pointer; stop drawing when it settles.
+(() => {
+  const landing = document.querySelector('.classifier-landing');
+  const mist = landing.querySelector('.landing-mist');
+  const motion = matchMedia('(prefers-reduced-motion: reduce)');
+  let frame = 0, x = 0, y = 0, targetX = 0, targetY = 0;
+
+  function tick() {
+    frame = 0;
+    x += (targetX - x) * .12;
+    y += (targetY - y) * .12;
+    mist.style.setProperty('--mist-x', x.toFixed(2) + 'px');
+    mist.style.setProperty('--mist-y', y.toFixed(2) + 'px');
+    mist.style.setProperty('--mist-tilt', (x / 24).toFixed(2) + 'deg');
+    if (Math.hypot(targetX - x, targetY - y) > .05) schedule();
+  }
+  function schedule() {
+    if (!frame && !motion.matches) frame = requestAnimationFrame(tick);
+  }
+  landing.addEventListener('pointermove', event => {
+    if (event.pointerType !== 'mouse' || motion.matches) return;
+    const bounds = landing.getBoundingClientRect();
+    targetX = ((event.clientX - bounds.left) / bounds.width - .5) * 60;
+    targetY = ((event.clientY - bounds.top) / bounds.height - .5) * 38;
+    schedule();
+  });
+  landing.addEventListener('pointerleave', () => {
+    targetX = targetY = 0;
+    schedule();
+  });
+  motion.addEventListener('change', () => {
+    if (!motion.matches) return;
+    cancelAnimationFrame(frame);
+    frame = x = y = targetX = targetY = 0;
+    for (const property of ['--mist-x', '--mist-y', '--mist-tilt']) mist.style.removeProperty(property);
+  });
+})();
