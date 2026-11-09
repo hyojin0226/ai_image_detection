@@ -400,6 +400,15 @@ body[data-route="home"] .dock { display: none; }
   text-align: center;
 }
 .classifier-choice small { margin: 0; }
+.classifier-choice strong, .classifier-choice .classifier-arrow {
+  --glow-amount: calc(var(--mist-glow, 0) * 100%);
+  text-shadow: 0 0 7px color-mix(in srgb, var(--choice-color) var(--glow-amount), transparent),
+    0 0 25px color-mix(in srgb, var(--choice-color) var(--glow-amount), transparent);
+}
+.classifier-choice strong {
+  color: color-mix(in srgb, var(--choice-color) var(--glow-amount), #211731);
+}
+.classifier-choice:focus-visible { --mist-glow: .65 !important; }
 .classifier-choice:hover .classifier-arrow { transform: translateX(-4px); }
 .classifier-choice-video:hover .classifier-arrow { transform: translateX(4px); }
 @media (max-width: 600px) {

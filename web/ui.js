@@ -280,8 +280,15 @@ document.getElementById('copy-extension-address')?.addEventListener('click', asy
 (() => {
   const landing = document.querySelector('.classifier-landing');
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
-  const radius = 90;
+  const choices = Array.from(landing.querySelectorAll('.classifier-choice'), link => ({
+    link, label: link.querySelector('strong'), glow: 0, target: 0
+  }));
   let streams, bounds, pointer, frame = 0, previousTime = 0;
+
+  function proximity(distance, radius) {
+    const progress = Math.min(1, distance / radius);
+    return .5 + .5 * Math.cos(Math.PI * progress);
+  }
 
   function sampleStreams() {
     return Array.from(landing.querySelectorAll('[data-mist-stream]'), stream =>
@@ -313,9 +320,15 @@ document.getElementById('copy-extension-address')?.addEventListener('click', asy
     const dt = previousTime ? Math.min((now - previousTime) / 1000, .04) : 1 / 60;
     previousTime = now;
     const scaleX = bounds.width / 1000, scaleY = bounds.height / 650;
-    const spring = 14, decay = Math.exp(-spring * dt);
+    const radius = Math.min(225, Math.max(115, bounds.width * .18));
+    const spring = 10, decay = Math.exp(-spring * dt);
     let unsettled = false;
 
+    for (const choice of choices) {
+      choice.glow += (choice.target - choice.glow) * (1 - Math.exp(-9 * dt));
+      choice.link.style.setProperty('--mist-glow', choice.glow.toFixed(3));
+      unsettled ||= Math.abs(choice.glow - choice.target) > .003;
+    }
     for (const stream of streams) {
       let direction = 0;
       if (pointer) {
@@ -328,8 +341,7 @@ document.getElementById('copy-extension-address')?.addEventListener('click', asy
         let bent = false;
         for (const point of stroke.points) {
           const distance = pointer ? Math.hypot(point.x * scaleX - pointer.x, point.y * scaleY - pointer.y) : radius;
-          const falloff = Math.max(0, 1 - (distance / radius) ** 2);
-          const target = direction * 36 * falloff ** 2 / scaleX;
+          const target = direction * 42 * proximity(distance, radius) / scaleX;
           const error = point.offset - target;
           const momentum = point.velocity + spring * error;
           point.offset = target + (error + momentum * dt) * decay;
@@ -356,11 +368,18 @@ document.getElementById('copy-extension-address')?.addEventListener('click', asy
     if (!bounds.width || !bounds.height) return;
     streams ??= sampleStreams();
     pointer = { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
+    for (const choice of choices) {
+      const label = choice.label.getBoundingClientRect();
+      const dx = Math.max(label.left - event.clientX, 0, event.clientX - label.right);
+      const dy = Math.max(label.top - event.clientY, 0, event.clientY - label.bottom);
+      choice.target = proximity(Math.hypot(dx, dy), 150);
+    }
     schedule();
   });
   const releasePointer = () => {
     if (!pointer) return;
     pointer = null;
+    for (const choice of choices) choice.target = 0;
     schedule();
   };
   landing.addEventListener('pointerleave', releasePointer);
@@ -370,6 +389,10 @@ document.getElementById('copy-extension-address')?.addEventListener('click', asy
     cancelAnimationFrame(frame);
     frame = previousTime = 0;
     pointer = null;
+    for (const choice of choices) {
+      choice.glow = choice.target = 0;
+      choice.link.style.removeProperty('--mist-glow');
+    }
     for (const stroke of streams.flat()) stroke.path.setAttribute('d', stroke.original);
     streams = undefined;
   });
