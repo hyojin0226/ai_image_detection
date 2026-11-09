@@ -1,8 +1,9 @@
-"""Bounded local web API for the frozen 64-frame model. No model training."""
+"""Bounded web API with duration-based sampling and unchanged frozen weights."""
 import argparse
 from concurrent.futures import ThreadPoolExecutor
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
+import math
 import mimetypes
 import os
 from pathlib import Path
@@ -10,6 +11,7 @@ import secrets
 import shutil
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 from urllib.parse import urlsplit
@@ -18,6 +20,128 @@ ROOT = Path(__file__).resolve().parents[1]
 SITE = Path(__file__).parent / 'site'
 MAX_BYTES = 90 * 1024 * 1024
 TTL_SECONDS = 3600
+FRAME_POLICY = 'duration_v1'
+
+
+def frame_count_for_duration(duration):
+    if not math.isfinite(duration) or not 3 <= duration <= 40:
+        raise ValueError('3~40초 영상을 선택하세요.')
+    return 16 if duration <= 10 else 32 if duration <= 20 else 48 if duration <= 30 else 64
+
+
+def select_duration_segments(frames, times, duration, decode, is_black):
+    """Keep eight unique nonblack timestamps per segment; never pad duplicates."""
+    planned = frame_count_for_duration(duration)
+    count = planned // 8
+    if len(frames) != planned or len(times) != planned:
+        raise ValueError('길이별 계획 프레임 수와 입력이 다릅니다.')
+    groups, skipped, black = [], [], []
+    for segment in range(count):
+        start, end = segment * duration / count, (segment + 1) * duration / count
+        candidates = []
+        for i in range(segment * 8, (segment + 1) * 8):
+            if is_black(frames[i]):
+                black.append(float(times[i]))
+            else:
+                candidates.append((float(times[i]), frames[i]))
+        if len(candidates) < 8:
+            for j in range(16):
+                timestamp = start + (j + .5) * (end - start) / 16
+                frame = decode(timestamp)
+                if is_black(frame):
+                    black.append(float(timestamp))
+                else:
+                    candidates.append((float(timestamp), frame))
+        if len(candidates) < 8:
+            skipped.append({'segment': segment + 1, 'start_sec': start, 'end_sec': end,
+                            'reason': '검은 화면 제외 후 유효 시점 8개를 확보하지 못해 미분석'})
+            continue
+        candidates.sort(key=lambda item: item[0])
+        chosen = [candidates[int((i + .5) * len(candidates) / 8)] for i in range(8)]
+        groups.append({'segment': segment + 1, 'start_sec': start, 'end_sec': end,
+                       'times': [item[0] for item in chosen], 'frames': [item[1] for item in chosen]})
+    return groups, skipped, black
+
+
+def analyze_duration_video(source, output):
+    """Reuse frozen scoring/Grad-CAM functions without rewriting the old release."""
+    sys.path.insert(0, str(ROOT / 'src'))
+    import analyze_64frames as core
+    from video_pipeline import probe_video
+    import tensorflow as tf
+    import image_model_backbone as backbone
+    import numpy as np
+
+    manifest = core.verify()
+    tf.config.threading.set_intra_op_parallelism_threads(4)
+    tf.config.threading.set_inter_op_parallelism_threads(1)
+    backbone.SOURCE = core.RELEASE / 'image_model'
+    started = time.monotonic()
+    local = ROOT / '.local'
+    previews = local / 'analyzed_frames64'
+    previews.mkdir(parents=True, exist_ok=True)
+    folder = Path(tempfile.mkdtemp(prefix='adaptive_', dir=previews))
+    with tempfile.TemporaryDirectory(prefix='adaptive_input_', dir=local) as temporary:
+        if source.startswith(('https://', 'http://')):
+            from shorts_worker import download
+            path, provenance = download(source, Path(temporary), lambda stage, message: core.progress(message), max_duration_sec=40)
+        else:
+            path = Path(source).expanduser().resolve()
+            if path.is_relative_to((ROOT / 'data/sample/test').resolve()):
+                raise ValueError('보존된 Test는 개별 분석 입력으로 사용하지 않습니다.')
+            if not path.is_file() or not 0 < path.stat().st_size <= MAX_BYTES:
+                raise ValueError('90 MB 이하의 영상 파일을 선택하세요.')
+            provenance = {'kind': 'file', 'title': path.name}
+            destination = Path(temporary) / ('input' + path.suffix)
+            shutil.copyfile(path, destination)
+            path = destination
+        planned = frame_count_for_duration(float(probe_video(path)['duration']))
+        count = planned // 8
+        core.progress(f'영상 길이에 따라 {planned}개 시점을 추출하고 있습니다.')
+        source_sha = core.file_sha256(path)
+        frames, times, metadata = core.sample_development_frames(
+            {'file_path': str(path.relative_to(ROOT)), 'sha256': source_sha}, planned, 256)
+        duration = float(metadata['duration'])
+        groups, skipped, black = select_duration_segments(frames, times, duration, lambda t: core.decode_at(path, t), core.is_black)
+        if not groups:
+            raise ValueError('검은 화면 제외 후 분석 가능한 구간이 없습니다. 실제 영상으로 기본 분류하지 않습니다.')
+        core.progress(f'유효 프레임 {len(groups) * 8}/{planned} · 이미지 모델을 불러오고 있습니다.')
+        encoder, _ = backbone.load_image_backbone()
+        bundle = backbone.load_image_backbone(include_gradcam=True)
+        sequences = []
+        for group in groups:
+            sequence = []
+            for frame in group['frames']:
+                embedding, real = encoder(tf.convert_to_tensor(frame[None], tf.float32))
+                sequence.append(np.concatenate([embedding.numpy()[0], [1 - float(real.numpy()[0, 0])]]))
+            sequences.append(np.asarray(sequence, np.float32))
+            core.progress(f"구간 {group['segment']}/{count} · 프레임 특징 분석 완료")
+        sequences = np.stack(sequences)
+        members = core.load_members()
+        segment_scores = core.score_sequences(sequences, members)
+        score = float(np.mean(segment_scores))
+        records = core.explain_frames(groups, sequences, segment_scores, members, bundle, folder)
+    main, details = core.rank_frames(records)
+    result = {
+        'status': 'completed', 'model': manifest['release'], 'analysis_mode': 'duration_frames_v1', 'frame_policy': FRAME_POLICY,
+        'threshold': .5, 'source': provenance, 'source_sha256': source_sha, 'duration_sec': duration,
+        'fake_score': score, 'prediction': 'fake' if score >= .5 else 'real',
+        'prediction_ko': 'AI 생성 영상 추정' if score >= .5 else '실제 촬영 영상 추정',
+        'planned_frames': planned, 'analyzed_frames': len(records), 'segments_used': len(groups),
+        'black_seek_positions_sec': black, 'skipped_segments': skipped,
+        'segments': [{'segment': g['segment'], 'start_sec': g['start_sec'], 'end_sec': g['end_sec'], 'fake_score': float(s)}
+                     for g, s in zip(groups, segment_scores, strict=True)],
+        'frames': records, 'main_frame_indices': main, 'detail_frame_indices': details,
+        'preview_directory': str(folder.resolve()), 'elapsed_sec': round(time.monotonic() - started, 1),
+        'accuracy_validated_for_this_mode': False, 'score_is_calibrated_probability': False,
+        'limitations_ko': '길이별 16·32·48·64프레임 방식의 정확도는 별도 검증 전입니다. '
+                          'Grad-CAM은 선택한 분류의 신호이며 합성 사실이나 합성 위치의 증명이 아닙니다.'}
+    output = Path(output)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(result, ensure_ascii=False, indent=2, allow_nan=False), encoding='utf-8')
+    (folder / 'analysis.json').write_text(json.dumps(result, ensure_ascii=False, allow_nan=False), encoding='utf-8')
+    core.progress('완료 · 주요 프레임 8개와 세부사항을 확인하세요.')
+    return result
 
 
 def youtube_url(value):
@@ -63,10 +187,10 @@ class Jobs:
 
     def run(self, record, source):
         with self.lock:
-            record.update(state='running', message='64프레임 분석 준비 중')
+            record.update(state='running', message='영상 길이에 맞춘 프레임 분석 준비 중')
         output = record['folder'] / 'result.json'
         env = dict(os.environ, PYTHONUTF8='1', PYTHONIOENCODING='utf-8')
-        command = [sys.executable, '-u', str(ROOT / 'src/analyze_64frames.py'), '--input', source, '--output', str(output)]
+        command = [sys.executable, '-u', str(Path(__file__).resolve()), '--analyze-duration', '--input', source, '--output', str(output)]
         try:
             with (record['folder'] / 'worker.log').open('w', encoding='utf-8') as log:
                 with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=log, encoding='utf-8', errors='replace', env=env,
@@ -100,7 +224,7 @@ class Jobs:
                     item[field.replace('_path', '_url')] = '/jobs/' + record['id'] + '/frames/' + path.name
                 frames.append(item)
             safe = {k: result[k] for k in ['prediction', 'prediction_ko', 'fake_score', 'threshold', 'duration_sec',
-                    'analyzed_frames', 'segments', 'skipped_segments', 'main_frame_indices', 'detail_frame_indices',
+                    'planned_frames', 'frame_policy', 'analyzed_frames', 'segments', 'skipped_segments', 'main_frame_indices', 'detail_frame_indices',
                     'elapsed_sec', 'limitations_ko']}
             safe.update(frames=frames, accuracy_validated_for_this_mode=False)
             with self.lock:
@@ -179,7 +303,7 @@ def make_server(port=8766, origins=(), jobs=None):
             manager.cleanup()
             path = urlsplit(self.path).path
             if path == '/health':
-                return self.send_json(200, {'status': 'online', 'mode': 'segmented64_v1', 'max_bytes': MAX_BYTES})
+                return self.send_json(200, {'status': 'online', 'mode': 'segmented64_v1', 'frame_policy': FRAME_POLICY, 'max_bytes': MAX_BYTES})
             if path == '/api/config':
                 return self.send_json(200, {'apiBase': '', 'configured': True})
             if path in {'/', '/index.html', '/app.js', '/style.css'}:
@@ -257,7 +381,20 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--port', type=int, default=8766)
     parser.add_argument('--origin', action='append', default=[], help='Exact HTTPS origin of the published frontend')
+    parser.add_argument('--analyze-duration', action='store_true', help=argparse.SUPPRESS)
+    parser.add_argument('--input', help=argparse.SUPPRESS)
+    parser.add_argument('--output', type=Path, help=argparse.SUPPRESS)
     args = parser.parse_args()
+    if args.analyze_duration:
+        if not args.input or not args.output:
+            parser.error('--input and --output are required for analysis')
+        try:
+            analyze_duration_video(args.input, args.output)
+        except Exception as error:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(json.dumps({'status': 'failed', 'error': str(error)}, ensure_ascii=False), encoding='utf-8')
+            raise
+        raise SystemExit(0)
     for origin in args.origin:
         parsed = urlsplit(origin)
         if parsed.scheme != 'https' or not parsed.netloc or parsed.path or parsed.username:
