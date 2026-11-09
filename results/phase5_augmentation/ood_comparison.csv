@@ -1,0 +1,13 @@
+model,holdout,view,baseline_ood_auc,aug_ood_auc,baseline_fake_recall,aug_fake_recall,baseline_real_recall,aug_real_recall
+convnext_tiny,diffusion,full,0.871,0.719,0.004,0.004,0.998,1.000
+convnext_tiny,diffusion,crop,0.872,0.683,0.010,0.008,0.999,1.000
+convnext_tiny,gan,full,0.377,0.502,0.000,0.000,1.000,1.000
+convnext_tiny,gan,crop,0.376,0.502,0.000,0.000,1.000,1.000
+convnext_tiny,manip,full,0.433,0.456,0.218,0.741,0.694,0.212
+convnext_tiny,manip,crop,0.473,0.442,0.118,0.752,0.859,0.202
+efficientnetv2s,diffusion,full,0.692,0.703,0.009,0.013,0.995,0.991
+efficientnetv2s,diffusion,crop,0.728,0.678,0.008,0.031,0.996,0.985
+efficientnetv2s,gan,full,0.474,0.480,0.000,0.001,0.999,0.997
+efficientnetv2s,gan,crop,0.473,0.480,0.000,0.001,0.999,0.997
+efficientnetv2s,manip,full,0.442,0.458,0.170,0.558,0.759,0.385
+efficientnetv2s,manip,crop,0.458,0.438,0.096,0.645,0.864,0.272

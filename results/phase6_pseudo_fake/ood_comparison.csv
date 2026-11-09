@@ -1,0 +1,20 @@
+model,holdout,view,ood_auc,ood_fake_recall,ood_real_recall,test_id_auc
+convnext_tiny (Phase3 baseline),diffusion,crop,0.872,0.010,0.999,0.998
+convnext_tiny_aug (Phase5),diffusion,crop,0.683,0.008,1.000,0.998
+convnext_tiny_pseudo_vae,diffusion,crop,0.952,0.209,0.998,0.998
+convnext_tiny_pseudo_sbi,diffusion,crop,0.929,0.233,0.994,0.997
+convnext_tiny_pseudo_vae_sbi,diffusion,crop,0.965,0.585,0.988,0.996
+convnext_tiny (Phase3 baseline),diffusion,full,0.871,0.004,0.998,0.999
+convnext_tiny_pseudo_vae,diffusion,full,0.912,0.042,0.996,0.998
+convnext_tiny_pseudo_sbi,diffusion,full,0.821,0.043,0.990,0.997
+convnext_tiny_pseudo_vae_sbi,diffusion,full,0.889,0.090,0.989,0.997
+convnext_tiny (Phase3 baseline),gan,crop,0.376,0.000,1.000,0.997
+convnext_tiny_aug (Phase5),gan,crop,0.502,0.000,1.000,0.998
+convnext_tiny_pseudo_vae,gan,crop,0.537,0.002,0.997,0.997
+convnext_tiny_pseudo_sbi,gan,crop,0.353,0.002,0.992,0.995
+convnext_tiny_pseudo_vae_sbi,gan,crop,0.489,0.005,0.993,0.995
+convnext_tiny (Phase3 baseline),manip,crop,0.473,0.118,0.859,1.000
+convnext_tiny_aug (Phase5),manip,crop,0.442,0.752,0.202,1.000
+convnext_tiny_pseudo_vae,manip,crop,0.517,0.523,0.513,1.000
+convnext_tiny_pseudo_sbi,manip,crop,0.506,0.154,0.822,1.000
+convnext_tiny_pseudo_vae_sbi,manip,crop,0.508,0.187,0.794,1.000

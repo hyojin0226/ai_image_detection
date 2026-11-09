@@ -1,0 +1,17 @@
+model,generator,n_fake,ood_auc,fake_recall
+convnext_tiny (baseline),flux_dev,1066,0.770,0.002
+convnext_tiny (baseline),flux_pro,483,0.743,0.000
+convnext_tiny (baseline),sd,690,0.958,0.023
+convnext_tiny (baseline),sdxl,7761,0.886,0.010
+convnext_tiny_pseudo_vae,flux_dev,1066,0.918,0.115
+convnext_tiny_pseudo_vae,flux_pro,483,0.877,0.075
+convnext_tiny_pseudo_vae,sd,690,0.987,0.362
+convnext_tiny_pseudo_vae,sdxl,7761,0.957,0.217
+convnext_tiny_pseudo_sbi,flux_dev,1066,0.952,0.384
+convnext_tiny_pseudo_sbi,flux_pro,483,0.957,0.410
+convnext_tiny_pseudo_sbi,sd,690,0.946,0.374
+convnext_tiny_pseudo_sbi,sdxl,7761,0.923,0.188
+convnext_tiny_pseudo_vae_sbi,flux_dev,1066,0.945,0.480
+convnext_tiny_pseudo_vae_sbi,flux_pro,483,0.942,0.474
+convnext_tiny_pseudo_vae_sbi,sd,690,0.981,0.771
+convnext_tiny_pseudo_vae_sbi,sdxl,7761,0.968,0.590
