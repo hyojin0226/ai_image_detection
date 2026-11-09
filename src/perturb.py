@@ -42,6 +42,22 @@ TRAIN_JPEG = random_jpeg(60, 95)
 EVAL_JPEG = jpeg(90)
 
 
+def random_degrade(resize_p: float = 0.5, resize_range=(0.4, 1.0), blur_p: float = 0.3, blur_range=(0.3, 1.2)):
+    """실험 A 후속: 축소·복원과 블러를 무작위로 넣은 뒤 TRAIN_JPEG. real·fake(의사 fake 포함) 모두 같은 분포로 적용.
+    최종 모델이 축소 0.5x·블러 σ1.0 에서 GAN fake 를 크게 놓친 문제를 겨냥합니다 (crop 배율 무작위화는 넣지 않음)."""
+    def apply(image: Image.Image) -> Image.Image:
+        if random.random() < resize_p:
+            width, height = image.size
+            scale = random.uniform(*resize_range)
+            method = random.choice([Image.BILINEAR, Image.BICUBIC, Image.LANCZOS])
+            image = image.resize((max(1, round(width * scale)), max(1, round(height * scale))), method)
+            image = image.resize((width, height), random.choice([Image.BILINEAR, Image.BICUBIC]))
+        if random.random() < blur_p:
+            image = image.filter(ImageFilter.GaussianBlur(radius=random.uniform(*blur_range)))
+        return TRAIN_JPEG(image)
+    return apply
+
+
 # EXPERIMENT_PLAN.md Phase 1의 변환 목록
 PERTURBATIONS = {
     "none": None,

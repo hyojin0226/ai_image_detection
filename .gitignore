@@ -249,3 +249,7 @@ outputs/exp2/**/predictions/
 outputs/exp2/**/features/
 outputs/exp2/**/*.pt
 outputs/exp2/*/*/predictions.csv
+models_aux/
+outputs/exp2/**/predictions.csv
+outputs/exp2/smoke/
+outputs/exp2/robustness_final/smoke/
