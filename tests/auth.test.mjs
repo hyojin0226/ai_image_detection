@@ -16,16 +16,19 @@ test('unconfigured providers, static assets and private paths', async t => {
   const request = await fixture(t, { env: {} });
   const data = await (await request('/api/auth')).json();
   assert.equal(data.user, null);
+  assert.equal(data.history, null);
+  assert.deepEqual(data.providers.map(p=>p.id), ['kakao','google']);
+  assert.equal((await request('/auth/naver/login')).status, 404);
   assert.ok(data.providers.every(p => !p.enabled));
   assert.equal((await request('/auth/google/login')).headers.get('location'), '/?auth_error=not_configured');
   for (const route of ['/.env', '/server.mjs', '/README.md', '/model/../../.git/config']) assert.equal((await request(route)).status, 404);
-  for (const route of ['/', '/ui.js', '/app.js', '/file-types.js', '/input-adapters.js', '/batch-input.js', '/lens.js', '/image-import.js', '/experience.css', '/icon.svg', '/extension.zip', '/model/inference_config.json']) assert.equal((await request(route)).status, 200);
+  for (const route of ['/', '/image', '/video', '/image/', '/video/', '/classifier-entry.js', '/history.js', '/gradcam-dialog.js', '/ui.js', '/app.js', '/file-types.js', '/input-adapters.js', '/batch-input.js', '/lens.js', '/image-import.js', '/experience.css', '/icon.svg', '/extension.zip', '/model/inference_config.json']) assert.equal((await request(route)).status, 200);
 });
 
-for (const provider of ['google', 'naver', 'kakao']) {
+for (const provider of ['google', 'kakao']) {
   test(`${provider}: complete login, replay protection, CSRF and logout`, async t => {
     const calls = [];
-    const profile = provider === 'google' ? { sub: '123', name: '<test>' } : provider === 'naver' ? { resultcode: '00', response: { id: '123', nickname: '<test>' } } : { id: 123, kakao_account: { profile: { nickname: '<test>' } } };
+    const profile = provider === 'google' ? { sub: '123', name: '<test>' } : { id: 123, kakao_account: { profile: { nickname: '<test>' } } };
     const request = await fixture(t, { env, fetchImpl: async (url, options) => {
       calls.push({ url, options });
       return Response.json(calls.length === 1 ? { access_token: 'private-token' } : profile);

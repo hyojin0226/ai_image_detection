@@ -16,7 +16,7 @@ export async function analyzeBatch(inputs, { signal, onItem = () => {}, analyzeI
     }
     signal?.throwIfAborted();
     results.push(result);
-    onItem(index, result.status, result);
+    await onItem(index, result.status, result);
   }
   return results;
 }

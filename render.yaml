@@ -13,13 +13,11 @@ services:
         value: 24.11.0
       - key: HOST
         value: 0.0.0.0
+      - key: SESSION_SECRET
+        sync: false
       - key: KAKAO_CLIENT_ID
         sync: false
       - key: KAKAO_CLIENT_SECRET
-        sync: false
-      - key: NAVER_CLIENT_ID
-        sync: false
-      - key: NAVER_CLIENT_SECRET
         sync: false
       - key: GOOGLE_CLIENT_ID
         sync: false

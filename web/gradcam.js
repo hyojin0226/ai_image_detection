@@ -36,14 +36,17 @@ export async function computeGradcam(tf, model, input, expectedReal, { signal } 
   } finally { tf.dispose([features, ...weights, heat].filter(Boolean)); }
 }
 
-export function overlayGradcam(image, map) {
+export function renderGradcam(image, map) {
   const canvas = document.createElement('canvas'); canvas.width = canvas.height = 256;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('설명 이미지를 그릴 수 없어요.');
   ctx.drawImage(image, 0, 0, 256, 256);
+  const original = canvas.toDataURL('image/jpeg', .88);
   const heat = document.createElement('canvas'); heat.width = map.width; heat.height = map.height;
   const hc = heat.getContext('2d'), pixels = hc.createImageData(map.width, map.height);
   map.values.forEach((v, i) => { pixels.data.set([255, Math.round(180 * (1-v)), 30, Math.round(v * 155)], i*4); });
   hc.putImageData(pixels, 0, 0); ctx.imageSmoothingEnabled = true; ctx.drawImage(heat, 0, 0, 256, 256);
-  return canvas.toDataURL('image/png');
+  return { original, heatmap: heat.toDataURL('image/png'), image: canvas.toDataURL('image/png') };
 }
+
+export const overlayGradcam = (image, map) => renderGradcam(image, map).image;

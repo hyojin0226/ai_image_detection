@@ -1,10 +1,19 @@
 // One worker / one model per tab. Serial RPC avoids overlapping tensor workloads.
 let worker, serial = 0;
 const pending = new Map();
+export function releaseInference() {
+  worker?.terminate();
+  worker = null;
+  for (const request of pending.values()) {
+    request.reject(new DOMException('분석을 취소했어요.', 'AbortError'));
+  }
+  pending.clear();
+  document.dispatchEvent(new Event('fakit:inference-released'));
+}
 export function metric(name, data = {}) { document.dispatchEvent(new CustomEvent('fakit:metric', {detail:{name,data}})); }
 export function inference(type, payload = {}) {
   if (!worker) {
-    const url=new URL('./inference-worker.js', import.meta.url);
+    const url=new URL('./inference-worker.js?v=classifiers', import.meta.url);
     if(new URLSearchParams(location.search).has('diagnostics'))url.searchParams.set('diagnostics','1');
     worker = new Worker(url);
     worker.onmessage = ({data}) => {

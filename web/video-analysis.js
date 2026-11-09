@@ -1,8 +1,9 @@
+import { openGradcam } from './gradcam-dialog.js';
 const $ = id => document.getElementById(id);
 
 export async function analyzeVideo(file, { signal, onState = () => {} } = {}) {
   onState('loading', '영상 분석 모델을 불러오고 있어요.');
-  const { analyzeFile } = await import('./browser-engine.js');
+  const { analyzeFile } = await import('./browser-engine.js?v=classifiers');
   signal?.throwIfAborted();
   const video = await analyzeFile(file, { signal, progress: message => {
     onState(message.includes('준비') ? 'loading' : 'analyzing', message);
@@ -20,18 +21,14 @@ export function updateVideoProgress(message = '') {
   if (match) { progress.max = Number(match[2]); progress.value = Number(match[1]); progress.setAttribute('aria-label', message); }
 }
 
-function frameCard(frame) {
+function frameCard(frame, result) {
   const figure = document.createElement('figure');
   const button = document.createElement('button'); button.type = 'button';
   button.setAttribute('aria-label', `${frame.timestamp_sec.toFixed(2)}초 원본과 Grad-CAM 확대`);
   const image = document.createElement('img'); image.loading = 'lazy'; image.src = frame.comparison_url;
   image.alt = `${frame.timestamp_sec.toFixed(2)}초 · 원본과 ${frame.target_class === 'fake' ? 'AI 생성' : '실제 촬영'} 판정 기여도`;
   button.append(image);
-  button.onclick = () => {
-    $('video-zoom-image').src = frame.comparison_url;
-    $('video-zoom-title').textContent = `${frame.timestamp_sec.toFixed(2)}초 · 원본 / Grad-CAM`;
-    $('video-zoom').showModal();
-  };
+  button.onclick = () => openGradcam(result,frame.index);
   const caption = document.createElement('figcaption');
   caption.textContent = `${frame.timestamp_sec.toFixed(2)}초 · 구간 ${frame.segment}${frame.gradcam_available ? '' : ' · 양의 기여 신호 없음'}`;
   figure.append(button, caption); return figure;
@@ -42,18 +39,17 @@ export function renderVideoResult(result) {
   panel.hidden = !video;
   $('video-main-frames').replaceChildren(); $('video-detail-frames').replaceChildren(); $('video-segments').replaceChildren();
   $('video-details').open = false; $('video-details').ontoggle = null;
-  $('video-zoom').close(); $('video-zoom-image').removeAttribute('src');
   updateVideoProgress();
   if (!video) return;
   $('video-meta').textContent = `${video.duration_sec.toFixed(1)}초 · ${video.analyzed_frames}/64프레임 분석 · ${video.elapsed_sec}초 소요`;
   $('video-limits').textContent = video.limitations_ko;
   const map = new Map(video.frames.map(frame => [frame.index, frame]));
-  $('video-main-frames').append(...video.main_frame_indices.map(id => map.get(id)).filter(Boolean).map(frameCard));
+  $('video-main-frames').append(...video.main_frame_indices.map(id => map.get(id)).filter(Boolean).map(frame => frameCard(frame,result)));
   $('video-details-title').textContent = `나머지 프레임 ${video.detail_frame_indices.length}개`;
   let rendered = false;
   $('video-details').ontoggle = () => {
     if (!$('video-details').open || rendered) return;
-    rendered = true; $('video-detail-frames').append(...video.detail_frame_indices.map(id => map.get(id)).filter(Boolean).map(frameCard));
+    rendered = true; $('video-detail-frames').append(...video.detail_frame_indices.map(id => map.get(id)).filter(Boolean).map(frame => frameCard(frame,result)));
   };
   const segments = [...video.segments, ...video.skipped_segments].sort((a,b) => a.start_sec - b.start_sec);
   for (const segment of segments) {
@@ -64,5 +60,3 @@ export function renderVideoResult(result) {
     $('video-segments').append(node);
   }
 }
-
-document.getElementById('video-zoom-close').onclick = () => $('video-zoom').close();

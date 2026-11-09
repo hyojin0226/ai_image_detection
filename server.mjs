@@ -1,6 +1,6 @@
 import {MODEL_BASE} from './web/model-release.js';
 import http from 'node:http';
-import { randomBytes, timingSafeEqual } from 'node:crypto';
+import { randomBytes, timingSafeEqual, createHmac } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -9,7 +9,6 @@ import { sessionCodec } from './session-cookie.mjs';
 const webRoot = fileURLToPath(new URL('./web/', import.meta.url));
 const providers = {
   kakao: { authorize: 'https://kauth.kakao.com/oauth/authorize', token: 'https://kauth.kakao.com/oauth/token', profile: 'https://kapi.kakao.com/v2/user/me', scope: 'profile_nickname' },
-  naver: { authorize: 'https://nid.naver.com/oauth2.0/authorize', token: 'https://nid.naver.com/oauth2.0/token', profile: 'https://openapi.naver.com/v1/nid/me' },
   google: { authorize: 'https://accounts.google.com/o/oauth2/v2/auth', token: 'https://oauth2.googleapis.com/token', profile: 'https://openidconnect.googleapis.com/v1/userinfo', scope: 'openid profile' },
 };
 const random = () => randomBytes(32).toString('hex');
@@ -25,6 +24,11 @@ export function createApp({ env = process.env, fetchImpl = fetch, now = Date.now
   const secure = origin.protocol === 'https:';
   const cookieName = secure ? '__Host-session' : 'session';
   const sessions = new Map();
+  const historySecret = env.SESSION_SECRET || randomBytes(32);
+  const historyAccess = id => {
+    const derive = purpose => createHmac("sha256", historySecret).update(JSON.stringify([origin.origin, purpose, id])).digest("hex");
+    return {scope: derive("history-scope-v1"), key: derive("history-key-v1")};
+  };
   if (env.VERCEL && !env.SESSION_SECRET) throw new Error('SESSION_SECRET is required on Vercel.');
   const codec = env.SESSION_SECRET ? sessionCodec(env.SESSION_SECRET, origin.origin, now) : null;
   const saveSession = value => {
@@ -61,7 +65,7 @@ export function createApp({ env = process.env, fetchImpl = fetch, now = Date.now
         const sid = req.headers.cookie?.split(';').map(s => s.trim()).find(s => s.startsWith(`${cookieName}=`))?.slice(cookieName.length + 1);
         const session = codec ? codec.open(sid) : sessions.get(sid);
         if (req.method === 'GET' && url.pathname === '/api/auth') {
-          return send(200, { user: session?.user || null, csrf: session?.csrf || null, providers: Object.keys(providers).map(id => ({ id, enabled: enabled(id) })) });
+          return send(200, { user: session?.user || null, csrf: session?.csrf || null, expires: session?.expires || null, history: session?.user ? historyAccess(session.user.id) : null, providers: Object.keys(providers).map(id => ({ id, enabled: enabled(id) })) });
         }
         if (req.method === 'POST' && url.pathname === '/auth/logout') {
           if (req.headers.origin !== origin.origin || !session || !equal(req.headers['x-csrf-token'], session.csrf)) return send(403, { error: 'Forbidden' });
@@ -69,7 +73,7 @@ export function createApp({ env = process.env, fetchImpl = fetch, now = Date.now
           res.setHeader('Set-Cookie', cookie('', 0));
           return send(200, { ok: true });
         }
-        const match = url.pathname.match(/^\/auth\/(kakao|naver|google)\/(login|callback)$/);
+        const match = url.pathname.match(/^\/auth\/(kakao|google)\/(login|callback)$/);
         if (req.method !== 'GET' || !match) return send(404, { error: 'Not found' });
         const [, name, action] = match;
         if (!enabled(name)) return redirect('/?auth_error=not_configured');
@@ -98,9 +102,9 @@ export function createApp({ env = process.env, fetchImpl = fetch, now = Date.now
           const token = await remote(p.token, { method: 'POST', body: new URLSearchParams({ grant_type: 'authorization_code', client_id: c.id, ...(c.secret ? { client_secret: c.secret } : {}), code, redirect_uri: callback, state: pending.state }) });
           if (typeof token.access_token !== 'string' || !token.access_token) throw new Error('Missing token');
           const profile = await remote(p.profile, { headers: { Authorization: `Bearer ${token.access_token}` } });
-          const value = name === 'naver' ? profile.response : profile;
+          const value = profile;
           const id = name === 'google' ? value?.sub : value?.id;
-          if (!id || (name === 'naver' && profile.resultcode !== '00')) throw new Error('Missing identity');
+          if (!id) throw new Error('Missing identity');
           const displayName = name === 'kakao' ? value.kakao_account?.profile?.nickname || value.properties?.nickname : value.name || value.nickname;
           const newSid = saveSession({ expires: now() + sessionTTL, csrf: random(), user: { id: `${name}:${id}`, provider: name, name: typeof displayName === 'string' ? displayName.slice(0, 100) : '사용자' } });
           res.setHeader('Set-Cookie', cookie(newSid, sessionTTL / 1000));
@@ -112,9 +116,10 @@ export function createApp({ env = process.env, fetchImpl = fetch, now = Date.now
         }
       }
       if (!['GET', 'HEAD'].includes(req.method)) return send(405, { error: 'Method not allowed' });
-      const pathname = decodeURIComponent(url.pathname);
+      const requestedPath = decodeURIComponent(url.pathname);
+      const pathname = /^\/(image|video)\/?$/.test(requestedPath) ? '/' : requestedPath;
       // Explicit public-file allowlist: repository files and credentials are never served.
-      if (!/^\/(?:|index\.html|extension-privacy\.html|(?:model-release|inference-client|inference-worker|diagnostics|app|ui|lens|file-types|image-import|input-adapters|batch-input|gradcam|media-links|video-analysis|browser-engine|video-math)\.js|(?:style|experience)\.css|icon\.(?:svg|ico)|extension\.zip|model\/(?:r-[a-f0-9]{20}\/)?[\w.-]+\.(?:json|bin))$/.test(pathname)) return send(404, { error: 'Not found' });
+      if (!/^\/(?:|index\.html|extension-privacy\.html|(?:classifier-entry|history|gradcam-dialog|model-release|inference-client|inference-worker|diagnostics|app|ui|lens|file-types|image-import|input-adapters|batch-input|gradcam|media-links|video-analysis|browser-engine|video-math)\.js|(?:style|experience)\.css|icon\.(?:svg|ico)|extension\.zip|model\/(?:r-[a-f0-9]{20}\/)?[\w.-]+\.(?:json|bin))$/.test(pathname)) return send(404, { error: 'Not found' });
       if(pathname.startsWith('/model/r-')&&!pathname.startsWith(MODEL_BASE))return send(404,{error:'Model release not found'});
       const publicPath=pathname.startsWith(MODEL_BASE)?pathname.replace(MODEL_BASE,'/model/'):pathname;
       const file = path.join(webRoot, publicPath === '/' ? 'index.html' : publicPath.slice(1));

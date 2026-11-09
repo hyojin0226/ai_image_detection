@@ -22,6 +22,8 @@
   // ── Router (hash based: #/, #/history, #/model …) ────────────────────
   const TITLES = {
     home: "Fakit — AI 얼굴 탐지",
+    image: "사진 분류기 — Fakit",
+    video: "영상 분류기 — Fakit",
     history: "기록 — Fakit",
     model: "모델 — Fakit",
     results: "결과 읽는 법 — Fakit",
@@ -32,15 +34,20 @@
   let current = null;
 
   function routeName() {
-    const name = location.hash.replace(/^#\/?/, "").split("?")[0];
-    if (name === "text" || name === "video") return "home";
-    return TITLES[name] ? name : "home";
+    const fragment = location.hash.replace(/^#\/?/, "").split("?")[0];
+    if (fragment && Object.hasOwn(TITLES, fragment)) return fragment;
+    const pathname = location.pathname.replace(/\/$/, "");
+    return pathname === "/image" ? "image" : pathname === "/video" ? "video" : "home";
+  }
+  const legacy = location.hash.replace(/^#\/?/, "").split("?")[0];
+  if (["image", "video", "text"].includes(legacy) || (location.pathname !== "/image" && /^#(?:image|import_error)=/.test(location.hash))) {
+    location.replace((legacy === "video" ? "/video" : "/image") + location.search + (legacy.includes("=") ? location.hash : ""));
   }
   function render() {
     const name = routeName();
     if (name === current) return;
     current = name;
-    document.querySelectorAll(".page").forEach((p) => p.classList.toggle("is-active", p.dataset.page === name));
+    document.querySelectorAll(".page").forEach((p) => p.classList.toggle("is-active", p.dataset.page === (["image", "video"].includes(name) ? "classifier" : name)));
     document.querySelectorAll("[data-route]").forEach((link) => {
       const on = link.dataset.route === name;
       link.classList.toggle("is-current", on);
@@ -55,7 +62,7 @@
     document.dispatchEvent(new CustomEvent("fakit:route", { detail: { route: name } }));
   }
   function go(name) {
-    location.hash = name === "home" ? "#/" : `#/${name}`;
+    location.assign(["image", "video"].includes(name) ? "/" + name : name === "home" ? "/" : "/#/" + name);
   }
   addEventListener("hashchange", render);
 
@@ -95,11 +102,13 @@
   // ── Login: only the server can establish an authenticated identity. ──
   let authenticatedUser = null;
   let csrfToken = null;
+  let historyAccess;
+  let expiryTimer;
+  const authChannel = typeof BroadcastChannel === "function" ? new BroadcastChannel("fakit-auth") : null;
   let availableProviders = new Set();
   let authLoaded = false;
   const PROVIDERS = {
     kakao: { label: "카카오", bg: "#fee500", ink: "#191919" },
-    naver: { label: "네이버", bg: "#03c75a", ink: "#ffffff" },
     google: { label: "Google", bg: "#ffffff", ink: "#1f1f1f", border: "#d9d4ee" },
   };
   const loginModal = $("login-modal");
@@ -117,7 +126,7 @@
     $("user-chip").hidden = !user;
     $("dock-login-label").textContent = user ? "내 계정" : "로그인";
     if (user) {
-      const p = PROVIDERS[user.provider];
+      const p = PROVIDERS[user.provider] || {label:"기존",bg:"#5b2ee0",ink:"#fff"};
       const avatar = $("user-avatar");
       avatar.textContent = user.name.slice(0, 1);
       avatar.style.background = p.bg;
@@ -149,12 +158,16 @@
       const data = await response.json();
       availableProviders = new Set(data.providers.filter(p => p.enabled).map(p => p.id));
       csrfToken = data.csrf;
+      clearTimeout(expiryTimer);
+      historyAccess = data.user ? data.history : {scope:"guest"};
+      if(data.expires) expiryTimer = setTimeout(refreshAuth, Math.max(0,data.expires-Date.now()+100));
       setUser(data.user);
       $("auth-message").textContent = availableProviders.size
         ? "사용할 계정을 선택하세요. 이미지 분석은 로그인 없이도 이용할 수 있어요."
         : "소셜 로그인은 준비 중이에요. 이미지 분석은 로그인 없이 이용할 수 있어요.";
     } catch {
       availableProviders.clear();
+      historyAccess = undefined;
       setUser(null);
       $("auth-message").textContent = "로그인 서비스에 연결할 수 없습니다. 이미지 분석은 계속 이용할 수 있어요.";
     } finally { authLoaded = true; renderProviders(); }
@@ -195,6 +208,7 @@
       const response = await fetch("/auth/logout", { method: "POST", headers: { "X-CSRF-Token": csrfToken } });
       if (!response.ok) throw new Error("Logout failed");
       await refreshAuth();
+      authChannel?.postMessage("refresh");
       closeUserMenu();
       toast("로그아웃했습니다.");
     } catch { toast("로그아웃하지 못했습니다. 새로고침 후 다시 시도해 주세요."); }
@@ -228,10 +242,11 @@
   }, { threshold: 0.15, rootMargin: "0px 0px -6% 0px" });
   document.querySelectorAll(".reveal").forEach((el) => revealObserver.observe(el));
 
-  window.Fakit = { toast, go, routeName, openModal, closeModal, getUser };
+  window.Fakit = { toast, go, routeName, openModal, closeModal, getUser, getHistoryAccess: () => historyAccess };
   renderUser();
   render();
   refreshAuth();
+  if(authChannel) authChannel.onmessage = refreshAuth;
   const authUrl = new URL(location.href);
   if (authUrl.searchParams.has("auth_error")) {
     const messages = { not_configured: "아직 준비 중인 로그인입니다.", invalid_state: "로그인 요청이 만료되었어요. 다시 시도해 주세요.", cancelled: "로그인을 취소했습니다.", failed: "로그인하지 못했습니다. 잠시 후 다시 시도해 주세요." };
@@ -239,7 +254,13 @@
     authUrl.searchParams.delete("auth_error");
     history.replaceState(null, "", authUrl);
   }
-  // Browser back/forward cache must not resurrect an old signed-in display.
+  // A page cached by back/forward navigation must wait for a fresh session.
+  addEventListener("pagehide", () => {
+    clearTimeout(expiryTimer);
+    historyAccess = undefined;
+    csrfToken = null;
+    setUser(null);
+  });
   addEventListener("pageshow", e => { if (e.persisted) refreshAuth(); });
 })();
 

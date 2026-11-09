@@ -5,6 +5,14 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/image",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/video",
+      "destination": "/index.html"
+    },
+    {
       "source": "/auth/:path*",
       "destination": "/api/handler"
     },

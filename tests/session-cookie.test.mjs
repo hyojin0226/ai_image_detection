@@ -39,6 +39,16 @@ test('OAuth state and authenticated identity work across independent server inst
   const cookie = done.headers.get('set-cookie').split(';')[0];
   const auth = await (await a('/api/auth', { headers: { Cookie: cookie } })).json();
   assert.equal(auth.user.name, 'Tester');
+  const codec = sessionCodec(secret, env.APP_ORIGIN);
+  const sessionFor = id => 'session=' + codec.seal({ user: { id, name: 'Tester' }, csrf: 'new', expires: Date.now() + 60000 });
+  const readAccess = async cookie => (await (await b('/api/auth', { headers: { Cookie: cookie } })).json()).history;
+  assert.match(auth.history.scope, /^[a-f0-9]{64}$/);
+  assert.notEqual(auth.history.key, auth.history.scope);
+  assert.deepEqual(await readAccess(sessionFor('google:123')), auth.history);
+  const other = await readAccess(sessionFor('google:456'));
+  assert.notEqual(other.scope, auth.history.scope);
+  assert.notEqual(other.key, auth.history.key);
+  assert.equal((await (await b('/api/auth')).json()).history, null);
   assert.equal((await a('/auth/logout', { method: 'POST', headers: { Cookie: cookie } })).status, 403);
   const logout = await b('/auth/logout', { method: 'POST', headers: { Cookie: cookie, Origin: env.APP_ORIGIN, 'X-CSRF-Token': auth.csrf } });
   assert.equal(logout.status, 200);

@@ -1,7 +1,8 @@
 import {pooled,head,featureGradient,loadHeads} from './video-math.js';
-import {inference} from './inference-client.js';
+import {inference} from './inference-client.js?v=classifiers';
 import {MODEL_BASE} from './model-release.js';
 let loading=null;
+document.addEventListener('fakit:inference-released',()=>{loading=null;});
 const next=()=>new Promise(resolve=>{const timer=setTimeout(resolve,100);requestAnimationFrame(()=>{clearTimeout(timer);resolve();});});
 const check=signal=>{if(signal?.aborted)throw new DOMException('분석을 취소했습니다.','AbortError');};
 async function json(url){const r=await fetch(url);if(!r.ok)throw Error('모델 파일을 불러오지 못했습니다.');return r.json();}
@@ -101,7 +102,7 @@ function render(rgb,heat,target){
   const comparison=canvas(512,280),draw=comparison.getContext('2d');draw.fillStyle='white';draw.fillRect(0,0,512,280);
   draw.fillStyle='black';draw.font='12px sans-serif';draw.fillText('Original',6,16);draw.fillText(heat?`Grad-CAM: ${target==='fake'?'AI':'REAL'}`:'No positive signal',262,16);
   draw.drawImage(original,0,24);draw.drawImage(heat?overlay:original,256,24);
-  return {comparison_url:comparison.toDataURL('image/png'),strongest_zone:zone};
+  return {comparison_url:comparison.toDataURL('image/png'),strongest_zone:zone, heatmap:heat ? Array.from(heat) : null};
 }
 export async function analyzeFile(file,{progress=()=>{},signal}={}){
   if(!file?.size||file.size>90*1024**2)throw Error('90 MB 이하의 영상을 선택하세요.');
@@ -145,6 +146,7 @@ export async function analyzeFile(file,{progress=()=>{},signal}={}){
   return {status:'completed',model:'v1.0.0-browser',analysis_mode:'browser_segmented64_v1',threshold:.5,
     inference_location:'browser',backend:engine.backend,source:{kind:'file',title:file.name},duration_sec:duration,
     fake_score:score,prediction:target,prediction_ko:target==='fake'?'AI 생성 영상 추정':'실제 촬영 영상 추정',
+    thumbnail:rawCanvas(groups[0].frames[0].rgb).toDataURL('image/jpeg',.72),
     planned_frames:64,analyzed_frames:records.length,segments_used:groups.length,black_seek_positions_sec:black,skipped_segments:skipped,
     frames:records,main_frame_indices:main,detail_frame_indices:records.filter(f=>!main.includes(f.index)).map(f=>f.index),
     segments:groups.map((group,i)=>({segment:group.segment,start_sec:group.start_sec,end_sec:group.end_sec,fake_score:scores[i]})),

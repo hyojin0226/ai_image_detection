@@ -1,14 +1,10 @@
 // Detection: same model, preprocessing and threshold as streamlit_app.py, run in the browser with
 // TF.js. Images are queued and analysed one at a time; results are kept in a local history.
 import { classifyFile, supportedImageMime } from './file-types.js';
-import { overlayGradcam } from './gradcam.js';
-import { inference, metric } from './inference-client.js';
+import { renderGradcam } from './gradcam.js?v=classifiers';
+import { inference, metric } from './inference-client.js?v=classifiers';
 const MAX_QUEUE = 20;                 // images per batch
 const MAX_BYTES = 15 * 1024 * 1024;   // per image
-const THUMB_SIZE = 160;               // history stores a small JPEG thumbnail, never the original
-const HISTORY_KEY = "fakit.history.v1";
-const HISTORY_ON_KEY = "fakit.history.enabled";
-const HISTORY_MAX = 200;
 
 const $ = (id) => document.getElementById(id);
 const els = {
@@ -28,7 +24,6 @@ const els = {
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const { toast, go, routeName, openModal, closeModal } = window.Fakit;
 
-let model = null;
 let config = null;
 let modelReady = null;   // promise: resolves when the model can predict, rejects if loading failed
 const state = { items: [], running: false, nextId: 1, filter: "all" };
@@ -39,7 +34,7 @@ function loadResources() {
   metric('model-load-start');
   els.status.classList.remove('failed'); els.modelError.hidden=true;
   modelReady = inference('init').then(result => {
-    config=result.config; model=true;
+    config=result.config;
     els.status.classList.add('ready');els.statusText.textContent='분석 준비 완료';
     metric('model-ready',{backend:result.backend});
     return result;
@@ -180,7 +175,6 @@ async function analyzeItem(item) {
     item.status = "done";
     renderItem(item);
     renderProcess(item, "done");
-    saveToHistory(item);
   } catch (err) {
     console.error(err);
     if (!state.items.includes(item)) return;
@@ -322,133 +316,7 @@ function openDetail(entry) {
 els.detailClose.addEventListener("click", () => closeModal(els.detail));
 $("detail-help").addEventListener("click", () => closeModal(els.detail));
 
-// ── History (localStorage, thumbnails only) ────────────────────────────
-function historyEnabled() {
-  try { return localStorage.getItem(HISTORY_ON_KEY) !== "0"; } catch { return false; }
-}
-function loadHistory() {
-  try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; } catch { return []; }
-}
-function storeHistory(list) {
-  try {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(list));
-    return true;
-  } catch {
-    toast("기록을 저장할 공간이 부족합니다. 오래된 기록을 지워 주세요.");
-    return false;
-  }
-}
-function makeThumb(img) {
-  const w = img.naturalWidth, h = img.naturalHeight;
-  const scale = Math.min(1, THUMB_SIZE / Math.max(w, h));
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.max(1, Math.round(w * scale));
-  canvas.height = Math.max(1, Math.round(h * scale));
-  const ctx = canvas.getContext("2d");
-  ctx.fillStyle = "#fff";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-  return canvas.toDataURL("image/jpeg", 0.72);
-}
-function saveToHistory(item) {
-  if (!historyEnabled()) return;
-  const list = loadHistory();
-  list.unshift({
-    id: `${item.at}-${item.id}`, name: item.name, thumb: makeThumb(item.img),
-    verdict: item.verdict, real: item.real, fake: item.fake, threshold: threshold(), at: Date.now(),
-  });
-  while (list.length > HISTORY_MAX) list.pop();
-  if (storeHistory(list)) refreshHistoryViews();
-}
-function deleteHistoryEntry(id) {
-  const list = loadHistory().filter((e) => e.id !== id);
-  storeHistory(list);
-  refreshHistoryViews();
-}
-function formatDate(ts) {
-  return new Date(ts).toLocaleString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
-}
-
-function renderHistoryPage() {
-  const all = loadHistory();
-  const list = state.filter === "all" ? all : all.filter((e) => e.verdict === state.filter);
-  els.historyCount.textContent = all.length ? `${all.length}건 저장됨` : "";
-  els.historyClear.hidden = all.length === 0;
-  els.historyEmpty.hidden = list.length > 0;
-  els.historyList.innerHTML = "";
-  if (!list.length && all.length) {
-    els.historyEmpty.hidden = false;
-    els.historyEmpty.querySelector("strong").textContent = state.filter === "real" ? "REAL로 판정한 기록이 없습니다." : "AI로 판정한 기록이 없습니다.";
-  } else {
-    els.historyEmpty.querySelector("strong").textContent = "아직 기록이 없습니다.";
-  }
-  list.forEach((entry, i) => {
-    const el = document.createElement("article");
-    el.className = "shot-card";
-    el.tabIndex = 0;
-    el.setAttribute("role", "button");
-    el.style.animationDelay = `${Math.min(i, 12) * 30}ms`;
-    el.innerHTML = cardHTML(entry, { date: true });
-    applyStatus(el, entry);
-    el.querySelector(".shot-remove").addEventListener("click", (e) => { e.stopPropagation(); deleteHistoryEntry(entry.id); });
-    el.addEventListener("click", () => openDetail(entry));
-    el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDetail(entry); } });
-    els.historyList.append(el);
-  });
-}
-function renderRecentStrip() {
-  const list = loadHistory().slice(0, 8);
-  els.recentStrip.hidden = list.length === 0;
-  els.recentList.innerHTML = "";
-  list.forEach((entry) => {
-    const el = document.createElement("button");
-    el.type = "button";
-    el.className = "recent-item";
-    el.dataset.verdict = entry.verdict;
-    el.title = `${entry.name} · ${entry.verdict === "real" ? "REAL" : "AI"} ${pct(entry.verdict === "real" ? entry.real : entry.fake)}`;
-    const thumb = document.createElement("img");
-    thumb.src = entry.thumb;
-    thumb.alt = "";
-    const label = document.createElement("b");
-    label.textContent = entry.verdict === "real" ? "REAL" : "AI";
-    const name = document.createElement("span");
-    name.className = "recent-name";
-    name.textContent = entry.name;
-    const score = document.createElement("span");
-    score.className = "recent-score";
-    score.textContent = `REAL 점수 ${pct(entry.real)}`;
-    el.setAttribute("aria-label", `${entry.name}, ${label.textContent}, ${score.textContent}, 상세 결과 보기`);
-    el.append(thumb, label, name, score);
-    el.addEventListener("click", () => openDetail(entry));
-    els.recentList.append(el);
-  });
-}
-function refreshHistoryViews() {
-  const count = loadHistory().length;
-  els.dockCount.textContent = count > 99 ? "99+" : String(count);
-  els.dockCount.hidden = count === 0;
-  renderRecentStrip();
-  if (routeName() === "history") renderHistoryPage();
-}
-els.historyToggle.checked = historyEnabled();
-els.historyToggle.addEventListener("change", () => {
-  try { localStorage.setItem(HISTORY_ON_KEY, els.historyToggle.checked ? "1" : "0"); } catch {}
-  toast(els.historyToggle.checked ? "이제부터 결과를 기록에 저장합니다." : "기록 저장을 껐습니다. 기존 기록은 남아 있습니다.");
-});
-els.historyClear.addEventListener("click", () => {
-  if (!confirm("저장된 기록을 모두 삭제할까요? 되돌릴 수 없습니다.")) return;
-  storeHistory([]);
-  refreshHistoryViews();
-  toast("기록을 모두 삭제했습니다.");
-});
-document.querySelectorAll(".chip[data-filter]").forEach((chip) => chip.addEventListener("click", () => {
-  state.filter = chip.dataset.filter;
-  document.querySelectorAll(".chip[data-filter]").forEach((c) => c.classList.toggle("is-on", c === chip));
-  renderHistoryPage();
-}));
-document.addEventListener("fakit:route", (e) => {
-  if (e.detail.route === "history") renderHistoryPage();
-});
+function formatDate(ts) { return new Date(ts).toLocaleString("ko-KR"); }
 
 // Unified UI bridge. Model preprocessing, predict, threshold and history are unchanged.
 window.Fakit.analyzeImage = async (file, { signal, onState = () => {} } = {}) => {
@@ -464,6 +332,13 @@ window.Fakit.analyzeImage = async (file, { signal, onState = () => {} } = {}) =>
     img.src = url;
     await img.decode();
     signal?.throwIfAborted();
+    const thumbCanvas = document.createElement('canvas');
+    const scale = Math.min(1, 160 / Math.max(img.naturalWidth, img.naturalHeight));
+    thumbCanvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+    thumbCanvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+    const thumbContext = thumbCanvas.getContext('2d');
+    thumbContext.drawImage(img, 0, 0, thumbCanvas.width, thumbCanvas.height);
+    const thumb = thumbCanvas.toDataURL('image/jpeg', .72);
     item = { id: state.nextId++, name: file.name, url, img, status: 'analyzing', real: null, fake: null, verdict: null, at: Date.now() };
     state.items.push(item);
     mountItem(item);
@@ -478,7 +353,7 @@ window.Fakit.analyzeImage = async (file, { signal, onState = () => {} } = {}) =>
     try {
       const map = await inference('explain',{rgb:toInputRGB(img),real:item.real});
       signal?.throwIfAborted();
-      explanation = { image: overlayGradcam(img, map), target: map.target, layer: map.layer };
+      explanation = { ...renderGradcam(img, map), target: map.target, layer: map.layer };
     } catch (error) {
       signal?.throwIfAborted();
       explanationError = '판별 점수는 계산했지만 이 환경에서는 Grad-CAM을 표시하지 못했어요.';
@@ -486,7 +361,7 @@ window.Fakit.analyzeImage = async (file, { signal, onState = () => {} } = {}) =>
     }
     signal?.throwIfAborted();
     metric('image-result');
-    return { status: 'result', real: item.real, fake: item.fake, verdict: item.verdict, explanation, explanationError };
+    return { status: 'result', real: item.real, fake: item.fake, verdict: item.verdict, threshold: threshold(), model: config.run_name, thumb, explanation, explanationError };
   } finally {
     signal?.removeEventListener('abort', cancel);
     cancel();
@@ -496,13 +371,8 @@ window.Fakit.analyzeImage = async (file, { signal, onState = () => {} } = {}) =>
     const canvas = $('process-input'); canvas.width = canvas.height = 1;
   }
 };
-refreshHistoryViews();
-if (routeName() === 'history') renderHistoryPage();
-window.Fakit.prepareImageModel = loadResources;
-requestAnimationFrame(()=>requestAnimationFrame(()=>{
-  setTimeout(()=>{
-    const start=()=>loadResources().catch(()=>{});
-    if('requestIdleCallback' in window)requestIdleCallback(start,{timeout:2000});else start();
-  },1800);
-}));
-metric('ui-ready');
+document.addEventListener('fakit:inference-released', () => {
+  modelReady = null;
+  els.status.classList.remove('ready');
+});
+metric("ui-ready");

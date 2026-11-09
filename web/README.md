@@ -6,7 +6,7 @@
 
 - 보라색 렌즈 효과가 파일 입력 영역에 적용됩니다. 포인터를 따라 선명한 영역이 이동하고 업로드 후 실제 이미지와 처리 상태를 표시합니다.
 - 이미지·영상·문서 유형을 같은 입력창에서 구분합니다. 현재 실제 분석은 얼굴 이미지 모델만 지원합니다. 글 입력창은 모델 연결 전입니다.
-- 카카오·네이버·구글 OAuth 서버 연동 코드가 포함되어 있습니다. 각 제공자 앱 설정과 로컬 환경변수가 필요하며, 실제 계정 로그인 완료는 별도로 검증해야 합니다.
+- 카카오·구글 OAuth 서버 연동 코드가 포함되어 있습니다. 각 제공자 앱 설정과 로컬 환경변수가 필요하며, 실제 계정 로그인 완료는 별도로 검증해야 합니다.
 - Chrome 확장 프로그램 소스와 다운로드 ZIP을 포함합니다. 개발자 모드로 설치하며 스토어 배포판은 아닙니다.
 - 로그인 정보는 서버 세션, 분석 기록은 브라우저 로컬 저장소에 보관합니다. 계정별 기록 동기화는 없습니다.
 - 디자인 참고: https://community.spline.design/file/355705e7-5f04-4051-93d5-5007f7034ada . 장면 파일은 포함하지 않고 CSS로 별도 구현했습니다.
@@ -30,9 +30,9 @@
 
 ## 팀 공유용 통합본
 
-`fakit-priview` 브랜치에는 최신 렌즈 UI, 최대 20장 이미지 순차 분석, 카카오·네이버·구글 OAuth 서버, 크롬 확장 프로그램이 함께 있습니다. 비밀 키는 각 실행 환경에 별도로 설정합니다.
+`fakit-priview` 브랜치에는 최신 렌즈 UI, 최대 20장 이미지 순차 분석, 카카오·구글 OAuth 서버, 크롬 확장 프로그램이 함께 있습니다. 비밀 키는 각 실행 환경에 별도로 설정합니다.
 
-루트의 `render.yaml`로 무료 단일 인스턴스 Web Service를 생성할 수 있습니다. Render의 공개 주소는 서버가 `RENDER_EXTERNAL_URL`에서 읽습니다. 사용자 지정 도메인은 `APP_ORIGIN`으로 설정하세요. 각 제공자 콘솔에 실제 공개 주소의 `/auth/kakao/callback`, `/auth/naver/callback`, `/auth/google/callback`을 등록해야 외부 로그인까지 동작합니다.
+루트의 `render.yaml`로 무료 단일 인스턴스 Web Service를 생성할 수 있습니다. Render의 공개 주소는 서버가 `RENDER_EXTERNAL_URL`에서 읽습니다. 사용자 지정 도메인은 `APP_ORIGIN`으로 설정하세요. 각 제공자 콘솔에 실제 공개 주소의 `/auth/kakao/callback`, `/auth/google/callback`을 등록해야 외부 로그인까지 동작합니다.
 
 구현·확인 범위: [통합 입력 문서](../docs/unified-input.md).
 
@@ -66,18 +66,16 @@ python -m http.server 8000 --directory web
 | 서비스 | `.env` 항목 | 로컬 Redirect / Callback URL |
 | --- | --- | --- |
 | 카카오 | `KAKAO_CLIENT_ID` = REST API 키, `KAKAO_CLIENT_SECRET` = 활성화한 경우 해당 비밀 키 | `http://localhost:8000/auth/kakao/callback` |
-| 네이버 | `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET` | `http://localhost:8000/auth/naver/callback` |
 | 구글 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (웹 애플리케이션 OAuth 클라이언트) | `http://localhost:8000/auth/google/callback` |
 
 - 카카오: 카카오 로그인을 활성화하고 닉네임을 표시하려면 프로필 닉네임 동의 항목을 설정하세요. 이메일 권한은 요청하지 않습니다.
-- 네이버: 서비스 URL은 `http://localhost:8000`, Callback URL은 위 주소로 등록하고 별명 등 사용할 프로필 항목을 설정하세요. 개발 중에는 앱에 허용된 테스트 계정으로 확인하세요.
 - 구글: OAuth 동의 화면을 설정하고 앱이 테스트 상태라면 테스트 사용자를 등록하세요. 이 구현은 `openid profile`만 요청합니다.
 - 비밀 키는 루트 `.env`에만 입력하세요. `.env`는 Git에서 제외되어 있고 `web/` 파일로 노출되지 않습니다.
 - 로그인 성공 시 서비스별 ID와 표시 이름만 서버 메모리에 보관합니다. 토큰은 프로필 조회 후 보관하지 않습니다. 브라우저에는 임의 세션 ID를 HttpOnly 쿠키로 전달합니다.
-- 세션은 8시간 후 만료되고 서버를 재시작하면 초기화됩니다. 로그아웃은 Fakit 세션만 종료하며 카카오/네이버/구글 계정 자체를 로그아웃하거나 연결 해제하지 않습니다.
+- 세션은 8시간 후 만료되고 서버를 재시작하면 초기화됩니다. 로그아웃은 Fakit 세션만 종료하며 카카오/구글 계정 자체를 로그아웃하거나 연결 해제하지 않습니다.
 - 계정 DB, 다른 제공자 계정 통합, 회원 탈퇴는 아직 구현하지 않았습니다. 표시 이름 제공에 동의하지 않아도 `사용자`로 로그인할 수 있습니다.
 
-공식 문서: [카카오](https://developers.kakao.com/docs/ko/kakaologin/rest-api), [네이버](https://developers.naver.com/docs/login/api/api.md), [구글](https://developers.google.com/identity/protocols/oauth2/web-server).
+공식 문서: [카카오](https://developers.kakao.com/docs/ko/kakaologin/rest-api), [구글](https://developers.google.com/identity/protocols/oauth2/web-server).
 
 ## 배포
 
@@ -111,3 +109,12 @@ python scripts/convert_to_tfjs.py path/to/efficientnetv2s_fake_face_final.keras 
 ```
 
 > Windows에서 TensorFlow 설치 중 경로 길이 오류가 나면 가상환경을 `C:\tfv`처럼 짧은 경로에 만드세요.
+
+## 분류기와 기록
+
+- `/`에서 검사 유형을 선택합니다. `/image`와 `/video`는 같은 서버에서 직접 열 수 있습니다. `/#/video`, `/#/image`, 확장 프로그램의 `#image=…` 링크도 처리합니다.
+- 추론과 Grad-CAM은 브라우저 워커에서 실행합니다. 사진은 이미지 모델, 영상은 같은 계열의 특징 추출기와 영상 분류기 헤드를 사용합니다. 검사 요청에서만 초기화하며 검사 화면을 떠나면 워커를 종료합니다. 서버에는 추론 모델을 올리지 않습니다.
+- 사진과 영상의 성공 결과만 IndexedDB에 저장합니다. 검사 ID로 중복을 막고 계정 또는 게스트당 200건과 64MiB를 한도로 보관합니다. Grad-CAM은 저장된 축소 이미지와 프레임으로 다시 표시합니다.
+- 로그인한 기록은 계정별로 암호화됩니다. 기록은 같은 브라우저와 사이트 주소에서 보이며 기기 간 동기화하지 않습니다. 기존 공용 localStorage 기록에는 소유자가 없어 계정에 이관하지 않습니다. 기존 값은 그대로 남아 있습니다.
+- 서명된 세션에 사용하는 `SESSION_SECRET`은 로그인 기록 키 파생에도 사용합니다. 같은 환경에서 값을 유지해야 재시작·재로그인 후 같은 계정의 기록을 열 수 있습니다. 기존 Vercel 환경 변수 그대로 사용하면 되며 신규 데이터베이스는 없습니다. 로컬에서 값을 비우면 로그인 기록 키는 서버 프로세스에 한정됩니다.
+- 네이버 OAuth 신규 진입을 제거했습니다. 기존 쿠키는 만료 시까지 처리되지만 네이버만 사용했던 사용자는 이후 같은 계정으로 다시 로그인할 수 없습니다. 다른 제공자로 로그인해도 자동으로 계정을 합치지 않습니다.
