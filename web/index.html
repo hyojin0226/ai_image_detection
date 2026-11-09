@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
   <link rel="stylesheet" href="/style.css">
-  <link rel="stylesheet" href="/experience.css?v=classifiers">
+  <link rel="stylesheet" href="/experience.css?v=mist">
   <script>document.documentElement.classList.add("js");</script>
 </head>
 <body data-route="home">
@@ -65,12 +65,41 @@
 
   <main id="main" tabindex="-1">
 
-    <!-- ── Home: image detection ─────────────────────────── -->
-    <section class="page is-active classifier-landing" data-page="home">
-      <header class="page-head"><h1>어떤 파일을 검사할까요?</h1></header>
+    <section class="page is-active classifier-landing" data-page="home" aria-labelledby="landing-title">
+      <svg class="landing-mist" viewBox="0 0 1440 760" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <defs>
+          <filter id="mist-warp" x="-30%" y="-60%" width="160%" height="220%">
+            <feTurbulence type="fractalNoise" baseFrequency=".004 .012" numOctaves="3" seed="12" result="noise"/>
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="115" xChannelSelector="R" yChannelSelector="G"/>
+            <feGaussianBlur stdDeviation="14"/>
+          </filter>
+          <linearGradient id="mist-colors">
+            <stop stop-color="#8c57ed" stop-opacity="0"/>
+            <stop offset=".25" stop-color="#aa75ff" stop-opacity=".68"/>
+            <stop offset=".52" stop-color="#dec3ff" stop-opacity=".25"/>
+            <stop offset=".76" stop-color="#657dff" stop-opacity=".62"/>
+            <stop offset="1" stop-color="#466aff" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <g fill="none" stroke="url(#mist-colors)" filter="url(#mist-warp)">
+          <path stroke-width="78" opacity=".55" d="M-90 558C221 561 222 238 517 298S719 410 901 309 1158 187 1530 351"/>
+          <path stroke-width="24" d="M-70 606C220 558 266 248 524 312S738 451 944 324 1178 225 1510 385"/>
+          <path stroke-width="15" opacity=".72" d="M-50 469C149 500 250 246 485 274S743 387 891 258 1187 144 1510 290"/>
+        </g>
+      </svg>
+      <header class="landing-wordmark">
+        <h1 id="landing-title">Fakit<span>.</span></h1>
+        <p>사진과 영상의 AI 생성 여부를 확인하세요.</p>
+      </header>
       <div class="classifier-grid">
-        <article class="classifier-card"><h2>사진 분류기</h2><p>사진을 업로드하여 AI 생성 여부를 분석합니다.</p><a class="btn btn-primary" href="/image">사진 검사 시작</a></article>
-        <article class="classifier-card"><h2>영상 분류기</h2><p>영상을 업로드하여 AI 생성 여부를 분석합니다.</p><a class="btn btn-primary" href="/video">영상 검사 시작</a></article>
+        <a class="classifier-choice classifier-choice-photo" href="/image">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="9" cy="9" r="1.5"/><path d="m4 18 5-5 3 3 4-5 5 6"/></svg>
+          <span><strong>사진 검사</strong><small>JPG · PNG · WEBP</small></span><span class="classifier-arrow" aria-hidden="true">↗</span>
+        </a>
+        <a class="classifier-choice classifier-choice-video" href="/video">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="2.5" y="4.5" width="19" height="15" rx="4"/><path d="m10 8.5 5.5 3.5-5.5 3.5Z"/></svg>
+          <span><strong>영상 검사</strong><small>MP4 · WEBM</small></span><span class="classifier-arrow" aria-hidden="true">↗</span>
+        </a>
       </div>
     </section>
     <section class="page" data-page="classifier">
