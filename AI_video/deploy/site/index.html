@@ -8,16 +8,10 @@
 <section class="panel" aria-labelledby="input-title"><div class="heading"><h2 id="input-title">영상 분석</h2><div class="connection-tools"><span id="connection" class="status" role="status">브라우저 모델 준비 중</span><button id="reconnect" type="button" class="text-button" hidden>모델 다시 준비</button></div></div>
 <div class="tabs" role="tablist" aria-label="입력 방식"><button type="button" role="tab" aria-selected="true" id="file-tab" aria-controls="file-panel">영상 파일</button><button type="button" role="tab" aria-selected="false" id="url-tab" aria-controls="url-panel">YouTube Shorts 주소</button></div>
 <form id="analysis-form"><div id="file-panel" role="tabpanel" aria-labelledby="file-tab"><label class="drop" id="drop-zone" for="video-file"><span class="upload-icon">↥</span><strong>영상을 놓거나 파일을 선택하세요</strong><span>MP4, MOV, WEBM 등 · 한 번에 영상 1개</span><input id="video-file" type="file" accept="video/*"><span id="filename">선택한 파일이 없습니다.</span></label><div id="preview" class="preview" hidden><video id="video-preview" controls playsinline preload="metadata"></video><div><strong id="preview-name"></strong><p id="preview-meta" class="help"></p><button id="remove-file" class="text-button" type="button">선택 취소</button></div></div></div>
-<div id="url-panel" role="tabpanel" aria-labelledby="url-tab" hidden><label for="video-url">공개 YouTube Shorts 주소</label><input id="video-url" type="url" placeholder="https://www.youtube.com/shorts/…" autocomplete="off"><p class="help">주소를 입력하고 분석 시작을 누르면 원본을 요청한 뒤 브라우저에서 분석합니다.</p><p class="help">YouTube가 사람 확인을 요구하면 아래에 공식 페이지 연결 단계를 표시합니다. 원본 접근이 실제 허용되기 전에는 분석을 시작하지 않습니다.</p>
-<section id="youtube-check" class="youtube-check" aria-labelledby="youtube-check-title" hidden>
-<h3 id="youtube-check-title">YouTube에서 확인이 필요합니다</h3>
-<p id="youtube-check-status" role="status" aria-live="polite">YouTube가 원본 요청을 거절했습니다.</p>
-<ol><li><a id="youtube-check-link" class="youtube-check-link" target="_blank" rel="noopener noreferrer">YouTube 공식 페이지에서 영상 확인 ↗</a><p class="help">열린 YouTube에서 로그인이나 사람 확인이 표시되면 직접 진행하세요. 이 사이트는 비밀번호나 인증 쿠키를 받지 않습니다.</p></li>
-<li>이 사이트로 돌아오면 원본 연결을 한 번 다시 확인합니다.<p class="help">자동 확인이 시작되지 않으면 아래 버튼을 누르세요.</p></li></ol>
-<button id="youtube-check-retry" type="button" class="secondary">원본 연결 다시 확인</button>
-<p class="help">브라우저의 YouTube 확인 결과가 분석 연결 서버로 전달되는 것은 아닙니다. 다시 요청해도 서버 접근이 거절될 수 있습니다.</p>
-</section></div>
-<div class="actions"><p class="help">영상 파일은 서버로 업로드하지 않고 이 브라우저에서 분석합니다.<br>YouTube 주소는 원본 요청을 위해 연결 서버에 전달됩니다.</p><button class="primary" id="analyze" type="submit" disabled>분석 시작 <span>↗</span></button></div></form>
+<div id="url-panel" role="tabpanel" aria-labelledby="url-tab" hidden><label for="video-url">공개 YouTube Shorts 주소</label><input id="video-url" type="url" placeholder="https://www.youtube.com/shorts/…" autocomplete="off"><p class="help">노트북 서버가 켜져 있으면 주소를 붙여넣고 분석할 수 있습니다. 꺼져 있어도 영상 파일 분석은 계속 가능합니다.</p>
+<div class="connection-tools"><p id="notebook-status" class="status" role="status" aria-live="polite">노트북 서버 연결 확인 중…</p><button id="check-notebook" class="text-button" type="button">연결 다시 확인</button></div>
+<p class="help">연결 상태는 약 15초마다 자동 확인합니다. YouTube가 해당 영상의 다운로드를 거절하면 주소 분석이 실패할 수 있습니다.</p></div>
+<div class="actions"><p class="help">영상 파일은 서버로 업로드하지 않고 이 브라우저에서 분석합니다.<br>YouTube 주소 분석은 연결된 운영자 노트북에서 실행합니다.</p><button class="primary" id="analyze" type="submit" disabled>분석 시작 <span>↗</span></button></div></form>
 <div id="progress" class="progress" role="status" aria-live="polite" hidden><span class="spinner"></span><div class="progress-body"><strong id="progress-title">분석 준비 중</strong><p id="progress-message">잠시 기다려 주세요.</p><progress id="frame-progress" max="64" value="0" aria-label="Grad-CAM 계산이 완료된 프레임 수" hidden></progress><span id="elapsed" class="help"></span><button id="cancel-analysis" class="text-button" type="button" hidden>분석 취소</button></div></div>
 <p id="error" class="error" role="alert" hidden></p><p id="availability" class="help">파일 분석은 접속한 사람의 기기에서 실행합니다. 운영자 노트북이나 분석 서버를 켤 필요가 없고 서버 분석 횟수 한도를 사용하지 않습니다. 처음에는 모델을 내려받으며, 분석 속도는 기기 성능에 따라 달라집니다.</p>
 </section>
