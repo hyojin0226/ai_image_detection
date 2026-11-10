@@ -3,7 +3,7 @@ const $ = id => document.getElementById(id);
 
 export async function analyzeVideo(file, { signal, onState = () => {} } = {}) {
   onState('loading', '영상 분석 모델을 불러오고 있어요.');
-  const { analyzeFile } = await import('./browser-engine.js?v=classifiers');
+  const { analyzeFile } = await import('./browser-engine.js?v=frames');
   signal?.throwIfAborted();
   const video = await analyzeFile(file, { signal, progress: message => {
     onState(message.includes('준비') ? 'loading' : 'analyzing', message);
@@ -41,7 +41,7 @@ export function renderVideoResult(result) {
   $('video-details').open = false; $('video-details').ontoggle = null;
   updateVideoProgress();
   if (!video) return;
-  $('video-meta').textContent = `${video.duration_sec.toFixed(1)}초 · ${video.analyzed_frames}/64프레임 분석 · ${video.elapsed_sec}초 소요`;
+  $('video-meta').textContent = `${video.duration_sec.toFixed(1)}초 · ${video.analyzed_frames}/${video.planned_frames}프레임 분석 · ${video.elapsed_sec}초 소요`;
   $('video-limits').textContent = video.limitations_ko;
   const map = new Map(video.frames.map(frame => [frame.index, frame]));
   $('video-main-frames').append(...video.main_frame_indices.map(id => map.get(id)).filter(Boolean).map(frame => frameCard(frame,result)));

@@ -22,7 +22,7 @@ test('unconfigured providers, static assets and private paths', async t => {
   assert.ok(data.providers.every(p => !p.enabled));
   assert.equal((await request('/auth/google/login')).headers.get('location'), '/?auth_error=not_configured');
   for (const route of ['/.env', '/server.mjs', '/README.md', '/model/../../.git/config']) assert.equal((await request(route)).status, 404);
-  for (const route of ['/', '/image', '/video', '/image/', '/video/', '/classifier-entry.js', '/history.js', '/gradcam-dialog.js', '/ui.js', '/app.js', '/file-types.js', '/input-adapters.js', '/batch-input.js', '/lens.js', '/image-import.js', '/experience.css', '/icon.svg', '/extension.zip', '/model/inference_config.json']) assert.equal((await request(route)).status, 200);
+  for (const route of ['/', '/image', '/video', '/image/', '/video/', '/classifier-entry.js', '/history.js', '/gradcam-dialog.js', '/ui.js', '/app.js', '/file-types.js', '/input-adapters.js', '/batch-input.js', '/lens.js', '/image-import.js', '/experience.css', '/icon.svg', '/model/inference_config.json']) assert.equal((await request(route)).status, 200);
 });
 
 for (const provider of ['google', 'kakao']) {

@@ -7,12 +7,17 @@
 - 보라색 렌즈 효과가 파일 입력 영역에 적용됩니다. 포인터를 따라 선명한 영역이 이동하고 업로드 후 실제 이미지와 처리 상태를 표시합니다.
 - 이미지·영상·문서 유형을 같은 입력창에서 구분합니다. 현재 실제 분석은 얼굴 이미지 모델만 지원합니다. 글 입력창은 모델 연결 전입니다.
 - 카카오·구글 OAuth 서버 연동 코드가 포함되어 있습니다. 각 제공자 앱 설정과 로컬 환경변수가 필요하며, 실제 계정 로그인 완료는 별도로 검증해야 합니다.
-- Chrome 확장 프로그램 소스와 다운로드 ZIP을 포함합니다. 개발자 모드로 설치하며 스토어 배포판은 아닙니다.
+- Chrome 확장 프로그램은 사용하지 않기로 해서 소스·ZIP·안내를 제거했습니다 (`feature/fakit-integration`).
 - 로그인 정보는 서버 세션, 분석 기록은 브라우저 로컬 저장소에 보관합니다. 계정별 기록 동기화는 없습니다.
 - 디자인 참고: https://community.spline.design/file/355705e7-5f04-4051-93d5-5007f7034ada . 장면 파일은 포함하지 않고 CSS로 별도 구현했습니다.
 
 `feature/main-model-hyojin` 브랜치의 `streamlit_app.py`를 브라우저에서 분석하는 웹사이트로 옮긴 버전입니다. 소셜 로그인은 저장소 루트의 Node.js 서버가 처리합니다.
-같은 EfficientNetV2S 모델을 [TensorFlow.js](https://www.tensorflow.org/js)로 변환해 사용하고, 판정 기준(threshold 0.24)도 동일합니다.
+**사진 검사(`/image`)** 는 2차 실험의 최종 ConvNeXt-T(ONNX, 약 56MB)를 onnxruntime-web으로 실행합니다.
+BlazeFace로 얼굴을 찾고 → 얼굴 상자를 2배 크기 정사각형으로 잘라 → 256×256 → JPEG 90 재인코딩 → ImageNet 정규화 후 판정합니다.
+REAL 기준은 0.16이고, 얼굴이 여러 개면 가장 큰 얼굴로 판정하며, 얼굴이 없으면 판단하지 않습니다.
+Grad-CAM은 ONNX 그래프 안에서 같은 추론으로 함께 계산합니다 (`face-model.js`, develop 저장소 `web_model/`에서 서버와 판정 불일치 0건으로 검증).
+**영상 검사(`/video`)** 는 두현 영상 분류기가 1차 EfficientNetV2S 특징으로 학습되어, 그 TF.js 모델(threshold 0.24 설정 파일 포함)을 영상 전용으로 계속 씁니다.
+영상 길이에 따라 16·32·48·64프레임을 추출합니다 (`study/KongDuHyun` 73617e2와 같은 방식).
 업로드한 이미지는 서버로 전송되지 않습니다.
 
 ## 폴더 구성
@@ -23,9 +28,10 @@
 | `ui.js` | 페이지 라우팅, 실제 로그인 팝업/로그아웃, 계정 표시 |
 | `experience.css`, `lens.js` | 렌즈 입력 디자인과 포인터 반응 |
 | `file-types.js` | 통합 입력의 파일 종류 분류 |
-| `image-import.js` | 확장 프로그램 URL 수신, 크기 제한이 있는 이미지 다운로드 |
-| `extension.zip` | 개발 모드로 설치하는 Chrome 확장 프로그램 소스 |
-| `model/model.json`, `model/group1-shard*.bin` | TF.js로 변환한 모델 (float16, 약 41MB) |
+| `image-import.js` | 이미지 링크 가져오기, 크기 제한이 있는 이미지 다운로드 |
+| `image-engine.js`, `face-model.js` | 사진 검사: 얼굴 검출 + ConvNeXt-T ONNX 추론 |
+| `model/convnext_tiny_fake_face.onnx`, `model/face_model_config.json`, `model/blaze_face_short_range.tflite` | 사진 모델, 전처리·기준값, 얼굴 검출 모델 |
+| `model/model.json`, `model/group1-shard*.bin` | 영상 검사용 EfficientNetV2S TF.js 모델 (float16, 약 41MB) |
 | `model/inference_config.json` | 입력 크기, threshold 등 (원본과 동일) |
 
 ## 팀 공유용 통합본
@@ -89,10 +95,6 @@ python -m http.server 8000 --directory web
 - 브라우저에서 실행되므로 처음 접속할 때 모델(약 41MB)을 내려받습니다. 이후엔 브라우저 캐시를 사용합니다.
 - 모델 가중치를 float16으로 줄였고, 이미지 리사이즈를 PIL 대신 브라우저 canvas로 합니다.
   테스트 이미지에서 원본 Keras 모델과의 확률 차이는 약 0.001 이하였습니다.
-
-## 크롬 우클릭 확장 프로그램
-
-[`../extension/README.md`](../extension/README.md)에 설치 방법이 있습니다. 사이트의 **확장 프로그램 받기**에서 개발용 ZIP을 내려받을 수 있습니다. 확장 프로그램은 이미지 주소를 Fakit 입력란으로 전달합니다. **가져와 분석하기**를 누르면 브라우저에서 가져오며, 원본 사이트의 CORS 제한이 있으면 직접 업로드해야 합니다.
 
 ## 테스트
 

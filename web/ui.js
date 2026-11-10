@@ -265,17 +265,6 @@
   addEventListener("pageshow", e => { if (e.persisted) refreshAuth(); });
 })();
 
-// Chrome internal pages cannot be opened by ordinary website links.
-document.getElementById('copy-extension-address')?.addEventListener('click', async () => {
-  const status = document.getElementById('extension-copy-status');
-  try {
-    await navigator.clipboard.writeText('chrome://extensions');
-    status.textContent = '복사했어요. Chrome의 새 탭 주소창에 붙여넣으세요.';
-  } catch {
-    status.textContent = '주소를 직접 선택해 복사해 주세요: chrome://extensions';
-  }
-});
-
 // Bend only the section of each mist stream within reach of the pointer.
 (() => {
   const landing = document.querySelector('.classifier-landing');

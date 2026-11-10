@@ -119,12 +119,12 @@ export function createApp({ env = process.env, fetchImpl = fetch, now = Date.now
       const requestedPath = decodeURIComponent(url.pathname);
       const pathname = /^\/(image|video)\/?$/.test(requestedPath) ? '/' : requestedPath;
       // Explicit public-file allowlist: repository files and credentials are never served.
-      if (!/^\/(?:|index\.html|extension-privacy\.html|(?:classifier-entry|history|gradcam-dialog|model-release|inference-client|inference-worker|diagnostics|app|ui|lens|file-types|image-import|input-adapters|batch-input|gradcam|media-links|video-analysis|browser-engine|video-math)\.js|(?:style|experience)\.css|icon\.(?:svg|ico)|extension\.zip|model\/(?:r-[a-f0-9]{20}\/)?[\w.-]+\.(?:json|bin))$/.test(pathname)) return send(404, { error: 'Not found' });
+      if (!/^\/(?:|index\.html|(?:classifier-entry|history|gradcam-dialog|model-release|inference-client|inference-worker|diagnostics|app|ui|lens|file-types|image-import|input-adapters|batch-input|gradcam|media-links|video-analysis|browser-engine|video-math|image-engine|face-model)\.js|(?:style|experience)\.css|icon\.(?:svg|ico)|model\/(?:r-[a-f0-9]{20}\/)?[\w.-]+\.(?:json|bin|onnx|tflite))$/.test(pathname)) return send(404, { error: 'Not found' });
       if(pathname.startsWith('/model/r-')&&!pathname.startsWith(MODEL_BASE))return send(404,{error:'Model release not found'});
       const publicPath=pathname.startsWith(MODEL_BASE)?pathname.replace(MODEL_BASE,'/model/'):pathname;
       const file = path.join(webRoot, publicPath === '/' ? 'index.html' : publicPath.slice(1));
       const content = await readFile(file);
-      const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.bin': 'application/octet-stream', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.zip': 'application/zip' };
+      const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.bin': 'application/octet-stream', '.onnx': 'application/octet-stream', '.tflite': 'application/octet-stream', '.svg': 'image/svg+xml', '.ico': 'image/x-icon' };
       const cache=pathname.startsWith(MODEL_BASE)?'public, max-age=604800, immutable':/\.(js|css)$/.test(pathname)?'public, max-age=300, stale-while-revalidate=86400':'no-cache';
       res.writeHead(200, { 'Content-Type': types[path.extname(file)], 'Cache-Control':cache });
       res.end(req.method === 'HEAD' ? undefined : content);
