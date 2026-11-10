@@ -4,7 +4,7 @@ services:
     runtime: node
     plan: free
     region: singapore
-    branch: fakit-priview
+    branch: fakit-preview
     buildCommand: node --test tests/*.test.mjs
     startCommand: node server.mjs
     healthCheckPath: /api/auth
