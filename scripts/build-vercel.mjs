@@ -8,7 +8,7 @@ if(path.dirname(output)!==process.cwd()||path.basename(output)!=='dist')throw Er
 await rm(output,{recursive:true,force:true});
 await mkdir('dist'+MODEL_BASE, { recursive: true });
 for (const name of await readdir('web')) {
-  if (/\.(html|js|css|svg|ico)$/.test(name)) await copyFile(`web/${name}`, `dist/${name}`);
+  if (/\.(html|js|css|svg|ico|zip)$/.test(name)) await copyFile(`web/${name}`, `dist/${name}`);
 }
 for (const name of await readdir('web/model')) {
   if (/\.(json|bin|onnx|tflite)$/.test(name)) await copyFile(`web/model/${name}`, `dist${MODEL_BASE}${name}`);

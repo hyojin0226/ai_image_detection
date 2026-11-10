@@ -430,6 +430,7 @@ $('classifier-prompt').textContent = isVideo ? '영상을 놓거나 렌즈를 �
 $('classifier-formats').textContent = isVideo ? 'MP4·WebM · 1개, 3~40초 · 90MB' : 'JPG·PNG·WEBP · 최대 20장 · 장당 15MB';
 $('pick-file').textContent = isVideo ? '영상 선택' : '사진 선택';
 $('take-photo').hidden = isVideo;
+document.querySelector('.extension-banner').hidden = isVideo;
 for (const id of ['unified-file','album-file']) {
   $(id).accept = isVideo ? 'video/mp4,video/webm' : 'image/jpeg,image/png,image/webp';
   $(id).multiple = !isVideo;
