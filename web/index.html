@@ -76,7 +76,7 @@
           <filter id="mist-warp" x="-50%" y="-30%" width="200%" height="160%">
             <feTurbulence type="fractalNoise" baseFrequency=".014 .007" numOctaves="3" seed="12" result="noise"/>
             <feDisplacementMap in="SourceGraphic" in2="noise" scale="56" xChannelSelector="R" yChannelSelector="G"/>
-            <feGaussianBlur stdDeviation="5"/>
+            <feGaussianBlur stdDeviation="8"/>
           </filter>
           <linearGradient id="mist-colors" x2="0%" y2="100%">
             <stop stop-color="#9b76dd" stop-opacity="0"/>
@@ -87,11 +87,11 @@
         </defs>
         <g fill="none" stroke="url(#mist-colors)" filter="url(#mist-warp)">
           <g data-mist-stream>
-            <path stroke-width="30" opacity=".45" d="M221 -40C282 108 181 157 217 287S272 435 207 690"/>
+            <path stroke-width="46" opacity=".37" d="M221 -40C282 108 181 157 217 287S272 435 207 690"/>
             <path stroke-width="10" d="M207 -40C257 114 201 175 229 305S242 464 210 690"/>
           </g>
           <g data-mist-stream>
-            <path stroke-width="30" opacity=".45" d="M786 -40C742 108 839 193 789 327S754 512 802 690"/>
+            <path stroke-width="46" opacity=".37" d="M786 -40C742 108 839 193 789 327S754 512 802 690"/>
             <path stroke-width="10" d="M797 -40C756 106 810 190 782 321S778 526 805 690"/>
           </g>
         </g>
@@ -457,7 +457,7 @@
     <p id="gradcam-message" role="status"></p><div id="gradcam-images" class="gradcam-grid"></div>
     <p class="small">Grad-CAM은 모델의 판단에 기여한 영역을 보여줍니다. 색의 강도는 이 시각화 안에서의 상대적 기여도이며 조작 여부를 확정하는 증거가 아닙니다.</p>
   </dialog>
-  <script src="/ui.js?v=mist-glow"></script>
+  <script src="/ui.js?v=soft-mist"></script>
 
   <script src="/diagnostics.js"></script>
   <script type="module" src="/classifier-entry.js?v=night"></script>

@@ -320,8 +320,8 @@ document.getElementById('copy-extension-address')?.addEventListener('click', asy
     const dt = previousTime ? Math.min((now - previousTime) / 1000, .04) : 1 / 60;
     previousTime = now;
     const scaleX = bounds.width / 1000, scaleY = bounds.height / 650;
-    const radius = Math.min(225, Math.max(115, bounds.width * .18));
-    const spring = 10, decay = Math.exp(-spring * dt);
+    const radius = Math.min(310, Math.max(130, bounds.width * .24));
+    const spring = 6.8, decay = Math.exp(-spring * dt);
     let unsettled = false;
 
     for (const choice of choices) {
@@ -341,7 +341,7 @@ document.getElementById('copy-extension-address')?.addEventListener('click', asy
         let bent = false;
         for (const point of stroke.points) {
           const distance = pointer ? Math.hypot(point.x * scaleX - pointer.x, point.y * scaleY - pointer.y) : radius;
-          const target = direction * 42 * proximity(distance, radius) / scaleX;
+          const target = direction * 48 * proximity(distance, radius) ** .8 / scaleX;
           const error = point.offset - target;
           const momentum = point.velocity + spring * error;
           point.offset = target + (error + momentum * dt) * decay;
