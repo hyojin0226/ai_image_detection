@@ -253,18 +253,42 @@
 
     <!-- ── Model ─────────────────────────────────────────── -->
     <section class="page model-editorial" data-page="model">
-      <header class="model-intro"><p class="model-kicker">모델 이야기</p><h1>익숙한 얼굴을 넘어,<br>처음 보는 생성기까지.</h1><p class="model-deck">Fakit은 얼굴 사진의 AI 생성 여부를 분석합니다.<br>지금은 학습에서 보지 못한 이미지에도 통하는지 검증하고 있습니다.</p><a class="model-source" href="https://github.com/hyojin0226/ai_image_detection/tree/feature/generalization-study" target="_blank" rel="noopener noreferrer">2차 실험 기록 ↗</a></header>
-      <section class="model-finding" aria-labelledby="finding-title"><h2 id="finding-title">학습에 없던 이미지도 구분할 수 있을까?</h2><div><p>생성기 한 계열을 학습에서 제외하고, 세 모델을 비교했습니다. 처음 보는 계열에서는 AI 이미지를 실제 사진으로 분류하는 오류가 늘었습니다.</p><p class="finding-conclusion">이번 비교만으로는 범용 탐지에 사용할 모델을 선정하기 어렵습니다.</p></div></section>
-      <section class="model-method" aria-labelledby="method-title"><h2 id="method-title">더 엄격하게, 다시 검증했습니다.</h2><div class="model-method-grid"><article><span>01</span><h3>중복 없이</h3><p>같은 사진과 같은 영상의 프레임이 학습과 평가에 섞이지 않도록 나눴습니다.</p></article><article><span>02</span><h3>처음 보는 계열로</h3><p>GAN·diffusion·얼굴 조작 중 한 계열을 학습에서 제외하고 테스트했습니다.</p></article><article><span>03</span><h3>같은 조건에서</h3><p>압축 조건을 맞추고 EfficientNetV2S, ConvNeXt-T, CLIP을 비교했습니다.</p></article></div></section>
-      <section class="model-reading"><h2>결과는 이렇게 읽어주세요.</h2><p>REAL은 실제 촬영을 인증하는 표시가 아닙니다. 새로운 생성기, 부분 조작, 강한 압축에서는 틀릴 수 있습니다. Grad-CAM 역시 모델의 판단에 영향을 준 영역이며, 위조 위치를 찾아낸 결과는 아닙니다.</p><a href="/#/results">결과 읽는 법 ↗</a></section>
-      <section class="model-evidence" aria-label="실험 상세 자료">
-        <details class="model-detail"><summary>세 모델의 성능 비교<span aria-hidden="true">＋</span></summary><div class="model-detail-body"><p class="body">2026년 10월 31일 연구 결과입니다. 아래 값은 현재 웹 모델의 실사용 정확도가 아닙니다. ID는 학습에서 본 계열, OOD는 학습에서 제외한 계열입니다.</p><div class="research-table-wrap" role="region" aria-label="2차 모델 비교표" tabindex="0"><table class="research-table"><caption>Macro F1 비교 · 0~1, 높을수록 좋음</caption><thead><tr><th scope="col">모델</th><th scope="col">ID 평균</th><th scope="col">미학습 GAN</th><th scope="col">미학습 diffusion</th><th scope="col">미학습 얼굴 조작</th><th scope="col">OOD 평균</th><th scope="col">JPEG q50</th></tr></thead><tbody><tr><th scope="row">EfficientNetV2S</th><td>0.978</td><td>0.333</td><td>0.342</td><td>0.414</td><td>0.363</td><td>0.971</td></tr><tr><th scope="row">ConvNeXt-T</th><td>0.982</td><td>0.333</td><td>0.337</td><td>0.423</td><td>0.365</td><td>0.978</td></tr><tr><th scope="row">CLIP + Linear</th><td>0.942</td><td>0.393</td><td>0.339</td><td>0.491</td><td>0.408</td><td>0.911</td></tr></tbody></table></div><p class="small">ID·OOD 평균·JPEG q50은 LOGO 3종 평균입니다. 클래스가 균형인 이번 평가에서 전부 REAL로 예측하면 Macro F1은 약 0.333입니다. F1은 정확도나 개별 사진의 정답 확률과 다릅니다.</p><p class="body">ConvNeXt-T는 미학습 diffusion에서 AUC 0.871을 보였지만, 검증셋에서 정한 기준으로 AI 이미지를 잡아낸 비율은 0.4%였습니다. 높은 AUC만으로 실제 판별이 잘 된다고 판단할 수 없습니다. 모델을 바꾸는 것만으로 일반화 문제가 해결되지는 않았습니다.</p><a href="https://github.com/hyojin0226/ai_image_detection/tree/feature/generalization-study/outputs/exp2/summary" target="_blank" rel="noopener noreferrer">실험 결과 원본 보기 ↗</a></div></details>
+      <header class="model-intro">
+        <h1>Fakit은 어떻게 검사하나요?</h1>
+        <p class="model-deck">사진에서는 가장 큰 얼굴을, 영상에서는 여러 시점의 프레임을 분석합니다. 사진과 영상 파일은 브라우저 안에서 처리합니다.</p>
+      </header>
+      <section class="model-method" aria-labelledby="method-title">
+        <h2 id="method-title">사진과 영상의 검사 방식</h2>
+        <div class="model-method-grid">
+          <article>
+            <span>01</span>
+            <h3>사진 · ConvNeXt-T</h3>
+            <p>BlazeFace가 얼굴을 찾으면 가장 큰 얼굴 주변을 잘라 검사합니다. 얼굴을 찾지 못하면 판단 불가로 표시합니다.</p>
+          </article>
+          <article>
+            <span>02</span>
+            <h3>영상 · 프레임 분석</h3>
+            <p>3~40초 영상에서 길이에 따라 16·32·48·64프레임을 추출합니다. EfficientNetV2S로 특징을 뽑고 영상 전용 분류기가 판정합니다.</p>
+          </article>
+          <article>
+            <span>03</span>
+            <h3>Grad-CAM · 판정에 영향을 준 영역</h3>
+            <p>히트맵은 모델의 판정에 기여한 영역을 보여줍니다. 붉게 표시된 곳만 보고 조작 여부를 확정할 수는 없습니다.</p>
+          </article>
+        </div>
+      </section>
+      <section class="model-reading">
+        <h2>결과를 볼 때</h2>
+        <p>REAL은 모델이 실제 얼굴 쪽으로 분류했다는 뜻입니다. 처음 보는 생성기의 이미지나 얼굴 일부만 바꾼 사진은 놓칠 수 있고, 압축이 심한 실제 사진도 AI로 분류될 수 있습니다.</p>
+        <a href="/#/results">점수와 결과 읽는 법 ↗</a>
+      </section>
+      <section class="model-evidence" aria-label="모델 사양과 연구 기록">
+        <details class="model-detail"><summary>현재 배포 모델 · 세부 사양<span aria-hidden="true">＋</span></summary><div class="model-detail-body"><dl class="specs"><div><dt>배포 모델</dt><dd>사진: 최종 ConvNeXt-T (ImageNet-22k 사전학습, VAE 의사 fake + 축소·블러·JPEG 증강) · 영상: 1차 EfficientNetV2S 특징 + 영상 분류기</dd></div><div><dt>사진 입력</dt><dd>BlazeFace 얼굴 검출 → 얼굴 상자 2배 정사각 crop → 256 × 256 → JPEG 90 재인코딩 → ImageNet 정규화</dd></div><div><dt>출력과 기준</dt><dd>REAL 점수 ≥ 0.16이면 REAL · 미만이면 AI (검증셋 기준으로 정한 값)</dd></div><div><dt>사진 모델 검증</dt><dd>별도 테스트 이미지 2만 장에서 AUC 0.990을 기록했습니다. AUC는 두 범주를 점수로 구분하는 능력을 나타냅니다. 0.990을 실사용 정확도 99%로 해석할 수는 없습니다.</dd></div><div><dt>실행 위치</dt><dd>브라우저 내 onnxruntime-web · 모델 약 56MB · 사진 서버 업로드 없음</dd></div><div><dt>Grad-CAM</dt><dd>ConvNeXt 마지막 단계(8 × 8)에서 판정한 분류 쪽 기여도를 계산</dd></div></dl><p class="body">Grad-CAM은 위조 부위 검출기가 아닙니다. 얼굴 대신 배경이나 가장자리에 반응할 수도 있으며, 판정이 맞다는 증거로 사용할 수 없습니다.</p></div></details>
+        <details class="model-detail"><summary>2차 연구 기록 · 세 모델 비교<span aria-hidden="true">＋</span></summary><div class="model-detail-body"><p class="body">2026년 10월 31일 연구 결과입니다. 아래 값은 현재 웹 모델의 실사용 정확도가 아닙니다. ID는 학습에서 본 계열, OOD는 학습에서 제외한 계열입니다.</p><div class="research-table-wrap" role="region" aria-label="2차 모델 비교표" tabindex="0"><table class="research-table"><caption>Macro F1 비교 · 0~1, 높을수록 좋음</caption><thead><tr><th scope="col">모델</th><th scope="col">ID 평균</th><th scope="col">미학습 GAN</th><th scope="col">미학습 diffusion</th><th scope="col">미학습 얼굴 조작</th><th scope="col">OOD 평균</th><th scope="col">JPEG q50</th></tr></thead><tbody><tr><th scope="row">EfficientNetV2S</th><td>0.978</td><td>0.333</td><td>0.342</td><td>0.414</td><td>0.363</td><td>0.971</td></tr><tr><th scope="row">ConvNeXt-T</th><td>0.982</td><td>0.333</td><td>0.337</td><td>0.423</td><td>0.365</td><td>0.978</td></tr><tr><th scope="row">CLIP + Linear</th><td>0.942</td><td>0.393</td><td>0.339</td><td>0.491</td><td>0.408</td><td>0.911</td></tr></tbody></table></div><p class="small">ID·OOD 평균·JPEG q50은 LOGO 3종 평균입니다. 클래스가 균형인 이번 평가에서 전부 REAL로 예측하면 Macro F1은 약 0.333입니다. F1은 정확도나 개별 사진의 정답 확률과 다릅니다.</p><p class="body">ConvNeXt-T는 미학습 diffusion에서 AUC 0.871을 보였지만, 검증셋에서 정한 기준으로 AI 이미지를 잡아낸 비율은 0.4%였습니다. 높은 AUC만으로 실제 판별이 잘 된다고 판단할 수 없습니다. 모델을 바꾸는 것만으로 일반화 문제가 해결되지는 않았습니다.</p><a href="https://github.com/hyojin0226/ai_image_detection/tree/feature/generalization-study/outputs/exp2/summary" target="_blank" rel="noopener noreferrer">실험 결과 원본 보기 ↗</a></div></details>
         <details class="model-detail"><summary>실험을 어떻게 설계했나요?<span aria-hidden="true">＋</span></summary><div class="model-detail-body"><ol class="action-list"><li><b>같은 사진과 영상 묶음을 분리했습니다.</b><span>중복 사진을 제거하고, 같은 사진이나 같은 영상의 프레임이 학습·검증·테스트에 나뉘어 섞이지 않도록 구성했습니다.</span></li><li><b>생성기 계열 하나를 학습에서 제외했습니다.</b><span>GAN, diffusion, 얼굴 조작(manip) 중 하나를 빼고 학습한 뒤, 제외한 계열로 테스트했습니다. 이를 LOGO 평가라고 합니다.</span></li><li><b>파일 형식 단서를 줄였습니다.</b><span>학습 시 JPEG 품질 60~95, 평가 시 품질 90으로 재인코딩했습니다. 기존 압축 흔적까지 완전히 제거할 수는 없습니다.</span></li><li><b>세 모델을 같은 조건에서 비교했습니다.</b><span>EfficientNetV2S, ConvNeXt-T, CLIP + 선형 분류기를 비교하고, 각 판정 기준은 검증셋에서 정한 뒤 테스트에 그대로 적용했습니다.</span></li></ol></div></details>
         <details class="model-detail"><summary>이전 정확도 97.8%는 무엇이 달라졌나요?<span aria-hidden="true">＋</span></summary><div class="model-detail-body"><p class="body">1차 ID 테스트 정확도 97.8%, ROC-AUC 0.998은 당시 평가셋의 결과입니다. 이후 조사에서 테스트의 실제 사진 73%, AI 사진 32%와 같은 사진이 학습에도 포함된 것으로 확인됐습니다. 따라서 이 수치를 실사용 정확도나 새로운 생성기에 대한 성능으로 볼 수 없습니다.</p><p class="body">FLUX·SDXL도 학습에 포함되어 있어, 기존의 99.6% 결과는 미학습 생성기 평가가 아닙니다. 파일 내용이 같아도 재인코딩으로 바이트가 달라질 수 있어, 파일 중복 검사만으로는 이 문제를 찾지 못했습니다.</p></div></details>
         <details class="model-detail"><summary>어떤 사진에서 주의해야 하나요?<span aria-hidden="true">＋</span></summary><div class="model-detail-body"><ul class="bullets"><li>얼굴 사진용 모델입니다. 풍경·사물·전신 사진이나 얼굴이 작은 사진에는 적합하지 않습니다.</li><li>1차 모델의 GRAVEX 분석에서는 FaceForensics++ 부분 조작 이미지 291장 중 286장(98.3%)을 놓쳤습니다. 이 특정 평가의 결과이며 모든 영상에 대한 수치가 아닙니다.</li><li>압축·축소가 강해지면 실제 사진을 AI로 오판하는 경우가 늘었습니다. 가능하면 원본으로 확인하세요.</li><li>1차 강건성 평가에도 중복 문제의 영향이 있어, 절대 성능보다 변환 전후의 차이를 참고해야 합니다.</li></ul></div></details>
-        <details class="model-detail"><summary>현재 데모의 모델과 실행 방식<span aria-hidden="true">＋</span></summary><div class="model-detail-body"><dl class="specs"><div><dt>배포 모델</dt><dd>사진: 최종 ConvNeXt-T (ImageNet-22k 사전학습, VAE 의사 fake + 축소·블러·JPEG 증강) · 영상: 1차 EfficientNetV2S 특징 + 영상 분류기</dd></div><div><dt>사진 입력</dt><dd>BlazeFace 얼굴 검출 → 얼굴 상자 2배 정사각 crop → 256 × 256 → JPEG 90 재인코딩 → ImageNet 정규화</dd></div><div><dt>출력과 기준</dt><dd>REAL 점수 ≥ 0.16이면 REAL · 미만이면 AI (검증셋 기준으로 정한 값)</dd></div><div><dt>사진 성능</dt><dd>학습에 쓰지 않은 추가 테스트 2만 장 AUC 0.990 · 같은 분포 테스트 AUC 0.998 · 보정한 실제 사진 오판 약 5~6%</dd></div><div><dt>실행 위치</dt><dd>브라우저 내 onnxruntime-web · 모델 약 56MB · 사진 서버 업로드 없음</dd></div><div><dt>Grad-CAM</dt><dd>ConvNeXt 마지막 단계(8 × 8)에서 판정한 분류 쪽 기여도를 계산</dd></div></dl><p class="body">Grad-CAM은 위조 부위 검출기가 아닙니다. 얼굴 대신 배경이나 가장자리에 반응할 수도 있으며, 판정이 맞다는 증거로 사용할 수 없습니다.</p></div></details>
       </section>
-      <p class="model-release-note">사진 분석기는 2차 실험에서 고른 최종 ConvNeXt-T입니다. 영상 분석기는 영상 분류기가 1차 EfficientNetV2S 특징으로 학습되어 그 모델을 그대로 씁니다.</p>
     </section>
 
     <section class="page" data-page="results">
