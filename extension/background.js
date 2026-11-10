@@ -1,5 +1,5 @@
 // Change this to your deployed Fakit URL when publishing the site.
-const FAKIT_URL = 'https://aiimagedetection-rho.vercel.app/';
+const FAKIT_URL = 'https://fakit-lens.vercel.app/';
 const MENU_ID = 'fakit-image';
 
 chrome.runtime.onInstalled.addListener(() => {
