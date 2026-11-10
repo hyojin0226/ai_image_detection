@@ -444,7 +444,11 @@ body[data-route="home"] .dock { display: none; }
 body:is([data-route="image"], [data-route="video"]) .nav-inner { justify-content: flex-start; gap: clamp(8px, 2vw, 24px); }
 body:is([data-route="image"], [data-route="video"]) .nav-right { margin-left: auto; }
 body:is([data-route="image"], [data-route="video"]) .classifier-switch { display: inline-flex; gap: 2px; }
-body:is([data-route="image"], [data-route="video"]) .unified-stage { min-height: auto; }
+body:is([data-route="image"], [data-route="video"]) .unified-stage {
+  min-height: calc(100svh - var(--nav-h));
+  justify-content: center;
+  padding-block: clamp(20px, 4vh, 42px);
+}
 body:is([data-route="image"], [data-route="video"]) .lens-stage { height: clamp(215px, 34svh, 355px); min-height: 0; }
 .classifier-title { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .page[data-page="classifier"].is-active { animation: none; }
@@ -460,3 +464,23 @@ body:is([data-route="image"], [data-route="video"]) #text-frame .unified-bar { b
   body:is([data-route="image"], [data-route="video"]) .nav-inner { gap: 6px; padding-inline: 12px; }
   .classifier-switch a { padding-inline: 8px; font-size: 13px; }
 }
+
+#saved-detail { width: min(640px, calc(100% - 24px)); }
+.saved-kicker { margin-bottom: 6px; color: var(--purple-ink); font-size: 13px; font-weight: 700; }
+#saved-title { font-size: clamp(22px, 4vw, 32px); line-height: 1.2; }
+#saved-meta { margin-top: 8px; color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+.saved-scores { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 20px; }
+.saved-scores div { display: grid; gap: 4px; padding: 12px 15px; border: 1px solid var(--line); border-radius: 14px; background: #fff; }
+.saved-scores span { color: var(--body); font-size: 13px; }
+.saved-scores strong { font-size: clamp(20px, 4vw, 30px); font-variant-numeric: tabular-nums; }
+#saved-detail[data-verdict="fake"] .saved-scores div:first-child,
+#saved-detail[data-verdict="real"] .saved-scores div:last-child { background: #f1ebff; border-color: #ddd0f7; }
+.saved-note, #saved-video > p { margin-top: 7px; color: var(--muted); font-size: 12px; }
+#saved-video { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
+#saved-video h3 { font-size: 16px; }
+#saved-video ul { display: grid; gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; }
+#saved-video li { display: grid; grid-template-columns: max-content minmax(16px, 1fr) 3.8rem; align-items: center; gap: 10px; font-size: 12px; font-variant-numeric: tabular-nums; }
+#saved-video li strong { text-align: right; }
+.saved-segment-bar { height: 7px; border-radius: 10px; background: #eee9f6; overflow: hidden; }
+.saved-segment-bar::before { content: ""; display: block; width: var(--segment-score, 0%); height: 100%; border-radius: inherit; background: #8d6ed1; }
+.saved-actions { margin-top: 18px; }

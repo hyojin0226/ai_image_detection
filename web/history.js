@@ -1,4 +1,4 @@
-import { openGradcam, scoreText } from './gradcam-dialog.js';
+import { openGradcam } from './gradcam-dialog.js';
 
 const $ = id => document.getElementById(id);
 const MAX_RECORDS = 200;
@@ -130,22 +130,43 @@ async function openResult(entry) {
     if (!isCurrent(owner) || !payload) return;
     const result = await transform(owner, entry.id, 'result', payload, false);
     if (!isCurrent(owner)) return;
-    $('saved-title').textContent = typeName(entry) + ' 검사 · ' + verdict(entry);
+    $('saved-kind').textContent = typeName(entry) + ' 검사 결과';
+    $('saved-title').textContent = entry.verdict === 'real' ? '실제 촬영으로 분류' : 'AI 생성으로 분류';
+    $('saved-detail').dataset.verdict = entry.verdict;
     $('saved-meta').textContent = entry.name + ' · ' + date(entry.at);
-    $('saved-score').textContent = scoreText(result);
+    $('saved-ai').textContent = (result.fake * 100).toFixed(1) + '%';
+    $('saved-real').textContent = (result.real * 100).toFixed(1) + '%';
+    const threshold = result.video?.threshold ?? result.threshold;
+    $('saved-score').textContent = (Number.isFinite(threshold)
+      ? `판정 기준 · ${result.video ? 'AI' : '실제'} 점수 ${(threshold * 100).toFixed(0)}% · `
+      : '') + '모델 점수는 진위가 확정될 확률이 아닙니다.';
     const video = $('saved-video');
     video.replaceChildren();
+    video.hidden = !result.video;
     if (result.video) {
+      const title = document.createElement('h3');
+      title.textContent = '구간별 AI 점수';
       const summary = document.createElement('p');
       summary.textContent = result.video.duration_sec.toFixed(1) + '초 · ' + result.video.analyzed_frames + '프레임 검사';
       const segments = document.createElement('ul');
       for (const segment of [...result.video.segments, ...result.video.skipped_segments].sort((a,b)=>a.start_sec-b.start_sec)) {
         const line = document.createElement('li');
-        line.textContent = segment.start_sec.toFixed(1) + '–' + segment.end_sec.toFixed(1) + '초 · ' +
-          (segment.fake_score == null ? '미분석' : 'AI 점수 ' + (segment.fake_score * 100).toFixed(1) + '%');
+        const time = document.createElement('span');
+        time.textContent = segment.start_sec.toFixed(1) + '–' + segment.end_sec.toFixed(1) + '초';
+        const bar = document.createElement('span');
+        bar.className = 'saved-segment-bar';
+        bar.setAttribute('aria-hidden', 'true');
+        const score = document.createElement('strong');
+        score.textContent = '미분석';
+        if (Number.isFinite(segment.fake_score)) {
+          const percent = segment.fake_score * 100;
+          bar.style.setProperty('--segment-score', `${Math.max(0, Math.min(100, percent))}%`);
+          score.textContent = percent.toFixed(1) + '%';
+        }
+        line.append(time, bar, score);
         segments.append(line);
       }
-      video.append(summary,segments);
+      video.append(title, summary, segments);
     }
     $('saved-gradcam').onclick = () => openGradcam(result);
     window.Fakit.openModal($('saved-detail'));

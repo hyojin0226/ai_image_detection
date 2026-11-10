@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
   <link rel="stylesheet" href="/style.css">
-  <link rel="stylesheet" href="/experience.css?v=shared-daylight">
+  <link rel="stylesheet" href="/experience.css?v=result-summary">
   <script>document.documentElement.classList.add("js");</script>
 </head>
 <body data-route="home">
@@ -447,8 +447,15 @@
 
   <dialog class="modal saved-dialog" id="saved-detail" aria-labelledby="saved-title">
     <button type="button" class="modal-close" data-close-dialog autofocus aria-label="닫기">×</button>
-    <h2 id="saved-title">검사 결과</h2><p id="saved-meta"></p><p id="saved-score"></p>
-    <div id="saved-video"></div><button type="button" class="btn btn-soft" id="saved-gradcam">Grad-CAM 결과 다시 보기</button>
+    <p class="saved-kicker" id="saved-kind"></p>
+    <h2 id="saved-title">검사 결과</h2><p id="saved-meta"></p>
+    <div class="saved-scores">
+      <div><span>AI 점수</span><strong id="saved-ai"></strong></div>
+      <div><span>실제 점수</span><strong id="saved-real"></strong></div>
+    </div>
+    <p class="saved-note" id="saved-score"></p>
+    <div id="saved-video" hidden></div>
+    <div class="saved-actions"><button type="button" class="btn btn-soft" id="saved-gradcam">판단 근거 보기 <span aria-hidden="true">↗</span></button></div>
   </dialog>
   <dialog class="modal saved-dialog" id="gradcam-dialog" aria-labelledby="gradcam-title">
     <button type="button" class="modal-close" data-close-dialog autofocus aria-label="닫기">×</button>
@@ -460,6 +467,6 @@
   <script src="/ui.js?v=soft-mist"></script>
 
   <script src="/diagnostics.js"></script>
-  <script type="module" src="/classifier-entry.js?v=night"></script>
+  <script type="module" src="/classifier-entry.js?v=result-summary"></script>
 </body>
 </html>
