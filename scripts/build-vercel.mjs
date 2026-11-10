@@ -11,6 +11,6 @@ for (const name of await readdir('web')) {
   if (/\.(html|js|css|svg|ico|zip)$/.test(name)) await copyFile(`web/${name}`, `dist/${name}`);
 }
 for (const name of await readdir('web/model')) {
-  if (/\.(json|bin)$/.test(name)) await copyFile(`web/model/${name}`, `dist${MODEL_BASE}${name}`);
+  if (/\.(json|bin|onnx|tflite)$/.test(name)) await copyFile(`web/model/${name}`, `dist${MODEL_BASE}${name}`);
 }
 console.log('Public assets ready in dist/');

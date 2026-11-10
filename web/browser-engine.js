@@ -5,6 +5,11 @@ let loading=null;
 document.addEventListener('fakit:inference-released',()=>{loading=null;});
 const next=()=>new Promise(resolve=>{const timer=setTimeout(resolve,100);requestAnimationFrame(()=>{clearTimeout(timer);resolve();});});
 const check=signal=>{if(signal?.aborted)throw new DOMException('분석을 취소했습니다.','AbortError');};
+// Same frame policy as study/KongDuHyun 73617e2: 16/32/48/64 frames by duration, 8 frames per segment.
+export function frameCountForDuration(duration){
+  if(!Number.isFinite(duration)||duration<3||duration>40)throw Error('3~40초 영상을 선택하세요.');
+  return duration<=10?16:duration<=20?32:duration<=30?48:64;
+}
 async function json(url){const r=await fetch(url);if(!r.ok)throw Error('모델 파일을 불러오지 못했습니다.');return r.json();}
 export function prepare(progress=()=>{}){
   if(loading)return loading;
@@ -50,13 +55,13 @@ async function openVideo(file,signal){
   return {video,capture,close(){video.pause();video.removeAttribute('src');video.load();URL.revokeObjectURL(url);}};
 }
 async function segments(reader,progress,signal){
-  const duration=reader.video.duration,groups=[],black=[],skipped=[];
-  for(let s=0;s<8;s++){
-    const start=s*duration/8,end=(s+1)*duration/8,candidates=[];
+  const duration=reader.video.duration,planned=frameCountForDuration(duration),count=planned/8,groups=[],black=[],skipped=[];
+  for(let s=0;s<count;s++){
+    const start=s*duration/count,end=(s+1)*duration/count,candidates=[];
     for(let j=0;j<8;j++){
-      check(signal);const f=await reader.capture((s*8+j+.5)*duration/64);
+      check(signal);const f=await reader.capture((s*8+j+.5)*duration/planned);
       if(f.black)black.push(f.timestamp_sec);else candidates.push(f);
-      progress(`프레임 추출 ${s*8+j+1}/64`);
+      progress(`프레임 추출 ${s*8+j+1}/${planned}`);
     }
     if(candidates.length<8)for(let j=0;j<16;j++){
       const f=await reader.capture(start+(j+.5)*(end-start)/16);
@@ -68,7 +73,7 @@ async function segments(reader,progress,signal){
     groups.push({segment:s+1,start_sec:start,end_sec:end,frames:chosen});
   }
   if(!groups.length)throw Error('검은 화면 제외 후 분석할 구간이 없습니다.');
-  return {groups,black,skipped};
+  return {groups,black,skipped,planned,count};
 }
 function heatmap(activation,gradient){
   const mean=new Float64Array(1280);
@@ -109,14 +114,14 @@ export async function analyzeFile(file,{progress=()=>{},signal}={}){
   const started=performance.now(),engine=await prepare(progress);check(signal);
   const reader=await openVideo(file,signal),duration=reader.video.duration;let selected;
   try{selected=await segments(reader,progress,signal);}finally{reader.close();}
-  const {groups,black,skipped}=selected,records=[],statistics=[],scores=[];
+  const {groups,black,skipped,planned,count}=selected,records=[],statistics=[],scores=[];
   for(const group of groups){
     group.sequence=new Float64Array(8*257);
     for(let i=0;i<8;i++){
       check(signal);const f=group.frames[i];
       const [activation,embedding,real]=await inference('video-features',{rgb:f.rgb});
       f.activation=activation;group.sequence.set(embedding,i*257);group.sequence[i*257+256]=1-real[0];
-      progress(`구간 ${group.segment}/8 · 프레임 ${i+1}/8 특징 분석`);await next();
+      progress(`구간 ${group.segment}/${count} · 프레임 ${i+1}/8 특징 분석`);await next();
     }
     const x=pooled(group.sequence),prediction=head(x,engine.members,true);
     statistics.push(x);scores.push(prediction.score);group.featureGradient=featureGradient(group.sequence,x,prediction.gradient);
@@ -143,13 +148,13 @@ export async function analyzeFile(file,{progress=()=>{},signal}={}){
     }
   }
   const main=[...records].sort((a,b)=>Math.abs(b.video_score_delta)-Math.abs(a.video_score_delta)||a.timestamp_sec-b.timestamp_sec||a.index-b.index).slice(0,8).map(f=>f.index);
-  return {status:'completed',model:'v1.0.0-browser',analysis_mode:'browser_segmented64_v1',threshold:.5,
+  return {status:'completed',model:'v1.0.0-browser',analysis_mode:'browser_duration_frames_v1',frame_policy:'duration_v1',threshold:.5,
     inference_location:'browser',backend:engine.backend,source:{kind:'file',title:file.name},duration_sec:duration,
     fake_score:score,prediction:target,prediction_ko:target==='fake'?'AI 생성 영상 추정':'실제 촬영 영상 추정',
     thumbnail:rawCanvas(groups[0].frames[0].rgb).toDataURL('image/jpeg',.72),
-    planned_frames:64,analyzed_frames:records.length,segments_used:groups.length,black_seek_positions_sec:black,skipped_segments:skipped,
+    planned_frames:planned,analyzed_frames:records.length,segments_used:groups.length,black_seek_positions_sec:black,skipped_segments:skipped,
     frames:records,main_frame_indices:main,detail_frame_indices:records.filter(f=>!main.includes(f.index)).map(f=>f.index),
     segments:groups.map((group,i)=>({segment:group.segment,start_sec:group.start_sec,end_sec:group.end_sec,fake_score:scores[i]})),
     elapsed_sec:Math.round((performance.now()-started)/100)/10,accuracy_validated_for_this_mode:false,score_is_calibrated_probability:false,
-    limitations_ko:'브라우저 디코딩·크기 조정은 FFmpeg와 차이가 있을 수 있으며 브라우저 방식의 정확도는 별도 검증 전입니다. Grad-CAM은 선택한 분류의 신호이며 합성 사실의 증명이 아닙니다.'};
+    limitations_ko:'길이별 16·32·48·64프레임 방식의 정확도는 별도 검증 전입니다. 브라우저 디코딩·크기 조정은 FFmpeg와 차이가 있을 수 있습니다. Grad-CAM은 선택한 분류의 신호이며 합성 사실의 증명이 아닙니다.'};
 }

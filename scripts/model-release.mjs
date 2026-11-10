@@ -2,7 +2,7 @@ import {readdir,readFile,writeFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 export async function modelRelease() {
   const hash=createHash('sha256');
-  for(const name of (await readdir('web/model')).filter(n=>/\.(json|bin)$/.test(n)).sort()) {
+  for(const name of (await readdir('web/model')).filter(n=>/\.(json|bin|onnx|tflite)$/.test(n)).sort()) {
     const bytes=await readFile('web/model/'+name);
     hash.update(name);hash.update(name.endsWith('.json')?JSON.stringify(JSON.parse(bytes)):bytes);
   }

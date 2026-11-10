@@ -83,7 +83,7 @@ export function openGradcam(result, frameIndex) {
     framePicker.onchange = () => void showFrame(frames.find(frame => String(frame.index) === framePicker.value), result);
     void showFrame(first,result);
   } else if (result?.explanation?.original && result.explanation.heatmap && result.explanation.image) {
-    $('gradcam-message').textContent = '표시 대상 · AI 생성';
+    $('gradcam-message').textContent = '표시 대상 · ' + (result.explanation.target === 'real' ? 'REAL' : 'AI 생성');
     showImages(result.explanation.original,result.explanation.heatmap,result.explanation.image);
   } else {
     $('gradcam-message').textContent = missing;

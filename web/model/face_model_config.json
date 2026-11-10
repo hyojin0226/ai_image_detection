@@ -1,0 +1,36 @@
+{
+  "model_name": "convnext_tiny_pseudo_vae_deg",
+  "model_file": "convnext_tiny_fake_face.onnx",
+  "input_name": "input",
+  "outputs": {
+    "logit": "logit of P(real)",
+    "cam_map": "REAL 방향 Grad-CAM, ReLU 이전 (N,8,8)"
+  },
+  "input_size": 256,
+  "mean": [
+    0.485,
+    0.456,
+    0.406
+  ],
+  "std": [
+    0.229,
+    0.224,
+    0.225
+  ],
+  "eval_jpeg_quality": 90,
+  "decision_threshold_real": {
+    "face": 0.16,
+    "full": 0.16
+  },
+  "class_names": [
+    "fake",
+    "real"
+  ],
+  "face_crop": {
+    "scale": 2.0,
+    "shift_up": 0.05,
+    "min_face_ratio": 0.04,
+    "max_faces": 8
+  },
+  "source_config": "server/models/convnext_tiny_fake_face.json"
+}

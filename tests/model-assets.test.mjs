@@ -8,7 +8,7 @@ import {MODEL_BASE} from '../web/model-release.js';
 
 test('one content-addressed release contains matching manifest, config and shards',async()=>{
   const hash=createHash('sha256');
-  for(const name of (await readdir('web/model')).filter(n=>/\.(json|bin)$/.test(n)).sort()){
+  for(const name of (await readdir('web/model')).filter(n=>/\.(json|bin|onnx|tflite)$/.test(n)).sort()){
     const bytes=await readFile('web/model/'+name);
     hash.update(name);hash.update(name.endsWith('.json')?JSON.stringify(JSON.parse(bytes)):bytes);
   }

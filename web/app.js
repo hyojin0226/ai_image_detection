@@ -1,8 +1,10 @@
-// Detection: same model, preprocessing and threshold as streamlit_app.py, run in the browser with
-// TF.js. Images are queued and analysed one at a time; results are kept in a local history.
+// Detection: final ConvNeXt-T face model (ONNX) run in the browser.
+// BlazeFace finds faces, each face is cropped at 2x its box, resized to 256x256 and classified.
+// The largest face decides the image verdict (same rule as the develop-branch server).
+// Images are queued and analysed one at a time; results are kept in a local history.
 import { classifyFile, supportedImageMime } from './file-types.js';
-import { renderGradcam } from './gradcam.js?v=classifiers';
-import { inference, metric } from './inference-client.js?v=classifiers';
+import { metric } from './inference-client.js?v=classifiers';
+import { loadImageEngine } from './image-engine.js?v=convnext';
 const MAX_QUEUE = 20;                 // images per batch
 const MAX_BYTES = 15 * 1024 * 1024;   // per image
 
@@ -25,6 +27,7 @@ const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const { toast, go, routeName, openModal, closeModal } = window.Fakit;
 
 let config = null;
+let engine = null;
 let modelReady = null;   // promise: resolves when the model can predict, rejects if loading failed
 const state = { items: [], running: false, nextId: 1, filter: "all" };
 
@@ -33,10 +36,10 @@ function loadResources() {
   if (modelReady) return modelReady;
   metric('model-load-start');
   els.status.classList.remove('failed'); els.modelError.hidden=true;
-  modelReady = inference('init').then(result => {
-    config=result.config;
+  modelReady = loadImageEngine({onProgress:progress=>metric('model-progress',{progress})}).then(result => {
+    engine=result;config=result.config;
     els.status.classList.add('ready');els.statusText.textContent='분석 준비 완료';
-    metric('model-ready',{backend:result.backend});
+    metric('model-ready',{backend:'onnxruntime-web wasm'});
     return result;
   }).catch(error=>{
     modelReady=null;els.status.classList.add('failed');els.statusText.textContent='모델을 불러오지 못했습니다';
@@ -47,29 +50,7 @@ function loadResources() {
 document.addEventListener('fakit:metric',e=>{
   if(e.detail.name==='model-progress')els.loadFill.style.width=Math.round(e.detail.data.progress*100)+'%';
 });
-const threshold = () => Number(config.decision_threshold_real);
-
-// Same shape/range as PIL RGB resize; browser resampling is not pixel-identical to PIL.
-// Transparent input is flattened on black. The model's own Rescaling normalises 0–255.
-function inputCanvas(img) {
-  const [h, w] = config.image_size;
-  const canvas = document.createElement("canvas");
-  canvas.width = w;
-  canvas.height = h;
-  const ctx = canvas.getContext("2d");
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = "high";
-  ctx.fillStyle = "#000";                 // flatten transparency like convert("RGB")
-  ctx.fillRect(0, 0, w, h);
-  ctx.drawImage(img, 0, 0, w, h);
-  return canvas;
-}
-function toInputRGB(img) {
-  const canvas=inputCanvas(img),rgba=canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height).data;
-  const rgb=new Uint8Array(canvas.width*canvas.height*3);
-  for(let i=0,j=0;i<rgba.length;i+=4){rgb[j++]=rgba[i];rgb[j++]=rgba[i+1];rgb[j++]=rgba[i+2];}
-  return rgb;
-}
+const threshold = () => Number(config.decision_threshold_real.face);
 
 // requestAnimationFrame stalls in background tabs; never let that hold up a result.
 const nextFrame = () => new Promise((resolve) => {
@@ -123,7 +104,7 @@ async function addFiles(fileList, { pasted = false } = {}) {
     const name = pasted && (!file.name || file.name === "clipboard")
       ? `붙여넣은 이미지 ${new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}`
       : file.name;
-    const item = { id: state.nextId++, name, url, img, status: "queued", real: null, fake: null, verdict: null, pasted, at: Date.now() };
+    const item = { id: state.nextId++, name, url, img, file, status: "queued", real: null, fake: null, verdict: null, pasted, at: Date.now() };
     state.items.push(item);
     mountItem(item);
     if (i === 0) els.queueSection.scrollIntoView({ behavior: reduceMotion ? "instant" : "smooth", block: "nearest" });
@@ -166,9 +147,16 @@ async function analyzeItem(item) {
   renderProcess(item, "analyzing");
   await nextFrame();
   try {
-    const probabilityReal = await inference('predict',{rgb:toInputRGB(item.img)});
-    if(!Number.isFinite(probabilityReal)||probabilityReal<0||probabilityReal>1)throw Error('잘못된 모델 출력');
+    const result = await engine.analyze(item.file, { mode: 'face', explain: true, ela: false });
     if (!state.items.includes(item)) return;   // removed while analysing
+    if (result.status === 'no_face') {
+      item.status = "error"; item.error = "판단 불가 · 얼굴 없음"; item.noFace = true;
+      renderItem(item); renderProcess(item, "error"); return;
+    }
+    const face = result.faces[0];
+    const probabilityReal = face.prob_real_raw;
+    if(!Number.isFinite(probabilityReal)||probabilityReal<0||probabilityReal>1)throw Error('잘못된 모델 출력');
+    item.faces = result.faces;
     item.real = probabilityReal;
     item.fake = 1 - probabilityReal;
     item.verdict = probabilityReal >= threshold() ? "real" : "fake";
@@ -231,7 +219,7 @@ function renderItem(item) {
 function renderProcess(item, phase) {
   if (!state.items.includes(item)) return;
   const view = $("process-view");
-  document.dispatchEvent(new CustomEvent('fakit:inspect', { detail: { url: item.url, state: phase, label: phase === 'done' ? `${item.verdict === 'real' ? 'REAL' : 'AI'} · REAL 점수 ${item.real.toFixed(3)}` : phase === 'error' ? '분석 실패' : phase === 'waiting' ? '모델 준비 중' : '분석 중' } }));
+  document.dispatchEvent(new CustomEvent('fakit:inspect', { detail: { url: item.url, state: phase, label: phase === 'done' ? `${item.verdict === 'real' ? 'REAL' : 'AI'} · REAL 점수 ${item.real.toFixed(3)}` : phase === 'error' ? (item.noFace ? '판단 불가 · 얼굴 없음' : '분석 실패') : phase === 'waiting' ? '모델 준비 중' : '분석 중' } }));
   view.hidden = false;
   view.dataset.phase = phase;
   view.dataset.item = String(item.id);
@@ -239,14 +227,16 @@ function renderProcess(item, phase) {
   $("process-original").src = item.url;
   $("process-size").textContent = `${item.img.naturalWidth} × ${item.img.naturalHeight}`;
   const input = $("process-input");
-  input.hidden = !config;
-  if (config) {
-    const prepared = inputCanvas(item.img);
-    input.width = prepared.width; input.height = prepared.height;
-    input.getContext("2d").drawImage(prepared, 0, 0);
-    $("process-input-size").textContent = `${prepared.width} × ${prepared.height}`;
+  const crop = item.faces?.[0]?.crop_image;
+  input.hidden = !crop;
+  if (crop) {
+    const image = new Image();
+    image.onload = () => { input.width = image.width; input.height = image.height; input.getContext("2d").drawImage(image, 0, 0); };
+    image.src = crop;
+    $("process-input-size").textContent = `얼굴 crop ${config.input_size} × ${config.input_size}`;
   }
-  const messages = { waiting: "모델 준비 대기", analyzing: "이미지 전체 분석 중", done: "분석 완료", error: "분석 실패 · 새로고침 후 다시 시도하세요" };
+  const faceCount = item.faces?.length > 1 ? ` · 얼굴 ${item.faces.length}개 중 가장 큰 얼굴 기준` : "";
+  const messages = { waiting: "모델 준비 대기", analyzing: "얼굴 검출 · 얼굴 crop 분석 중", done: "분석 완료" + faceCount, error: item.noFace ? "얼굴을 찾지 못해 판단할 수 없습니다" : "분석 실패 · 새로고침 후 다시 시도하세요" };
   $("process-status").textContent = messages[phase];
   $("process-score").hidden = phase !== "done";
   $("process-verdict").textContent = phase === "done" ? (item.verdict === "real" ? "REAL 분류" : "AI 분류") : phase === "error" ? "결과 없음" : "결과 대기";
@@ -339,29 +329,27 @@ window.Fakit.analyzeImage = async (file, { signal, onState = () => {} } = {}) =>
     const thumbContext = thumbCanvas.getContext('2d');
     thumbContext.drawImage(img, 0, 0, thumbCanvas.width, thumbCanvas.height);
     const thumb = thumbCanvas.toDataURL('image/jpeg', .72);
-    item = { id: state.nextId++, name: file.name, url, img, status: 'analyzing', real: null, fake: null, verdict: null, at: Date.now() };
+    item = { id: state.nextId++, name: file.name, url, img, file, status: 'analyzing', real: null, fake: null, verdict: null, at: Date.now() };
     state.items.push(item);
     mountItem(item);
     signal?.addEventListener('abort', cancel, { once: true });
     onState('analyzing', '이미지를 검사하고 있어요.');
     await analyzeItem(item);
     signal?.throwIfAborted();
+    if (item.noFace) throw new Error('사진에서 얼굴을 찾지 못해 판단할 수 없어요. 얼굴이 잘 보이는 사진을 올려 주세요.');
     if (item.status !== 'done') throw new Error('이미지를 분석하지 못했어요. 다시 시도해 주세요.');
+    // Grad-CAM comes from the same forward pass (closed-form head gradient in the ONNX graph).
+    const face = item.faces[0];
     let explanation, explanationError;
-    onState('analyzing', 'AI 판정에 영향을 준 영역을 계산하고 있어요.');
-    await nextFrame();
-    try {
-      const map = await inference('explain',{rgb:toInputRGB(img),real:item.real});
-      signal?.throwIfAborted();
-      explanation = { ...renderGradcam(img, map), target: map.target, layer: map.layer };
-    } catch (error) {
-      signal?.throwIfAborted();
+    if (face.crop_image && face.gradcam_image && face.gradcam_heatmap) {
+      explanation = { original: face.crop_image, heatmap: face.gradcam_heatmap, image: face.gradcam_image, target: face.gradcam_target, layer: 'convnext stage 4 (8 × 8)' };
+    } else {
       explanationError = '판별 점수는 계산했지만 이 환경에서는 Grad-CAM을 표시하지 못했어요.';
-      console.warn('Grad-CAM unavailable:', error.message);
     }
+    const faces = item.faces.map(f => ({ real: f.prob_real, verdict: f.label, bbox: f.bbox }));
     signal?.throwIfAborted();
     metric('image-result');
-    return { status: 'result', real: item.real, fake: item.fake, verdict: item.verdict, threshold: threshold(), model: config.run_name, thumb, explanation, explanationError };
+    return { status: 'result', real: item.real, fake: item.fake, verdict: item.verdict, threshold: threshold(), model: config.model_name, thumb, faces, explanation, explanationError };
   } finally {
     signal?.removeEventListener('abort', cancel);
     cancel();

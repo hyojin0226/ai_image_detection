@@ -12,7 +12,12 @@
 - 디자인 참고: https://community.spline.design/file/355705e7-5f04-4051-93d5-5007f7034ada . 장면 파일은 포함하지 않고 CSS로 별도 구현했습니다.
 
 `feature/main-model-hyojin` 브랜치의 `streamlit_app.py`를 브라우저에서 분석하는 웹사이트로 옮긴 버전입니다. 소셜 로그인은 저장소 루트의 Node.js 서버가 처리합니다.
-같은 EfficientNetV2S 모델을 [TensorFlow.js](https://www.tensorflow.org/js)로 변환해 사용하고, 판정 기준(threshold 0.24)도 동일합니다.
+**사진 검사(`/image`)** 는 2차 실험의 최종 ConvNeXt-T(ONNX, 약 56MB)를 onnxruntime-web으로 실행합니다.
+BlazeFace로 얼굴을 찾고 → 얼굴 상자를 2배 크기 정사각형으로 잘라 → 256×256 → JPEG 90 재인코딩 → ImageNet 정규화 후 판정합니다.
+REAL 기준은 0.16이고, 얼굴이 여러 개면 가장 큰 얼굴로 판정하며, 얼굴이 없으면 판단하지 않습니다.
+Grad-CAM은 ONNX 그래프 안에서 같은 추론으로 함께 계산합니다 (`face-model.js`, develop 저장소 `web_model/`에서 서버와 판정 불일치 0건으로 검증).
+**영상 검사(`/video`)** 는 두현 영상 분류기가 1차 EfficientNetV2S 특징으로 학습되어, 그 TF.js 모델(threshold 0.24 설정 파일 포함)을 영상 전용으로 계속 씁니다.
+영상 길이에 따라 16·32·48·64프레임을 추출합니다 (`study/KongDuHyun` 73617e2와 같은 방식).
 업로드한 이미지는 서버로 전송되지 않습니다.
 
 ## 폴더 구성
@@ -25,7 +30,9 @@
 | `file-types.js` | 통합 입력의 파일 종류 분류 |
 | `image-import.js` | 확장 프로그램 URL 수신, 크기 제한이 있는 이미지 다운로드 |
 | `extension.zip` | 개발 모드로 설치하는 Chrome 확장 프로그램 소스 |
-| `model/model.json`, `model/group1-shard*.bin` | TF.js로 변환한 모델 (float16, 약 41MB) |
+| `image-engine.js`, `face-model.js` | 사진 검사: 얼굴 검출 + ConvNeXt-T ONNX 추론 |
+| `model/convnext_tiny_fake_face.onnx`, `model/face_model_config.json`, `model/blaze_face_short_range.tflite` | 사진 모델, 전처리·기준값, 얼굴 검출 모델 |
+| `model/model.json`, `model/group1-shard*.bin` | 영상 검사용 EfficientNetV2S TF.js 모델 (float16, 약 41MB) |
 | `model/inference_config.json` | 입력 크기, threshold 등 (원본과 동일) |
 
 ## 팀 공유용 통합본
