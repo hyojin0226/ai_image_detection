@@ -108,6 +108,12 @@ $('close-input').onclick=()=>{reset();lens.focus({preventScroll:true});};
 const busy = () => ['loading', 'analyzing'].includes(phase);
 function setState(next, message = '') {
   phase = next; stage.dataset.state = next;
+  if (isVideo) {
+    $('classifier-prompt').textContent = current?.file && next === 'idle'
+      ? '영상이 첨부됐어요. 검사 버튼을 눌러주세요.'
+      : '영상을 놓거나 렌즈를 눌러보세요';
+    $('classifier-prompt').hidden = next !== 'idle';
+  }
   if (!['loading','analyzing'].includes(next)) updateVideoProgress();
   $('lens-message').textContent = message;
   $('cancel-analysis').hidden = !['loading', 'analyzing', 'detecting'].includes(next);
@@ -155,14 +161,33 @@ async function preview(input, token) {
       $('lens-image').setAttribute('visibility', 'visible');
     } else {
       const element = document.createElement('video'); video = element;
-      element.preload = 'metadata'; element.muted = true; element.playsInline = true;
+      element.preload = 'auto'; element.muted = true; element.playsInline = true;
+      const isActive = () => video === element && token === generation && current === input;
       element.onloadedmetadata = () => {
-        if (token !== generation || current !== input) return;
+        if (!isActive()) return;
         if (Number.isFinite(element.duration)) { input.duration = element.duration; renderChip(); }
-        // No frame sampling or invented video progress without a video model.
+      };
+      element.onloadeddata = () => {
+        if (!isActive() || !element.videoWidth || !element.videoHeight) return;
+        const canvas = document.createElement('canvas');
+        const scale = Math.min(1, 480 / Math.max(element.videoWidth, element.videoHeight));
+        canvas.width = Math.max(1, Math.round(element.videoWidth * scale));
+        canvas.height = Math.max(1, Math.round(element.videoHeight * scale));
+        try {
+          canvas.getContext('2d').drawImage(element, 0, 0, canvas.width, canvas.height);
+          const frame = canvas.toDataURL('image/jpeg', .84);
+          releasePreview();
+          $('lens-image').setAttribute('href', frame);
+          $('lens-image').setAttribute('visibility', 'visible');
+        } catch {
+          $('lens-excerpt').textContent = '미리보기 없음';
+        }
+      };
+      element.onerror = () => {
+        if (isActive()) $('lens-excerpt').textContent = '미리보기 없음';
       };
       element.src = previewUrl;
-      $('lens-excerpt').textContent = '영상'; $('lens-excerpt').setAttribute('visibility', 'visible');
+      $('lens-excerpt').textContent = '미리보기 준비 중'; $('lens-excerpt').setAttribute('visibility', 'visible');
     }
   } else if (input.kind === 'text') {
     $('lens-excerpt').textContent = input.value.slice(0, 12);
