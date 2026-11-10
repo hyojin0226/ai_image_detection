@@ -450,14 +450,17 @@ body:is([data-route="image"], [data-route="video"]) .unified-stage {
   padding-block: clamp(20px, 4vh, 42px);
 }
 body:is([data-route="image"], [data-route="video"]) .lens-stage { height: clamp(215px, 34svh, 355px); min-height: 0; }
+body:is([data-route="image"], [data-route="video"]) .unified-controls { width: min(100%, 780px); }
 .classifier-title { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .page[data-page="classifier"].is-active { animation: none; }
 body:is([data-route="image"], [data-route="video"]) .unified-bar {
   border: 1px solid #e3dbee;
   border-radius: 16px;
-  padding: 5px 8px;
+  padding: 6px 10px;
   background: #ffffffd9;
 }
+body:is([data-route="image"], [data-route="video"]) .unified-controls #unified-input { height: 48px; padding-block: 12px; font-size: 16px; }
+body:is([data-route="image"], [data-route="video"]) .unified-controls #inspect-button { min-height: 44px; padding-inline: clamp(16px, 2vw, 25px); }
 body:is([data-route="image"], [data-route="video"]) .unified-bar:focus-within { border-color: #9879ce; }
 body:is([data-route="image"], [data-route="video"]) #text-frame .unified-bar { border: 0; background: transparent; padding: 16px; }
 @media (max-width: 420px) {

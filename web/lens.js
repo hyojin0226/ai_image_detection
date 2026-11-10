@@ -337,7 +337,7 @@ function layout() {
   if (phase==='dragover') radius=Math.min(radius*1.04,width*.45,height*.46);
   art.setAttribute('viewBox',`0 0 ${width} ${height}`);
   const word=$('word-shape'); word.setAttribute('x',width/2); word.setAttribute('y',active ? (mobile ? 70 : height*.46) : height*.63);
-  const logoSize=Math.min(width*(active ? .30 : .36), height*(active ? .53 : .68));
+  const logoSize=Math.min(width*(active ? .35 : .43), height*(active ? .64 : .81));
   word.removeAttribute('textLength');word.removeAttribute('lengthAdjust');
   word.setAttribute('font-size',logoSize);word.setAttribute('letter-spacing',-logoSize*.045);
   if (active || phase==='dragover' || reduced.matches) { tx=width/2; ty=active ? height-radius-12 : height/2; }
