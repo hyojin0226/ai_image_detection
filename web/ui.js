@@ -66,6 +66,34 @@
   }
   addEventListener("hashchange", render);
 
+  // Model guide tabs only control the visibility of explanatory content.
+  const modelTabs = [...document.querySelectorAll(".model-tabs [role='tab']")];
+  function selectModelTab(selected) {
+    for (const tab of modelTabs) {
+      const active = tab === selected;
+      tab.setAttribute("aria-selected", String(active));
+      tab.tabIndex = active ? 0 : -1;
+      $(tab.getAttribute("aria-controls")).hidden = !active;
+    }
+  }
+  modelTabs.forEach((tab, index) => {
+    tab.addEventListener("click", () => selectModelTab(tab));
+    tab.addEventListener("keydown", (event) => {
+      const last = modelTabs.length - 1;
+      const nextIndex = {
+        ArrowLeft: index === 0 ? last : index - 1,
+        ArrowRight: index === last ? 0 : index + 1,
+        Home: 0,
+        End: last,
+      }[event.key];
+      if (!Number.isInteger(nextIndex)) return;
+      event.preventDefault();
+      const nextTab = modelTabs[nextIndex];
+      selectModelTab(nextTab);
+      nextTab.focus();
+    });
+  });
+
   // ── Mobile drawer ────────────────────────────────────────────────────
   const drawer = $("drawer");
   const menuToggle = $("menu-toggle");
