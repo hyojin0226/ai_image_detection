@@ -156,5 +156,5 @@ export async function analyzeFile(file,{progress=()=>{},signal}={}){
     frames:records,main_frame_indices:main,detail_frame_indices:records.filter(f=>!main.includes(f.index)).map(f=>f.index),
     segments:groups.map((group,i)=>({segment:group.segment,start_sec:group.start_sec,end_sec:group.end_sec,fake_score:scores[i]})),
     elapsed_sec:Math.round((performance.now()-started)/100)/10,accuracy_validated_for_this_mode:false,score_is_calibrated_probability:false,
-    limitations_ko:'길이별 16·32·48·64프레임 방식의 정확도는 별도 검증 전입니다. 브라우저 디코딩·크기 조정은 FFmpeg와 차이가 있을 수 있습니다. Grad-CAM은 선택한 분류의 신호이며 합성 사실의 증명이 아닙니다.'};
+    limitations_ko:'길이별 프레임 방식은 시험 영상 1,000개에서 정확도 80.3%였습니다(독립 시험 아님, AI 영상은 Sora만 포함, 30초 초과 AI 영상 미검증). 브라우저 디코딩·크기 조정은 FFmpeg와 차이가 있을 수 있습니다. Grad-CAM은 선택한 분류의 신호이며 합성 사실의 증명이 아닙니다.'};
 }
