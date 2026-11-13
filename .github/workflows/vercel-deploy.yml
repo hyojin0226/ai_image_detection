@@ -21,16 +21,16 @@ jobs:
         include:
           - name: site
             directory: AI_video/deploy/site
-            project_id: ${{ vars.VERCEL_SITE_PROJECT_ID || 'prj_SiXAdlXOnCa0OkzKODmdTv4iXqyk' }}
+            project_id: prj_SiXAdlXOnCa0OkzKODmdTv4iXqyk
             project_name: duhyeon-ai-video
           - name: cloud
             directory: AI_video/deploy/cloud
-            project_id: ${{ vars.VERCEL_CLOUD_PROJECT_ID || 'prj_QoPw0QRcTOEiZVYjLKUe5SyLJrrN' }}
+            project_id: prj_QoPw0QRcTOEiZVYjLKUe5SyLJrrN
             project_name: duhyeon-ai-video-cloud
 
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID || 'team_kCloEe4t0ufwmj8gp3gCnru5' }}
+      VERCEL_ORG_ID: team_kCloEe4t0ufwmj8gp3gCnru5
       VERCEL_PROJECT_ID: ${{ matrix.project_id }}
 
     defaults:
@@ -51,6 +51,11 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Install uv and build tools
+        run: |
+          pip install --upgrade pip uv
+          uv --version
+
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
@@ -62,7 +67,7 @@ jobs:
         run: |
           mkdir -p .vercel
           echo "{\"projectId\":\"$VERCEL_PROJECT_ID\",\"orgId\":\"$VERCEL_ORG_ID\"}" > .vercel/project.json
-          echo "::notice title=Vercel Config (${{ matrix.name }})::Dir=${{ matrix.directory }}, ProjectID=${VERCEL_PROJECT_ID:0:8}... (len ${#VERCEL_PROJECT_ID}), OrgID=${VERCEL_ORG_ID:0:8}... (len ${#VERCEL_ORG_ID})"
+          echo "::notice title=Vercel Config (${{ matrix.name }})::Dir=${{ matrix.directory }}, ProjectID=${VERCEL_PROJECT_ID:0:8}..., OrgID=${VERCEL_ORG_ID:0:8}..."
 
       - name: Pull Vercel settings
         id: pull
@@ -72,7 +77,6 @@ jobs:
             echo "Vercel pull succeeded"
           else
             echo "$output"
-            # Format single line for annotation
             compact_err=$(echo "$output" | tr '\n' ' ' | head -c 500)
             echo "::error title=Pull Error (${{ matrix.name }})::$compact_err"
             exit 1
