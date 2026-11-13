@@ -4,7 +4,7 @@
 // Images are queued and analysed one at a time; results are kept in a local history.
 import { classifyFile, supportedImageMime } from './file-types.js';
 import { metric } from './inference-client.js?v=classifiers';
-import { loadImageEngine } from './image-engine.js?v=convnext';
+import { loadImageEngine } from './image-engine.js?v=photo-responsive';
 const MAX_QUEUE = 20;                 // images per batch
 const MAX_BYTES = 15 * 1024 * 1024;   // per image
 
@@ -310,6 +310,7 @@ function formatDate(ts) { return new Date(ts).toLocaleString("ko-KR"); }
 
 // Unified UI bridge. Model preprocessing, predict, threshold and history are unchanged.
 window.Fakit.analyzeImage = async (file, { signal, onState = () => {} } = {}) => {
+  const started = performance.now();
   signal?.throwIfAborted();
   onState('loading', '이미지 분석을 준비하고 있어요.');
   await loadResources();
@@ -349,7 +350,7 @@ window.Fakit.analyzeImage = async (file, { signal, onState = () => {} } = {}) =>
     const faces = item.faces.map(f => ({ real: f.prob_real, verdict: f.label, bbox: f.bbox }));
     signal?.throwIfAborted();
     metric('image-result');
-    return { status: 'result', real: item.real, fake: item.fake, verdict: item.verdict, threshold: threshold(), model: config.model_name, thumb, faces, explanation, explanationError };
+    return { status: 'result', real: item.real, fake: item.fake, verdict: item.verdict, threshold: threshold(), model: config.model_name, thumb, faces, explanation, explanationError, elapsedMs: performance.now() - started };
   } finally {
     signal?.removeEventListener('abort', cancel);
     cancel();

@@ -1,7 +1,7 @@
 import { analyze, classifyInput, LIMITS } from './input-adapters.js';
 import { analyzeBatch, MAX_ATTACHMENTS } from './batch-input.js?v=classifiers';
 import { analyzeVideo, renderVideoResult, updateVideoProgress } from './video-analysis.js?v=original-photo';
-import { captureHistoryOwner, saveCompleted } from './history.js?v=original-photo';
+import { captureHistoryOwner, saveCompleted } from './history.js?v=photo-timing';
 import { openGradcam } from './gradcam-dialog.js?v=original-photo';
 import { releaseInference } from './inference-client.js?v=classifiers';
 const mode = window.Fakit.routeName();
@@ -63,8 +63,13 @@ function showResult(result) {
   stage.dataset.verdict=result.verdict;
   $('lens-percent').textContent=(result.real*100).toFixed(1)+'%';
   $('lens-verdict').textContent=result.verdict==='real'?(result.video?'실제 촬영 영상으로 분류':'실제 사진으로 분류'):'AI 생성으로 분류';
-  $('score-caption').textContent='REAL 점수';
+  $('score-caption').textContent=scoreCaption(result);
   setState('result','점수는 모델 출력이며 진위의 확정이나 정답률이 아니에요.');
+}
+function scoreCaption(result) {
+  return Number.isFinite(result.elapsedMs)
+    ? 'REAL 점수 · ' + (result.elapsedMs / 1000).toFixed(1) + '초 소요'
+    : 'REAL 점수';
 }
 function renderAttachments() {
   const list=$('attachment-list'),deck=$('photo-deck');list.replaceChildren();deck.replaceChildren();
@@ -279,7 +284,7 @@ async function run() {
     stage.dataset.verdict = result.verdict;
     $('lens-percent').textContent = `${(result.real * 100).toFixed(1)}%`;
     $('lens-verdict').textContent = result.verdict === 'real' ? (result.video ? '실제 촬영 영상으로 분류' : '실제 사진으로 분류') : 'AI 생성으로 분류';
-    $('score-caption').textContent = 'REAL 점수';
+    $('score-caption').textContent = scoreCaption(result);
     setState('result', '검사가 끝났어요. 점수는 모델 출력이며 진위의 확정이나 정답률이 아니에요.');
     if (current.file) { const item=attachments.find(item=>item===current);if(item){item.result=result;delete item.file;}current = { kind: current.kind, source: current.source };submit.disabled = true;renderAttachments(); }
   } catch (error) {

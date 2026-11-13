@@ -1,7 +1,7 @@
-import './history.js?v=original-photo';
+import './history.js?v=photo-timing';
 
 const route = window.Fakit.routeName();
 if (route === 'image' || route === 'video') {
-  if (route === 'image') await import('./app.js?v=convnext');
-  await import('./lens.js?v=original-photo');
+  if (route === 'image') await import('./app.js?v=photo-responsive');
+  await import('./lens.js?v=photo-timing');
 }

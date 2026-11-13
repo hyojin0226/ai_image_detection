@@ -224,7 +224,7 @@ class FaceFinder {
       .some((found) => found.score >= DETECT.verifyMinConfidence && centerInside(found, box));
   }
 
-  detect(pixels) {
+  async detect(pixels) {
     const { width, height } = pixels;
     let boxes = this.region(pixels);
     if (Math.min(width, height) >= 400) {
@@ -232,8 +232,13 @@ class FaceFinder {
       const step = Math.max(1, Math.trunc(tile / 2));
       const tops = [...new Set([...pyRange(0, Math.max(1, height - tile + 1), step), Math.max(0, height - tile)])].sort((a, b) => a - b);
       const lefts = [...new Set([...pyRange(0, Math.max(1, width - tile + 1), step), Math.max(0, width - tile)])].sort((a, b) => a - b);
+      let lastYield = performance.now();
       for (const top of tops) {
         for (const left of lefts) {
+          if (performance.now() - lastYield >= 24) {
+            await new Promise(resolve => setTimeout(resolve, 0));
+            lastYield = performance.now();
+          }
           const w = Math.min(tile, width - left), h = Math.min(tile, height - top);
           for (const box of this.region(pixels, left, top, w, h)) {
             if (box.score >= DETECT.tileMinConfidence && this.verify(pixels, box)) boxes.push(box);
@@ -440,13 +445,19 @@ export async function createFaceModel({
   const config = await (await fetch(configUrl)).json();
   const size = config.input_size;
   const thresholds = config.decision_threshold_real;
-  const session = await ort.InferenceSession.create(modelUrl, { executionProviders, graphOptimizationLevel: 'all' });
   const fileset = await vision.FilesetResolver.forVisionTasks(mediapipeWasmUrl);
   const detector = await vision.FaceDetector.createFromOptions(fileset, {
     baseOptions: { modelAssetPath: detectorModelUrl, delegate: 'CPU' },
     runningMode: 'IMAGE',
     minDetectionConfidence: DETECT.minConfidence,
   });
+  let session;
+  try {
+    session = await ort.InferenceSession.create(modelUrl, { executionProviders, graphOptimizationLevel: 'all' });
+  } catch (error) {
+    detector.close();
+    throw error;
+  }
   const finder = new FaceFinder(detector);
   const [mean, std] = [config.mean, config.std];
 
@@ -465,15 +476,22 @@ export async function createFaceModel({
   }
 
   async function runModel(inputs) {
-    const outputs = await session.run({ [config.input_name]: toTensor(inputs) });
-    const logits = outputs.logit.data;
-    const cams = outputs.cam_map.data;
-    const side = outputs.cam_map.dims[1];
-    return inputs.map((_, i) => ({
-      probReal: 1 / (1 + Math.exp(-logits[i])),
-      cam: cams.slice(i * side * side, (i + 1) * side * side),
-      camSide: side,
-    }));
+    const input = toTensor(inputs);
+    let outputs;
+    try {
+      outputs = await session.run({ [config.input_name]: input });
+      const logits = outputs.logit.data;
+      const cams = outputs.cam_map.data;
+      const side = outputs.cam_map.dims[1];
+      return inputs.map((_, i) => ({
+        probReal: 1 / (1 + Math.exp(-logits[i])),
+        cam: cams.slice(i * side * side, (i + 1) * side * side),
+        camSide: side,
+      }));
+    } finally {
+      input.dispose();
+      for (const output of Object.values(outputs ?? {})) output.dispose();
+    }
   }
 
   /** 서버의 /predict 응답과 같은 형식으로 돌려준다. source: File | Blob | ImageBitmap | {width,height,data} */
@@ -485,7 +503,11 @@ export async function createFaceModel({
       original = source;
     } else {
       const bitmap = source instanceof ImageBitmap ? source : await decodeBlob(source);
-      original = bitmapToPixels(bitmap);
+      try {
+        original = bitmapToPixels(bitmap);
+      } finally {
+        if (bitmap !== source) bitmap.close();
+      }
     }
     const { width, height } = original;
     let scale = 1;
@@ -501,7 +523,7 @@ export async function createFaceModel({
       faces = [null];
       cropBoxes = [[0, 0, workW, workH]];
     } else {
-      faces = finder.detect(image);
+      faces = await finder.detect(image);
       cropBoxes = faces.map((f) => cropBoxFor(f, workW, workH));
     }
     const base = { image_size: [width, height], threshold_real: thresholds[mode], mode };

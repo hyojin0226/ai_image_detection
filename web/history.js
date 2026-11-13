@@ -146,7 +146,8 @@ async function openResult(entry) {
     $('saved-kind').textContent = typeName(entry) + ' 검사 결과';
     $('saved-title').textContent = entry.verdict === 'real' ? '실제 촬영으로 분류' : 'AI 생성으로 분류';
     $('saved-detail').dataset.verdict = entry.verdict;
-    $('saved-meta').textContent = entry.name + ' · ' + date(entry.at);
+    const elapsed = Number.isFinite(result.elapsedMs) ? ' · 검사 ' + (result.elapsedMs / 1000).toFixed(1) + '초' : '';
+    $('saved-meta').textContent = entry.name + ' · ' + date(entry.at) + elapsed;
     $('saved-ai').textContent = (result.fake * 100).toFixed(1) + '%';
     $('saved-real').textContent = (result.real * 100).toFixed(1) + '%';
     const threshold = result.video?.threshold ?? result.threshold;
