@@ -77,7 +77,7 @@ jobs:
             echo "Vercel pull succeeded"
           else
             echo "$output"
-            compact_err=$(echo "$output" | tr '\n' ' ' | head -c 500)
+            compact_err=$(echo "$output" | tail -c 2000 | tr '\n' ' ')
             echo "::error title=Pull Error (${{ matrix.name }})::$compact_err"
             exit 1
           fi
@@ -90,7 +90,7 @@ jobs:
             echo "Vercel build succeeded"
           else
             echo "$output"
-            compact_err=$(echo "$output" | tr '\n' ' ' | head -c 500)
+            compact_err=$(echo "$output" | tail -c 2000 | tr '\n' ' ')
             echo "::error title=Build Error (${{ matrix.name }})::$compact_err"
             exit 1
           fi
@@ -98,14 +98,20 @@ jobs:
       - name: Deploy preview
         id: deploy
         run: |
-          if url=$(vercel deploy --prebuilt --token="$VERCEL_TOKEN" 2>&1); then
+          if deploy_output=$(vercel deploy --prebuilt --token="$VERCEL_TOKEN" 2>&1); then
+            echo "$deploy_output"
+            url=$(echo "$deploy_output" | grep -o 'https://[^ ]*\.vercel\.app' | tail -n 1)
+            if [ -z "$url" ]; then
+              url=$(echo "$deploy_output" | tail -n 1)
+            fi
             echo "PREVIEW_URL=$url" >> "$GITHUB_ENV"
             echo "### Preview Deployment for ${{ matrix.name }}" >> $GITHUB_STEP_SUMMARY
             echo "URL: $url" >> $GITHUB_STEP_SUMMARY
             echo "Deployed successfully to: $url"
             echo "::notice title=Preview Deployed (${{ matrix.name }})::$url"
           else
-            compact_err=$(echo "$url" | tr '\n' ' ' | head -c 500)
+            echo "$deploy_output"
+            compact_err=$(echo "$deploy_output" | tail -c 2000 | tr '\n' ' ')
             echo "::error title=Deploy Error (${{ matrix.name }})::$compact_err"
             exit 1
           fi
