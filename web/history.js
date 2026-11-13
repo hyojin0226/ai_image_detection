@@ -82,13 +82,6 @@ async function write(owner, update) {
   }
 }
 
-function readOriginal(file) {
-  const reader = new FileReader();
-  const reading = request(reader);
-  reader.readAsDataURL(file);
-  return reading;
-}
-
 export async function saveCompleted(owner, input, result, type) {
   if (result.status !== 'result' || !input.id) return;
   if (!owner) {
@@ -106,11 +99,11 @@ export async function saveCompleted(owner, input, result, type) {
   };
   try {
     const meta = await transform(owner, id, 'meta', summary, true);
-    let savedResult = result;
-    if (type === 'image' && input.file) {
-      const data = await readOriginal(input.file).catch(() => null);
-      if (data) savedResult = { ...result, originalPhoto: { data, name: input.file.name } };
-    }
+    const savedResult = type === 'image' ? {
+      status: result.status, verdict: result.verdict, real: result.real, fake: result.fake,
+      threshold: result.threshold, elapsedMs: result.elapsedMs,
+      explanation: result.explanation?.image ? { image: result.explanation.image } : undefined,
+    } : result;
     if (!isCurrent(owner) || !enabled(owner)) return;
     const payload = await transform(owner, id, 'result', savedResult, true);
     const size = [meta, payload].reduce((sum, value) => sum + (typeof value === 'string' ? value.length * 2 : value.data.byteLength + 12), 0);
@@ -214,7 +207,7 @@ async function openResult(entry) {
     const photo = $('saved-photo-evidence');
     photo.hidden = entry.type !== 'image';
     if (!photo.hidden) {
-      renderPhotoEvidence($('saved-photo-images'), result);
+      renderPhotoEvidence($('saved-photo-images'), { ...result, thumb: result.thumb ?? entry.thumb });
       $('saved-photo-note').textContent = result.explanation
         ? '색이 진한 곳은 모델의 판정에 더 크게 기여한 영역이에요. 실제 조작 위치를 뜻하지는 않아요.'
         : '이 검사에는 저장된 Grad-CAM 결과가 없어요.';
@@ -233,6 +226,7 @@ function card(entry, removable) {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'recent-item';
+  button.dataset.verdict = entry.verdict;
   const tag = document.createElement('b');
   tag.textContent = typeName(entry) + ' · ' + verdict(entry);
   const name = document.createElement('span');
@@ -264,7 +258,8 @@ function card(entry, removable) {
 
 function render() {
   const route = window.Fakit.routeName();
-  $('recent-strip').hidden = !entries.length || !['home','image','video'].includes(route);
+  $('recent-strip').hidden = !['image','video'].includes(route);
+  $('recent-empty').hidden = entries.length > 0;
   $('recent-list').replaceChildren(...entries.slice(0,8).map(entry => card(entry,false)));
   const shown = entries.filter(entry => filter === 'all' || entry.verdict === filter);
   $('history-list').replaceChildren(...shown.map(entry => card(entry,true)));

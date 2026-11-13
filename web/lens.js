@@ -1,7 +1,7 @@
 import { analyze, classifyInput, LIMITS } from './input-adapters.js';
 import { analyzeBatch, MAX_ATTACHMENTS } from './batch-input.js?v=classifiers';
 import { analyzeVideo, renderVideoResult, updateVideoProgress } from './video-analysis.js?v=original-photo';
-import { captureHistoryOwner, saveCompleted } from './history.js?v=history-write';
+import { captureHistoryOwner, saveCompleted } from './history.js?v=compact-history';
 import { openGradcam } from './gradcam-dialog.js?v=original-photo';
 import { releaseInference } from './inference-client.js?v=classifiers';
 const mode = window.Fakit.routeName();
@@ -76,6 +76,7 @@ function renderAttachments() {
   list.hidden=attachments.length<2;stage.dataset.multiple=String(attachments.length>1);
   attachments.forEach((item,index)=>{
     const row=document.createElement('div');row.className='attachment';row.dataset.status=item.result?.status||item.status||'queued';
+    if (item.result?.status === 'result') row.dataset.verdict = item.result.verdict;
     const button=document.createElement('button');button.type='button';button.className='attachment-select';
     if(item.thumb){const img=document.createElement('img');img.src=item.thumb;img.alt='';button.append(img);}
     const name=document.createElement('span');name.textContent=item.name;button.append(name);
@@ -247,7 +248,7 @@ async function runBatch() {
         const item = inputs[index];
         item.result = result;
         if (result.status === 'result') {
-          void saveCompleted(owner, { ...item }, result, 'image');
+          void saveCompleted(owner, { id: item.id, name: item.name }, result, 'image');
           delete item.file;
         }
       }
@@ -272,13 +273,12 @@ async function run() {
   const input = current;
   const owner = captureHistoryOwner();
   let filename = input.name || input.file?.name;
-  let resolvedFile = input.file;
   try {
     // Manual corrections never coerce binary files into a different format.
     if (input.file && input.kind !== mode) throw new Error('선택한 종류와 파일 형식이 달라요. 해당 종류의 파일을 다시 넣어 주세요.');
     if (!input.file && ['image','video'].includes(input.kind)) throw new Error('이미지·영상은 파일이나 직접 링크로 넣어 주세요.');
     setState('loading', '입력을 확인하고 있어요.');
-    const requestOptions = {...options, signal, onResolved: file => { if(token === generation) { resolvedFile = file; filename = file.name; morphText(false); preview(classifyInput(file,'url'),token); } }, onState: (state, message) => { if (token === generation) setState(state, message); } };
+    const requestOptions = {...options, signal, onResolved: file => { if(token === generation) { filename = file.name; morphText(false); preview(classifyInput(file,'url'),token); } }, onState: (state, message) => { if (token === generation) setState(state, message); } };
     const result = isVideo && input.kind === 'url'
       ? {status:'unsupported', message:'영상 링크는 직접 분석할 수 없어요. MP4 또는 WebM 파일을 선택해 주세요.', serviceUrl:'https://duhyeon-ai-video.vercel.app/'}
       : await analyze(input, requestOptions);
@@ -291,7 +291,7 @@ async function run() {
     $('lens-verdict').textContent = result.verdict === 'real' ? (result.video ? '실제 촬영 영상으로 분류' : '실제 사진으로 분류') : 'AI 생성으로 분류';
     $('score-caption').textContent = scoreCaption(result);
     setState('result', '검사가 끝났어요. 점수는 모델 출력이며 진위의 확정이나 정답률이 아니에요.');
-    void saveCompleted(owner, {...input, name:filename, file:resolvedFile}, result, mode);
+    void saveCompleted(owner, { id: input.id, name: filename }, result, mode);
     if (current.file) { const item=attachments.find(item=>item===current);if(item){item.result=result;delete item.file;}current = { kind: current.kind, source: current.source };submit.disabled = true;renderAttachments(); }
   } catch (error) {
     if (token !== generation) return;
