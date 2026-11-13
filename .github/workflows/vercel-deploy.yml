@@ -1,3 +1,4 @@
+
 name: Deploy AI Video to Vercel (Preview)
 
 on:
@@ -13,6 +14,7 @@ jobs:
     name: Preview - ${{ matrix.name }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
+
     strategy:
       fail-fast: false
       matrix:
@@ -45,29 +47,39 @@ jobs:
           test -n "$VERCEL_ORG_ID" || { echo 'ERROR: VERCEL_ORG_ID variable is empty.'; exit 1; }
           test -n "$VERCEL_PROJECT_ID" || { echo 'ERROR: Project ID variable is empty.'; exit 1; }
           test -f vercel.json || { echo 'ERROR: Cannot find vercel.json in deployment directory.'; exit 1; }
-          echo "Checking GitHub variables and deployment directory for ${{ matrix.name }}: OK"
+          echo "Deployment inputs verified."
 
-      - name: Check Vercel API access (do not reveal token)
+      - name: Check Vercel API access
         run: |
           set -euo pipefail
           status=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
             --header "Authorization: Bearer ${VERCEL_TOKEN}" \
             "https://api.vercel.com/v9/projects/${VERCEL_PROJECT_ID}?teamId=${VERCEL_ORG_ID}")
-          echo "Vercel project API HTTP status for ${{ matrix.name }}: ${status}"
+          echo "Vercel project API HTTP status: ${status}"
           case "$status" in
-            200) echo 'Project is accessible to this token.' ;;
-            401|403) echo 'ERROR: Token is invalid, expired, or lacks permission for the Vercel team/project.'; exit 1 ;;
-            404) echo 'ERROR: Project inaccessible/not found. Recheck exact Project ID, Team ID, and token team scope.'; exit 1 ;;
-            *) echo "ERROR: Unexpected Vercel API HTTP status ${status}."; exit 1 ;;
+            200) echo 'Project is accessible.' ;;
+            401|403) echo 'ERROR: Vercel token permission denied.'; exit 1 ;;
+            404) echo 'ERROR: Vercel project not found.'; exit 1 ;;
+            *) echo "ERROR: Unexpected HTTP status ${status}."; exit 1 ;;
           esac
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Verify Python version
+        run: |
+          python --version
+          python -c "import sys; assert sys.version_info[:2] == (3, 12), sys.version"
 
       - name: Install uv for Vercel Python builds
-        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e
 
       - name: Verify uv installation
         run: uv --version
