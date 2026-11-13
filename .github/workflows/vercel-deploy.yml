@@ -1,0 +1,57 @@
+
+name: Deploy AI Video to Vercel
+
+on:
+  push:
+    branches:
+      - study/KongDuHyun
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-preview:
+    name: Preview - ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: site
+            directory: AI_video/deploy/site
+            project_id: ${{ vars.VERCEL_SITE_PROJECT_ID }}
+          - name: cloud
+            directory: AI_video/deploy/cloud
+            project_id: ${{ vars.VERCEL_CLOUD_PROJECT_ID }}
+
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ matrix.project_id }}
+
+    defaults:
+      run:
+        working-directory: ${{ matrix.directory }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel settings
+        run: vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
+
+      - name: Build website
+        run: vercel build --token="$VERCEL_TOKEN"
+
+      - name: Deploy preview
+        run: vercel deploy --prebuilt --token="$VERCEL_TOKEN"
