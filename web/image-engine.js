@@ -2,7 +2,7 @@
 // Same pipeline and runtime versions as the verified develop-branch module (web_model/test.html).
 // The video page keeps the EfficientNetV2S TF.js worker because the video heads use its features.
 import { MODEL_BASE } from './model-release.js';
-import { createFaceModel } from './face-model.js?v=photo-responsive';
+import { createFaceModel } from './face-model.js?v=photo-stages';
 
 const ORT_VERSION = '1.20.1';
 const MEDIAPIPE_VERSION = '0.10.14';

@@ -243,7 +243,7 @@ async function runBatch() {
     const results=await analyzeBatch(inputs,{...options,signal,onState:(state,message)=>{if(token===generation)setState(state,(activeIndex+1)+' / '+inputs.length+' · '+message);},onItem:async (index,status,result)=>{
       if(token!==generation)return;
       activeIndex=index;inputs[index].status=status;
-      if(result){inputs[index].result=result;if(result.status==='result'){await saveCompleted(owner, inputs[index], result, 'image');delete inputs[index].file;}}
+      if(result){inputs[index].result=result;if(result.status==='result'){setState('analyzing',(index+1)+' / '+inputs.length+' · 검사 기록을 저장하고 있어요.');await saveCompleted(owner, inputs[index], result, 'image');delete inputs[index].file;}}
       else {current=inputs[index];preview(current,token);if(!current.thumb)thumbnail(current,token);}
       renderAttachments();
     }});
@@ -278,6 +278,7 @@ async function run() {
     if (token !== generation) return;
     releasePreview();
     if (result.status === 'unsupported') { morphText(false);setState('unsupported', result.message); if (result.serviceUrl) $('video-service-link').hidden=false; return; }
+    if (mode === 'image') setState('analyzing', '검사 기록을 저장하고 있어요.');
     await saveCompleted(owner, {...input, name:filename, file:resolvedFile}, result, mode);
     if (token !== generation) return;
     renderExplanation(result);
