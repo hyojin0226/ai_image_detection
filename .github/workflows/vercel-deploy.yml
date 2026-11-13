@@ -1,4 +1,4 @@
-name: Deploy AI Video to Vercel
+name: Deploy AI Video to Vercel (Preview)
 
 on:
   push:
@@ -7,115 +7,73 @@ on:
 
 permissions:
   contents: read
-  checks: write
 
 jobs:
   deploy-preview:
     name: Preview - ${{ matrix.name }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
-
     strategy:
       fail-fast: false
       matrix:
         include:
           - name: site
             directory: AI_video/deploy/site
-            project_id: prj_SiXAdlXOnCa0OkzKODmdTv4iXqyk
-            project_name: duhyeon-ai-video
+            project_id: ${{ vars.VERCEL_SITE_PROJECT_ID }}
           - name: cloud
             directory: AI_video/deploy/cloud
-            project_id: prj_QoPw0QRcTOEiZVYjLKUe5SyLJrrN
-            project_name: duhyeon-ai-video-cloud
+            project_id: ${{ vars.VERCEL_CLOUD_PROJECT_ID }}
 
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      VERCEL_ORG_ID: team_kCloEe4t0ufwmj8gp3gCnru5
+      VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ matrix.project_id }}
-      VERCEL_SUPPORT_LARGE_FUNCTIONS: "1"
 
     defaults:
       run:
         working-directory: ${{ matrix.directory }}
+        shell: bash
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Verify deployment inputs
+        run: |
+          set -euo pipefail
+          test -n "$VERCEL_TOKEN" || { echo 'ERROR: VERCEL_TOKEN secret is empty.'; exit 1; }
+          test -n "$VERCEL_ORG_ID" || { echo 'ERROR: VERCEL_ORG_ID variable is empty.'; exit 1; }
+          test -n "$VERCEL_PROJECT_ID" || { echo 'ERROR: Project ID variable is empty.'; exit 1; }
+          test -f vercel.json || { echo 'ERROR: Cannot find vercel.json in deployment directory.'; exit 1; }
+          echo "Checking GitHub variables and deployment directory for ${{ matrix.name }}: OK"
+
+      - name: Check Vercel API access (do not reveal token)
+        run: |
+          set -euo pipefail
+          status=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
+            --header "Authorization: Bearer ${VERCEL_TOKEN}" \
+            "https://api.vercel.com/v9/projects/${VERCEL_PROJECT_ID}?teamId=${VERCEL_ORG_ID}")
+          echo "Vercel project API HTTP status for ${{ matrix.name }}: ${status}"
+          case "$status" in
+            200) echo 'Project is accessible to this token.' ;;
+            401|403) echo 'ERROR: Token is invalid, expired, or lacks permission for the Vercel team/project.'; exit 1 ;;
+            404) echo 'ERROR: Project inaccessible/not found. Recheck exact Project ID, Team ID, and token team scope.'; exit 1 ;;
+            *) echo "ERROR: Unexpected Vercel API HTTP status ${status}."; exit 1 ;;
+          esac
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install uv and build tools
-        run: |
-          pip install --upgrade pip uv
-          uv --version
+          node-version: '22'
 
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
-      - name: Install dependencies (cloud)
-        if: matrix.name == 'cloud'
-        run: npm ci || npm install
+      - name: Pull Vercel preview settings
+        run: vercel pull --yes --environment=preview
 
-      - name: Link Vercel project
-        run: |
-          mkdir -p .vercel
-          echo "{\"projectId\":\"$VERCEL_PROJECT_ID\",\"orgId\":\"$VERCEL_ORG_ID\"}" > .vercel/project.json
-          echo "::notice title=Vercel Config (${{ matrix.name }})::Dir=${{ matrix.directory }}, ProjectID=${VERCEL_PROJECT_ID:0:8}..., OrgID=${VERCEL_ORG_ID:0:8}..."
+      - name: Build preview
+        run: vercel build
 
-      - name: Pull Vercel settings
-        id: pull
-        run: |
-          export VERCEL_SUPPORT_LARGE_FUNCTIONS=1
-          if output=$(vercel pull --yes --environment=preview --token="$VERCEL_TOKEN" 2>&1); then
-            echo "$output"
-            echo "Vercel pull succeeded"
-          else
-            echo "$output"
-            compact_err=$(echo "$output" | tail -c 2000 | tr '\n' ' ')
-            echo "::error title=Pull Error (${{ matrix.name }})::$compact_err"
-            exit 1
-          fi
-
-      - name: Build website
-        id: build
-        run: |
-          export VERCEL_SUPPORT_LARGE_FUNCTIONS=1
-          if output=$(vercel build --token="$VERCEL_TOKEN" 2>&1); then
-            echo "$output"
-            echo "Vercel build succeeded"
-          else
-            echo "$output"
-            compact_err=$(echo "$output" | tail -c 2000 | tr '\n' ' ')
-            echo "::error title=Build Error (${{ matrix.name }})::$compact_err"
-            exit 1
-          fi
-
-      - name: Deploy preview
-        id: deploy
-        run: |
-          export VERCEL_SUPPORT_LARGE_FUNCTIONS=1
-          if deploy_output=$(vercel deploy --prebuilt --archive=tgz --token="$VERCEL_TOKEN" 2>&1); then
-            echo "$deploy_output"
-            url=$(echo "$deploy_output" | grep -o 'https://[^ ]*\.vercel\.app' | tail -n 1)
-            if [ -z "$url" ]; then
-              url=$(echo "$deploy_output" | tail -n 1)
-            fi
-            echo "PREVIEW_URL=$url" >> "$GITHUB_ENV"
-            echo "### Preview Deployment for ${{ matrix.name }}" >> $GITHUB_STEP_SUMMARY
-            echo "URL: $url" >> $GITHUB_STEP_SUMMARY
-            echo "Deployed successfully to: $url"
-            echo "::notice title=Preview Deployed (${{ matrix.name }})::$url"
-          else
-            echo "$deploy_output"
-            compact_err=$(echo "$deploy_output" | tail -c 2000 | tr '\n' ' ')
-            echo "::error title=Deploy Error (${{ matrix.name }})::$compact_err"
-            exit 1
-          fi
+      - name: Deploy preview (no production changes)
+        run: vercel deploy --prebuilt
