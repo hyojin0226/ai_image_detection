@@ -32,6 +32,7 @@ jobs:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: team_kCloEe4t0ufwmj8gp3gCnru5
       VERCEL_PROJECT_ID: ${{ matrix.project_id }}
+      VERCEL_SUPPORT_LARGE_FUNCTIONS: "1"
 
     defaults:
       run:
@@ -72,6 +73,7 @@ jobs:
       - name: Pull Vercel settings
         id: pull
         run: |
+          export VERCEL_SUPPORT_LARGE_FUNCTIONS=1
           if output=$(vercel pull --yes --environment=preview --token="$VERCEL_TOKEN" 2>&1); then
             echo "$output"
             echo "Vercel pull succeeded"
@@ -85,6 +87,7 @@ jobs:
       - name: Build website
         id: build
         run: |
+          export VERCEL_SUPPORT_LARGE_FUNCTIONS=1
           if output=$(vercel build --token="$VERCEL_TOKEN" 2>&1); then
             echo "$output"
             echo "Vercel build succeeded"
@@ -98,6 +101,7 @@ jobs:
       - name: Deploy preview
         id: deploy
         run: |
+          export VERCEL_SUPPORT_LARGE_FUNCTIONS=1
           if deploy_output=$(vercel deploy --prebuilt --token="$VERCEL_TOKEN" 2>&1); then
             echo "$deploy_output"
             url=$(echo "$deploy_output" | grep -o 'https://[^ ]*\.vercel\.app' | tail -n 1)
