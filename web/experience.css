@@ -247,15 +247,31 @@ body[data-route="model"] main { padding-inline: 0; }
 .model-section h3 { font-size: 19px; margin: 0 0 12px; }
 .model-tabs { display: flex; gap: 16px; border-bottom: 1px solid var(--line); margin-bottom: 18px; }
 .model-tabs button { min-height: 48px; padding: 8px 16px; border: 0; border-bottom: 3px solid transparent; background: transparent; color: #514b60; font: inherit; font-weight: 650; cursor: pointer; }
-.model-tabs button[aria-selected="true"] { color: #5028b9; border-bottom-color: #643de0; }
+.model-tabs button[aria-selected="true"] { color: #45209a; background: #f2ebff; border-bottom-color: currentColor; }
+#model-video-tab[aria-selected="true"] { color: #16457c; background: #eaf4ff; }
+.model-tab-panel { --panel-ink: #45209a; --panel-bg: #f2ebff; padding: clamp(18px, 3vw, 30px); background: var(--panel-bg); border-radius: 14px; }
+#model-video-panel { --panel-ink: #16457c; --panel-bg: #eaf4ff; }
 .model-tab-panel[hidden] { display: none; }
+.model-editorial .model-panel-lead { display: flex; align-items: center; gap: 12px; font-size: 19px; font-weight: 700; color: var(--panel-ink); }
+.model-media-icon { position: relative; flex: 0 0 23px; height: 18px; border: 2px solid currentColor; border-radius: 4px; }
+.model-media-icon::after { content: ""; position: absolute; }
+.model-photo-icon::after { width: 7px; height: 7px; left: 5px; top: 5px; border: 2px solid currentColor; border-radius: 50%; }
+.model-video-icon::after { top: 3px; left: 7px; border: 4px solid transparent; border-left: 6px solid currentColor; }
 .model-tabs button:focus-visible, .model-tab-panel:focus-visible, .model-editorial a:focus-visible, .model-detail > summary:focus-visible, .research-table-wrap:focus-visible { outline: 2px solid #5b2ee0; outline-offset: 3px; }
-.model-flow { display: flex; flex-wrap: wrap; gap: 8px 14px; padding: 0; margin: 12px 0; list-style: none; color: #5028b9; font-weight: 650; }
-.model-flow li + li::before { content: "→" / ""; margin-right: 14px; color: #64558a; }
-.model-outcomes { max-width: 700px; margin: 0 0 16px; }
-.model-outcomes div { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 12px; padding: 8px 0; }
-.model-outcomes div + div { border-top: 1px solid var(--line); }
-.model-outcomes dt { font-weight: 700; }
+.model-flow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 16px 0; margin: 0 0 14px; border-block: 1px solid var(--line); color: var(--panel-ink); font-weight: 650; counter-reset: model-step; list-style: none; }
+.model-flow li { display: flex; align-items: center; gap: 8px; counter-increment: model-step; }
+.model-flow li::before { content: counter(model-step) / ""; display: grid; place-items: center; flex: 0 0 28px; height: 28px; background: #fff; border-radius: 50%; }
+.model-tab-panel > p:last-child { margin-bottom: 0; }
+.model-outcomes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 0 0 20px; }
+.model-outcomes div { min-width: 0; padding: 14px; border: 1px solid var(--line); border-radius: 10px; }
+.model-outcomes dt { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; font-weight: 700; }
+.model-verdict { display: inline-block; padding: 3px 8px; border-radius: 6px; }
+.model-real { color: #11524d; background: #e2f5f1; }
+.model-ai { color: #9b2335; background: #fde8ec; }
+.model-unknown { color: #754600; background: #ffedc4; }
+.model-caution { margin-top: 32px; padding: 20px; border-radius: 10px; background: #fff5d6; color: #44320b; }
+.model-caution h2 { font-size: 20px; line-height: 1.4; margin: 0 0 10px; }
+.model-caution ul { margin: 0; padding-left: 22px; }
 .model-editorial dd { margin: 0; color: var(--body); overflow-wrap: anywhere; }
 .model-link { display: inline-flex; align-items: center; min-height: 44px; text-underline-offset: 4px; }
 .model-detail { border-bottom: 1px solid var(--line); }
@@ -274,6 +290,7 @@ body[data-route="model"] main { padding-inline: 0; }
   .model-intro { padding-top: 24px; }
   .model-intro h1 { font-size: clamp(28px, 8vw, 32px); }
   .model-section { margin-top: 36px; padding-top: 20px; }
+  .model-flow, .model-outcomes { grid-template-columns: minmax(0, 1fr); }
   .model-spec-grid { grid-template-columns: minmax(0, 1fr); gap: 24px; }
 }
 
