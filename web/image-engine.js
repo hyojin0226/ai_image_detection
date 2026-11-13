@@ -2,7 +2,7 @@
 // Same pipeline and runtime versions as the verified develop-branch module (web_model/test.html).
 // The video page keeps the EfficientNetV2S TF.js worker because the video heads use its features.
 import { MODEL_BASE } from './model-release.js';
-import { createFaceModel } from './face-model.js?v=convnext';
+import { createFaceModel } from './face-model.js?v=photo-stages';
 
 const ORT_VERSION = '1.20.1';
 const MEDIAPIPE_VERSION = '0.10.14';
@@ -23,7 +23,17 @@ function loadScript(src) {
 
 // Fetch the model with progress so the page can show the 56 MB download.
 async function fetchModel(url, onProgress) {
-  const response = await fetch(url);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(new Error('모델 다운로드 시간이 초과됐어요. 연결을 확인하고 다시 검사해 주세요.')), 120000);
+  try {
+    return await readModel(url, onProgress, controller.signal);
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function readModel(url, onProgress, signal) {
+  const response = await fetch(url, { signal });
   if (!response.ok) throw new Error('모델 파일을 불러오지 못했어요.');
   const total = Number(response.headers.get('content-length')) || 0;
   if (!response.body || !total) return new Uint8Array(await response.arrayBuffer());
@@ -35,7 +45,8 @@ async function fetchModel(url, onProgress) {
     bytes.set(value, received); received += value.length;
     onProgress(Math.min(received / total, 1));
   }
-  return received === total ? bytes : bytes.slice(0, received);
+  if (received !== total) throw new Error('모델 다운로드가 끝나지 않았어요. 다시 검사해 주세요.');
+  return bytes;
 }
 
 export function loadImageEngine({ onProgress = () => {} } = {}) {

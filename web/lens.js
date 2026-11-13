@@ -1,8 +1,8 @@
 import { analyze, classifyInput, LIMITS } from './input-adapters.js';
 import { analyzeBatch, MAX_ATTACHMENTS } from './batch-input.js?v=classifiers';
 import { analyzeVideo, renderVideoResult, updateVideoProgress } from './video-analysis.js?v=whole8';
-import { captureHistoryOwner, saveCompleted } from './history.js?v=result-summary';
-import { openGradcam } from './gradcam-dialog.js';
+import { captureHistoryOwner, saveCompleted } from './history.js?v=whole8-history';
+import { openGradcam } from './gradcam-dialog.js?v=whole8-photo';
 import { releaseInference } from './inference-client.js?v=classifiers';
 const mode = window.Fakit.routeName();
 const isVideo = mode === 'video';
@@ -63,14 +63,20 @@ function showResult(result) {
   stage.dataset.verdict=result.verdict;
   $('lens-percent').textContent=(result.real*100).toFixed(1)+'%';
   $('lens-verdict').textContent=result.verdict==='real'?(result.video?'실제 촬영 영상으로 분류':'실제 사진으로 분류'):'AI 생성으로 분류';
-  $('score-caption').textContent='REAL 점수';
+  $('score-caption').textContent=scoreCaption(result);
   setState('result','점수는 모델 출력이며 진위의 확정이나 정답률이 아니에요.');
+}
+function scoreCaption(result) {
+  return Number.isFinite(result.elapsedMs)
+    ? 'REAL 점수 · ' + (result.elapsedMs / 1000).toFixed(1) + '초 소요'
+    : 'REAL 점수';
 }
 function renderAttachments() {
   const list=$('attachment-list'),deck=$('photo-deck');list.replaceChildren();deck.replaceChildren();
   list.hidden=attachments.length<2;stage.dataset.multiple=String(attachments.length>1);
   attachments.forEach((item,index)=>{
     const row=document.createElement('div');row.className='attachment';row.dataset.status=item.result?.status||item.status||'queued';
+    if (item.result?.status === 'result') row.dataset.verdict = item.result.verdict;
     const button=document.createElement('button');button.type='button';button.className='attachment-select';
     if(item.thumb){const img=document.createElement('img');img.src=item.thumb;img.alt='';button.append(img);}
     const name=document.createElement('span');name.textContent=item.name;button.append(name);
@@ -235,10 +241,17 @@ async function runBatch() {
   const inputs=[...attachments];let activeIndex=0;
   setState('loading','여러 사진을 순서대로 검사할게요.');
   try {
-    const results=await analyzeBatch(inputs,{...options,signal,onState:(state,message)=>{if(token===generation)setState(state,(activeIndex+1)+' / '+inputs.length+' · '+message);},onItem:async (index,status,result)=>{
+    const results=await analyzeBatch(inputs,{...options,signal,onState:(state,message)=>{if(token===generation)setState(state,(activeIndex+1)+' / '+inputs.length+' · '+message);},onItem:(index,status,result)=>{
       if(token!==generation)return;
       activeIndex=index;inputs[index].status=status;
-      if(result){inputs[index].result=result;if(result.status==='result'){await saveCompleted(owner, inputs[index], result, 'image');delete inputs[index].file;}}
+      if (result) {
+        const item = inputs[index];
+        item.result = result;
+        if (result.status === 'result') {
+          void saveCompleted(owner, { id: item.id, name: item.name }, result, 'image');
+          delete item.file;
+        }
+      }
       else {current=inputs[index];preview(current,token);if(!current.thumb)thumbnail(current,token);}
       renderAttachments();
     }});
@@ -272,14 +285,13 @@ async function run() {
     if (token !== generation) return;
     releasePreview();
     if (result.status === 'unsupported') { morphText(false);setState('unsupported', result.message); if (result.serviceUrl) $('video-service-link').hidden=false; return; }
-    await saveCompleted(owner, {...input, name:filename}, result, mode);
-    if (token !== generation) return;
     renderExplanation(result);
     stage.dataset.verdict = result.verdict;
     $('lens-percent').textContent = `${(result.real * 100).toFixed(1)}%`;
     $('lens-verdict').textContent = result.verdict === 'real' ? (result.video ? '실제 촬영 영상으로 분류' : '실제 사진으로 분류') : 'AI 생성으로 분류';
-    $('score-caption').textContent = 'REAL 점수';
+    $('score-caption').textContent = scoreCaption(result);
     setState('result', '검사가 끝났어요. 점수는 모델 출력이며 진위의 확정이나 정답률이 아니에요.');
+    void saveCompleted(owner, { id: input.id, name: filename }, result, mode);
     if (current.file) { const item=attachments.find(item=>item===current);if(item){item.result=result;delete item.file;}current = { kind: current.kind, source: current.source };submit.disabled = true;renderAttachments(); }
   } catch (error) {
     if (token !== generation) return;
@@ -336,7 +348,7 @@ function layout() {
   if (active && !mobile) radius=Math.min(radius,height*.245);
   if (phase==='dragover') radius=Math.min(radius*1.04,width*.45,height*.46);
   art.setAttribute('viewBox',`0 0 ${width} ${height}`);
-  const word=$('word-shape'); word.setAttribute('x',width/2); word.setAttribute('y',active ? (mobile ? 70 : height*.46) : height*.63);
+  const word=$('word-shape'); word.setAttribute('x',width/2); word.setAttribute('y',active ? (mobile ? 70 : height*.46) : height*.69);
   const logoSize=Math.min(width*(active ? .35 : .43), height*(active ? .64 : .81));
   word.removeAttribute('textLength');word.removeAttribute('lengthAdjust');
   word.setAttribute('font-size',logoSize);word.setAttribute('letter-spacing',-logoSize*.045);

@@ -1,4 +1,4 @@
-import { openGradcam } from './gradcam-dialog.js';
+import { openGradcam, renderPhotoEvidence } from './gradcam-dialog.js?v=whole8-photo';
 
 const $ = id => document.getElementById(id);
 const MAX_RECORDS = 200;
@@ -24,7 +24,19 @@ function openDatabase() {
       db.createObjectStore('records', { keyPath: ['scope', 'id'] }).createIndex('scope', 'scope');
       db.createObjectStore('results');
     };
-    database = request(opening).catch(error => { database = null; throw error; });
+    database = new Promise((resolve, reject) => {
+      opening.onblocked = () => reject(new Error('다른 Fakit 탭에서 기록 저장소를 사용하고 있어요. 다른 탭을 닫고 다시 검사해 주세요.'));
+      opening.onerror = () => reject(opening.error);
+      opening.onsuccess = () => {
+        const db = opening.result;
+        db.onversionchange = () => { db.close(); database = null; };
+        resolve(db);
+      };
+    }).catch(error => {
+      database = null;
+      opening.onsuccess = () => opening.result.close();
+      throw error;
+    });
   }
   return database;
 }
@@ -71,7 +83,12 @@ async function write(owner, update) {
 }
 
 export async function saveCompleted(owner, input, result, type) {
-  if (result.status !== 'result' || !input.id || !isCurrent(owner) || !enabled(owner)) return;
+  if (result.status !== 'result' || !input.id) return;
+  if (!owner) {
+    window.Fakit.toast('기록 저장에 필요한 브라우저 상태를 확인하지 못했어요. 새로고침한 뒤 다시 검사해 주세요.');
+    return;
+  }
+  if (!isCurrent(owner) || !enabled(owner)) return;
   const { id } = input;
   const at = Date.now();
   const summary = {
@@ -82,26 +99,44 @@ export async function saveCompleted(owner, input, result, type) {
   };
   try {
     const meta = await transform(owner, id, 'meta', summary, true);
-    const payload = await transform(owner, id, 'result', result, true);
+    const savedResult = type === 'image' ? {
+      status: result.status, verdict: result.verdict, real: result.real, fake: result.fake,
+      threshold: result.threshold, elapsedMs: result.elapsedMs,
+      explanation: result.explanation?.image ? { image: result.explanation.image } : undefined,
+    } : result;
+    if (!isCurrent(owner) || !enabled(owner)) return;
+    const payload = await transform(owner, id, 'result', savedResult, true);
     const size = [meta, payload].reduce((sum, value) => sum + (typeof value === 'string' ? value.length * 2 : value.data.byteLength + 12), 0);
     if (size > MAX_BYTES) throw new Error('이 검사 결과는 저장 한도를 넘어요.');
-    await write(owner, async (records, results) => {
-      const rows = await request(records.index('scope').getAll(owner.scope));
-      if (!isCurrent(owner) || rows.some(row => row.id === id)) return;
-      records.add({scope:owner.scope, id, at, size, meta});
-      results.add(payload, [owner.scope, id]);
-      let bytes = size + rows.reduce((sum,row) => sum + row.size, 0);
-      rows.sort((a,b) => b.at - a.at);
-      while (rows.length >= MAX_RECORDS || bytes > MAX_BYTES) {
-        const old = rows.pop();
-        records.delete([owner.scope, old.id]);
-        results.delete([owner.scope, old.id]);
-        bytes -= old.size;
-      }
-    });
+    await write(owner, (records, results) => new Promise((resolve, reject) => {
+      const reading = records.index('scope').getAll(owner.scope);
+      reading.onerror = () => reject(reading.error);
+      reading.onsuccess = () => {
+        try {
+          const rows = reading.result;
+          if (!isCurrent(owner) || !enabled(owner) || rows.some(row => row.id === id)) {
+            resolve();
+            return;
+          }
+          records.add({scope:owner.scope, id, at, size, meta});
+          results.add(payload, [owner.scope, id]);
+          let bytes = size + rows.reduce((sum,row) => sum + row.size, 0);
+          rows.sort((a,b) => b.at - a.at);
+          while (rows.length >= MAX_RECORDS || bytes > MAX_BYTES) {
+            const old = rows.pop();
+            records.delete([owner.scope, old.id]);
+            results.delete([owner.scope, old.id]);
+            bytes -= old.size;
+          }
+          resolve();
+        } catch (error) { reject(error); }
+      };
+    }));
     void refresh();
   } catch (error) {
-    if (isCurrent(owner)) window.Fakit.toast(error.name === 'QuotaExceededError' ? '저장 공간이 부족해 이번 검사는 기록에 남기지 못했어요.' : '검사는 완료했지만 기록을 저장하지 못했어요.');
+    if (isCurrent(owner)) window.Fakit.toast(error.name === 'QuotaExceededError'
+      ? '저장 공간이 부족해 이번 검사는 기록에 남기지 못했어요.'
+      : error.message?.startsWith('다른 Fakit 탭') ? error.message : '검사는 완료했지만 기록을 저장하지 못했어요.');
   }
 }
 
@@ -133,7 +168,8 @@ async function openResult(entry) {
     $('saved-kind').textContent = typeName(entry) + ' 검사 결과';
     $('saved-title').textContent = entry.verdict === 'real' ? '실제 촬영으로 분류' : 'AI 생성으로 분류';
     $('saved-detail').dataset.verdict = entry.verdict;
-    $('saved-meta').textContent = entry.name + ' · ' + date(entry.at);
+    const elapsed = Number.isFinite(result.elapsedMs) ? ' · 검사 ' + (result.elapsedMs / 1000).toFixed(1) + '초' : '';
+    $('saved-meta').textContent = entry.name + ' · ' + date(entry.at) + elapsed;
     $('saved-ai').textContent = (result.fake * 100).toFixed(1) + '%';
     $('saved-real').textContent = (result.real * 100).toFixed(1) + '%';
     const threshold = result.video?.threshold ?? result.threshold;
@@ -168,10 +204,21 @@ async function openResult(entry) {
       }
       video.append(title, summary, segments);
     }
+    const photo = $('saved-photo-evidence');
+    photo.hidden = entry.type !== 'image';
+    if (!photo.hidden) {
+      renderPhotoEvidence($('saved-photo-images'), { ...result, thumb: result.thumb ?? entry.thumb });
+      $('saved-photo-note').textContent = result.explanation
+        ? '색이 진한 곳은 모델의 판정에 더 크게 기여한 영역이에요. 실제 조작 위치를 뜻하지는 않아요.'
+        : '이 검사에는 저장된 Grad-CAM 결과가 없어요.';
+    }
+    $('saved-gradcam').hidden = !photo.hidden;
     $('saved-gradcam').onclick = () => openGradcam(result);
     window.Fakit.openModal($('saved-detail'));
   } catch { if (isCurrent(owner)) window.Fakit.toast('이 검사 결과를 불러오지 못했어요.'); }
 }
+
+$('saved-detail').addEventListener('close', () => $('saved-photo-images').replaceChildren());
 
 function card(entry, removable) {
   const container = document.createElement('article');
@@ -179,6 +226,7 @@ function card(entry, removable) {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'recent-item';
+  button.dataset.verdict = entry.verdict;
   const tag = document.createElement('b');
   tag.textContent = typeName(entry) + ' · ' + verdict(entry);
   const name = document.createElement('span');
@@ -210,7 +258,8 @@ function card(entry, removable) {
 
 function render() {
   const route = window.Fakit.routeName();
-  $('recent-strip').hidden = !entries.length || !['home','image','video'].includes(route);
+  $('recent-strip').hidden = !['image','video'].includes(route);
+  $('recent-empty').hidden = entries.length > 0;
   $('recent-list').replaceChildren(...entries.slice(0,8).map(entry => card(entry,false)));
   const shown = entries.filter(entry => filter === 'all' || entry.verdict === filter);
   $('history-list').replaceChildren(...shown.map(entry => card(entry,true)));

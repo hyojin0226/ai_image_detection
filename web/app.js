@@ -4,7 +4,7 @@
 // Images are queued and analysed one at a time; results are kept in a local history.
 import { classifyFile, supportedImageMime } from './file-types.js';
 import { metric } from './inference-client.js?v=classifiers';
-import { loadImageEngine } from './image-engine.js?v=convnext';
+import { loadImageEngine } from './image-engine.js?v=photo-stages';
 const MAX_QUEUE = 20;                 // images per batch
 const MAX_BYTES = 15 * 1024 * 1024;   // per image
 
@@ -29,6 +29,7 @@ const { toast, go, routeName, openModal, closeModal } = window.Fakit;
 let config = null;
 let engine = null;
 let modelReady = null;   // promise: resolves when the model can predict, rejects if loading failed
+let photoInFlight = null;
 const state = { items: [], running: false, nextId: 1, filter: "all" };
 
 // ── Model ──────────────────────────────────────────────────────────────
@@ -142,12 +143,33 @@ async function pump() {
   }
 }
 
-async function analyzeItem(item) {
+async function analyzeItem(item, { signal, onStage } = {}) {
   if (!state.items.includes(item)) return;
   renderProcess(item, "analyzing");
   await nextFrame();
   try {
-    const result = await engine.analyze(item.file, { mode: 'face', explain: true, ela: false });
+    if (photoInFlight) throw new Error('이전 사진 검사가 아직 끝나지 않았어요. 잠시 기다리거나 페이지를 새로고침해 주세요.');
+    const deadline = AbortSignal.timeout(90000);
+    const operationSignal = signal ? AbortSignal.any([signal, deadline]) : deadline;
+    operationSignal.throwIfAborted();
+    const task = engine.analyze(item.file, { mode: 'face', explain: true, ela: false, signal: operationSignal, onStage });
+    photoInFlight = task;
+    const clear = () => { if (photoInFlight === task) photoInFlight = null; };
+    task.then(clear, clear);
+    let onAbort;
+    const stopped = new Promise((_, reject) => {
+      onAbort = () => reject(deadline.aborted
+        ? new Error('사진 검사 시간이 초과됐어요. 페이지를 새로고침하고 한 장씩 다시 검사해 주세요.')
+        : operationSignal.reason);
+      if (operationSignal.aborted) onAbort();
+      else operationSignal.addEventListener('abort', onAbort, { once: true });
+    });
+    let result;
+    try {
+      result = await Promise.race([task, stopped]);
+    } finally {
+      operationSignal.removeEventListener('abort', onAbort);
+    }
     if (!state.items.includes(item)) return;   // removed while analysing
     if (result.status === 'no_face') {
       item.status = "error"; item.error = "판단 불가 · 얼굴 없음"; item.noFace = true;
@@ -168,6 +190,7 @@ async function analyzeItem(item) {
     if (!state.items.includes(item)) return;
     item.status = "error";
     item.error = "분석 실패";
+    item.failure = err;
     renderItem(item);
     renderProcess(item, "error");
   }
@@ -310,6 +333,7 @@ function formatDate(ts) { return new Date(ts).toLocaleString("ko-KR"); }
 
 // Unified UI bridge. Model preprocessing, predict, threshold and history are unchanged.
 window.Fakit.analyzeImage = async (file, { signal, onState = () => {} } = {}) => {
+  const started = performance.now();
   signal?.throwIfAborted();
   onState('loading', '이미지 분석을 준비하고 있어요.');
   await loadResources();
@@ -334,10 +358,10 @@ window.Fakit.analyzeImage = async (file, { signal, onState = () => {} } = {}) =>
     mountItem(item);
     signal?.addEventListener('abort', cancel, { once: true });
     onState('analyzing', '이미지를 검사하고 있어요.');
-    await analyzeItem(item);
+    await analyzeItem(item, { signal, onStage: message => onState('analyzing', message) });
     signal?.throwIfAborted();
     if (item.noFace) throw new Error('사진에서 얼굴을 찾지 못해 판단할 수 없어요. 얼굴이 잘 보이는 사진을 올려 주세요.');
-    if (item.status !== 'done') throw new Error('이미지를 분석하지 못했어요. 다시 시도해 주세요.');
+    if (item.status !== 'done') throw item.failure || new Error('이미지를 분석하지 못했어요. 다시 시도해 주세요.');
     // Grad-CAM comes from the same forward pass (closed-form head gradient in the ONNX graph).
     const face = item.faces[0];
     let explanation, explanationError;
@@ -349,7 +373,7 @@ window.Fakit.analyzeImage = async (file, { signal, onState = () => {} } = {}) =>
     const faces = item.faces.map(f => ({ real: f.prob_real, verdict: f.label, bbox: f.bbox }));
     signal?.throwIfAborted();
     metric('image-result');
-    return { status: 'result', real: item.real, fake: item.fake, verdict: item.verdict, threshold: threshold(), model: config.model_name, thumb, faces, explanation, explanationError };
+    return { status: 'result', real: item.real, fake: item.fake, verdict: item.verdict, threshold: threshold(), model: config.model_name, thumb, faces, explanation, explanationError, elapsedMs: performance.now() - started };
   } finally {
     signal?.removeEventListener('abort', cancel);
     cancel();

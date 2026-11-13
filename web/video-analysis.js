@@ -1,4 +1,4 @@
-import { openGradcam } from './gradcam-dialog.js';
+import { openGradcam } from './gradcam-dialog.js?v=whole8-photo';
 const $ = id => document.getElementById(id);
 // Frames used for the verdict (whole-video 8) vs reference segment frames.
 export const frameLabel = frame => frame.role === 'decision' ? '전체 판정' : '구간 ' + frame.segment;
