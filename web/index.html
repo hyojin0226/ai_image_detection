@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
   <link rel="stylesheet" href="/style.css">
-  <link rel="stylesheet" href="/experience.css?v=model-verdict-colors">
+  <link rel="stylesheet" href="/experience.css?v=photo-result">
   <script>document.documentElement.classList.add("js");</script>
 </head>
 <body data-route="home">
@@ -543,6 +543,11 @@
     </div>
     <p class="saved-note" id="saved-score"></p>
     <div id="saved-video" hidden></div>
+    <section id="saved-photo-evidence" aria-labelledby="saved-photo-title" hidden>
+      <h3 id="saved-photo-title">사진과 판단 근거</h3>
+      <p id="saved-photo-note"></p>
+      <div id="saved-photo-images" class="gradcam-grid"></div>
+    </section>
     <div class="saved-actions"><button type="button" class="btn btn-soft" id="saved-gradcam">판단 근거 보기 <span aria-hidden="true">↗</span></button></div>
   </dialog>
   <dialog class="modal saved-dialog" id="gradcam-dialog" aria-labelledby="gradcam-title">
@@ -555,6 +560,6 @@
   <script src="/ui.js?v=model-guide"></script>
 
   <script src="/diagnostics.js"></script>
-  <script type="module" src="/classifier-entry.js?v=convnext"></script>
+  <script type="module" src="/classifier-entry.js?v=photo-result"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-import { openGradcam } from './gradcam-dialog.js';
+import { openGradcam, renderPhotoEvidence } from './gradcam-dialog.js?v=photo-result';
 
 const $ = id => document.getElementById(id);
 const MAX_RECORDS = 200;
@@ -168,10 +168,21 @@ async function openResult(entry) {
       }
       video.append(title, summary, segments);
     }
+    const photo = $('saved-photo-evidence');
+    photo.hidden = entry.type !== 'image';
+    if (!photo.hidden) {
+      renderPhotoEvidence($('saved-photo-images'), result);
+      $('saved-photo-note').textContent = result.explanation
+        ? '색이 진한 곳은 모델의 판정에 더 크게 기여한 영역이에요. 실제 조작 위치를 뜻하지는 않아요.'
+        : '이 검사에는 저장된 Grad-CAM 결과가 없어요.';
+    }
+    $('saved-gradcam').hidden = !photo.hidden;
     $('saved-gradcam').onclick = () => openGradcam(result);
     window.Fakit.openModal($('saved-detail'));
   } catch { if (isCurrent(owner)) window.Fakit.toast('이 검사 결과를 불러오지 못했어요.'); }
 }
+
+$('saved-detail').addEventListener('close', () => $('saved-photo-images').replaceChildren());
 
 function card(entry, removable) {
   const container = document.createElement('article');
