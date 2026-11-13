@@ -3,6 +3,7 @@ const dialog = $('gradcam-dialog');
 const framePicker = $('gradcam-frame');
 const gallery = $('gradcam-images');
 const missing = '이 검사에는 저장된 Grad-CAM 결과가 없습니다';
+const overlayLabel = 'Grad-CAM 판독 지표';
 let selection = 0;
 
 export function scoreText(result) {
@@ -40,13 +41,13 @@ export function renderPhotoEvidence(container, result) {
   const panels = [
     ['사진 미리보기', result.thumb, 'fakit-photo-preview', result.originalPhoto],
     ['Grad-CAM 히트맵', evidence?.heatmap, 'fakit-gradcam'],
-    ['겹쳐 보기', evidence?.image, 'fakit-overlay'],
+    [overlayLabel, evidence?.image, 'fakit-overlay'],
   ];
   container.replaceChildren(...panels.filter(([, src]) => src).map(args => imagePanel(...args)));
 }
 
 function showImages(original, heatmap, overlay) {
-  gallery.replaceChildren(imagePanel('원본 미리보기', original), imagePanel('Grad-CAM 히트맵', heatmap), imagePanel('겹쳐 보기', overlay));
+  gallery.replaceChildren(imagePanel('원본 미리보기', original), imagePanel('Grad-CAM 히트맵', heatmap), imagePanel(overlayLabel, overlay));
 }
 
 function canvas(width,height) {
