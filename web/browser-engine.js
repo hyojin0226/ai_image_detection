@@ -54,14 +54,22 @@ async function openVideo(file,signal){
   }
   return {video,capture,close(){video.pause();video.removeAttribute('src');video.load();URL.revokeObjectURL(url);}};
 }
-async function segments(reader,progress,signal){
+// Final verdict frames: 8 evenly spaced over the whole video at (i+.5)*duration/8, the method Duhyun
+// validated (test 1,000: accuracy 81.5%, real judged AI 11.6%). Black frames are kept, as in that evaluation.
+async function wholeFrames(reader,progress,signal,total){
+  const duration=reader.video.duration,frames=[];
+  for(let i=0;i<8;i++){check(signal);frames.push(await reader.capture((i+.5)*duration/8));progress(`프레임 추출 ${i+1}/${total}`);}
+  return {segment:0,start_sec:0,end_sec:duration,frames};
+}
+// Reference segments (shown only): 16/32/48/64 frames by duration, 8 frames per segment (study/KongDuHyun 73617e2).
+async function segments(reader,progress,signal,offset=0){
   const duration=reader.video.duration,planned=frameCountForDuration(duration),count=planned/8,groups=[],black=[],skipped=[];
   for(let s=0;s<count;s++){
     const start=s*duration/count,end=(s+1)*duration/count,candidates=[];
     for(let j=0;j<8;j++){
       check(signal);const f=await reader.capture((s*8+j+.5)*duration/planned);
       if(f.black)black.push(f.timestamp_sec);else candidates.push(f);
-      progress(`프레임 추출 ${s*8+j+1}/${planned}`);
+      progress(`프레임 추출 ${offset+s*8+j+1}/${offset+planned}`);
     }
     if(candidates.length<8)for(let j=0;j<16;j++){
       const f=await reader.capture(start+(j+.5)*(end-start)/16);
@@ -109,52 +117,63 @@ function render(rgb,heat,target){
   draw.drawImage(original,0,24);draw.drawImage(heat?overlay:original,256,24);
   return {comparison_url:comparison.toDataURL('image/png'),strongest_zone:zone, heatmap:heat ? Array.from(heat) : null};
 }
+async function scoreGroup(group,engine,signal,label,progress){
+  group.sequence=new Float64Array(8*257);
+  for(let i=0;i<8;i++){
+    check(signal);const f=group.frames[i];
+    const [activation,embedding,real]=await inference('video-features',{rgb:f.rgb});
+    f.activation=activation;group.sequence.set(embedding,i*257);group.sequence[i*257+256]=1-real[0];
+    progress(`${label} · 프레임 ${i+1}/8 특징 분석`);await next();
+  }
+  const x=pooled(group.sequence),prediction=head(x,engine.members,true);
+  group.score=prediction.score;group.featureGradient=featureGradient(group.sequence,x,prediction.gradient);
+}
 export async function analyzeFile(file,{progress=()=>{},signal}={}){
   if(!file?.size||file.size>90*1024**2)throw Error('90 MB 이하의 영상을 선택하세요.');
   const started=performance.now(),engine=await prepare(progress);check(signal);
-  const reader=await openVideo(file,signal),duration=reader.video.duration;let selected;
-  try{selected=await segments(reader,progress,signal);}finally{reader.close();}
-  const {groups,black,skipped,planned,count}=selected,records=[],statistics=[],scores=[];
-  for(const group of groups){
-    group.sequence=new Float64Array(8*257);
-    for(let i=0;i<8;i++){
-      check(signal);const f=group.frames[i];
-      const [activation,embedding,real]=await inference('video-features',{rgb:f.rgb});
-      f.activation=activation;group.sequence.set(embedding,i*257);group.sequence[i*257+256]=1-real[0];
-      progress(`구간 ${group.segment}/${count} · 프레임 ${i+1}/8 특징 분석`);await next();
-    }
-    const x=pooled(group.sequence),prediction=head(x,engine.members,true);
-    statistics.push(x);scores.push(prediction.score);group.featureGradient=featureGradient(group.sequence,x,prediction.gradient);
-  }
-  const score=scores.reduce((a,b)=>a+b,0)/groups.length,target=score>=.5?'fake':'real';
-  for(let g=0;g<groups.length;g++){
-    const group=groups[g],mean=new Float64Array(257);
+  const reader=await openVideo(file,signal),duration=reader.video.duration;let whole,selected;
+  try{
+    const planned=frameCountForDuration(duration);
+    whole=await wholeFrames(reader,progress,signal,8+planned);
+    selected=await segments(reader,progress,signal,8);
+  }finally{reader.close();}
+  const {groups,black,skipped,planned,count}=selected,records=[];
+  await scoreGroup(whole,engine,signal,'전체 판정',progress);
+  for(const group of groups)await scoreGroup(group,engine,signal,`구간 ${group.segment}/${count}`,progress);
+  // The verdict uses the whole-video 8-frame score; segment scores are reference only.
+  const score=whole.score,target=score>=.5?'fake':'real';
+  const segmentAverage=groups.reduce((a,g)=>a+g.score,0)/groups.length,totalCams=8+groups.length*8;
+  async function explain(group,role,base,scale){
+    const mean=new Float64Array(257);
     for(let i=0;i<8;i++)for(let j=0;j<257;j++)mean[j]+=group.sequence[i*257+j]/8;
     for(let i=0;i<8;i++){
       check(signal);const f=group.frames[i],changed=group.sequence.slice();changed.set(mean,i*257);
-      const alternative=score+(head(pooled(changed),engine.members).score-scores[g])/groups.length;
-      const weights=new Float32Array(257),direction=(target==='fake'?1:-1)/groups.length;
+      const alternative=base+(head(pooled(changed),engine.members).score-group.score)*scale;
+      const weights=new Float32Array(257),direction=(target==='fake'?1:-1)*scale;
       for(let j=0;j<257;j++)weights[j]=group.featureGradient[i*257+j]*direction;
       try{
         const gradient=await inference('video-gradient',{activation:f.activation,weights});
         const heat=heatmap(f.activation,gradient);
         const rendered=render(f.rgb,heat,target);
-        records.push({index:records.length+1,timestamp_sec:f.timestamp_sec,segment:group.segment,
-          video_score_delta:score-alternative,replacement_video_score:alternative,
+        records.push({index:records.length+1,timestamp_sec:f.timestamp_sec,segment:group.segment,role,
+          video_score_delta:base-alternative,replacement_video_score:alternative,
           image_fake_score:group.sequence[i*257+256],target_class:target,gradcam_available:!!heat,
           note:heat?null:'양의 Grad-CAM 신호가 없어 색을 표시하지 않습니다.',...rendered});
       }finally{f.activation=null;}
-      progress(`Grad-CAM ${records.length}/${groups.length*8}`);await next();
+      progress(`Grad-CAM ${records.length}/${totalCams}`);await next();
     }
   }
-  const main=[...records].sort((a,b)=>Math.abs(b.video_score_delta)-Math.abs(a.video_score_delta)||a.timestamp_sec-b.timestamp_sec||a.index-b.index).slice(0,8).map(f=>f.index);
-  return {status:'completed',model:'v1.0.0-browser',analysis_mode:'browser_duration_frames_v1',frame_policy:'duration_v1',threshold:.5,
+  await explain(whole,'decision',score,1);
+  for(const group of groups)await explain(group,'segment',segmentAverage,1/groups.length);
+  const main=records.filter(f=>f.role==='decision').map(f=>f.index);
+  return {status:'completed',model:'v1.0.0-browser',analysis_mode:'browser_whole8_decision_v1',frame_policy:'whole8_decision_with_duration_segments_v1',threshold:.5,
     inference_location:'browser',backend:engine.backend,source:{kind:'file',title:file.name},duration_sec:duration,
     fake_score:score,prediction:target,prediction_ko:target==='fake'?'AI 생성 영상 추정':'실제 촬영 영상 추정',
+    segment_average_score:segmentAverage,decision_frames:8,segment_frames:groups.length*8,
     thumbnail:rawCanvas(groups[0].frames[0].rgb).toDataURL('image/jpeg',.72),
-    planned_frames:planned,analyzed_frames:records.length,segments_used:groups.length,black_seek_positions_sec:black,skipped_segments:skipped,
+    planned_frames:8+planned,analyzed_frames:records.length,segments_used:groups.length,black_seek_positions_sec:black,skipped_segments:skipped,
     frames:records,main_frame_indices:main,detail_frame_indices:records.filter(f=>!main.includes(f.index)).map(f=>f.index),
-    segments:groups.map((group,i)=>({segment:group.segment,start_sec:group.start_sec,end_sec:group.end_sec,fake_score:scores[i]})),
-    elapsed_sec:Math.round((performance.now()-started)/100)/10,accuracy_validated_for_this_mode:false,score_is_calibrated_probability:false,
-    limitations_ko:'길이별 프레임 방식은 시험 영상 1,000개에서 정확도 80.3%, 실제 영상 오판 19.0%, AI 영상 놓침 20.4%였습니다(독립 시험 아님, AI 영상은 Sora만 포함, 10초 초과 AI 영상은 6개뿐). 브라우저 디코딩·크기 조정은 FFmpeg와 차이가 있을 수 있습니다. Grad-CAM은 선택한 분류의 신호이며 합성 사실의 증명이 아닙니다.'};
+    segments:groups.map(group=>({segment:group.segment,start_sec:group.start_sec,end_sec:group.end_sec,fake_score:group.score})),
+    elapsed_sec:Math.round((performance.now()-started)/100)/10,accuracy_validated_for_this_mode:true,score_is_calibrated_probability:false,
+    limitations_ko:'판정은 영상 전체에서 고르게 뽑은 8프레임 점수로 합니다. 이 방식은 시험 영상 1,000개에서 정확도 81.5%, 실제 영상 오판 11.6%, AI 영상 놓침 25.4%였습니다(독립 시험 아님, AI 영상은 Sora만 포함, 10초 초과 AI 영상은 6개뿐). 구간별 점수는 참고용이며 판정에 쓰지 않습니다. 브라우저 디코딩·크기 조정은 FFmpeg와 차이가 있을 수 있습니다. Grad-CAM은 선택한 분류의 신호이며 합성 사실의 증명이 아닙니다.'};
 }

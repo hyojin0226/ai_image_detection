@@ -77,7 +77,7 @@ export function openGradcam(result, frameIndex) {
   $('gradcam-frame-label').hidden = !frames.length;
   window.Fakit.openModal(dialog);
   if (frames.length) {
-    frames.forEach(frame => framePicker.add(new Option(frame.timestamp_sec.toFixed(2) + '초 · 구간 ' + frame.segment, frame.index)));
+    frames.forEach(frame => framePicker.add(new Option(frame.timestamp_sec.toFixed(2) + '초 · ' + (frame.role === 'decision' ? '전체 판정' : '구간 ' + frame.segment), frame.index)));
     const first = frames.find(frame => frame.index === frameIndex) || frames.find(frame => frame.gradcam_available) || frames[0];
     framePicker.value = first.index;
     framePicker.onchange = () => void showFrame(frames.find(frame => String(frame.index) === framePicker.value), result);

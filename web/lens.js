@@ -1,6 +1,6 @@
 import { analyze, classifyInput, LIMITS } from './input-adapters.js';
 import { analyzeBatch, MAX_ATTACHMENTS } from './batch-input.js?v=classifiers';
-import { analyzeVideo, renderVideoResult, updateVideoProgress } from './video-analysis.js?v=classifiers';
+import { analyzeVideo, renderVideoResult, updateVideoProgress } from './video-analysis.js?v=whole8';
 import { captureHistoryOwner, saveCompleted } from './history.js?v=result-summary';
 import { openGradcam } from './gradcam-dialog.js';
 import { releaseInference } from './inference-client.js?v=classifiers';
