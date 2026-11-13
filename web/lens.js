@@ -240,10 +240,17 @@ async function runBatch() {
   const inputs=[...attachments];let activeIndex=0;
   setState('loading','여러 사진을 순서대로 검사할게요.');
   try {
-    const results=await analyzeBatch(inputs,{...options,signal,onState:(state,message)=>{if(token===generation)setState(state,(activeIndex+1)+' / '+inputs.length+' · '+message);},onItem:async (index,status,result)=>{
+    const results=await analyzeBatch(inputs,{...options,signal,onState:(state,message)=>{if(token===generation)setState(state,(activeIndex+1)+' / '+inputs.length+' · '+message);},onItem:(index,status,result)=>{
       if(token!==generation)return;
       activeIndex=index;inputs[index].status=status;
-      if(result){inputs[index].result=result;if(result.status==='result'){setState('analyzing',(index+1)+' / '+inputs.length+' · 검사 기록을 저장하고 있어요.');await saveCompleted(owner, inputs[index], result, 'image');delete inputs[index].file;}}
+      if (result) {
+        const item = inputs[index];
+        item.result = result;
+        if (result.status === 'result') {
+          void saveCompleted(owner, { ...item }, result, 'image');
+          delete item.file;
+        }
+      }
       else {current=inputs[index];preview(current,token);if(!current.thumb)thumbnail(current,token);}
       renderAttachments();
     }});
@@ -278,15 +285,13 @@ async function run() {
     if (token !== generation) return;
     releasePreview();
     if (result.status === 'unsupported') { morphText(false);setState('unsupported', result.message); if (result.serviceUrl) $('video-service-link').hidden=false; return; }
-    if (mode === 'image') setState('analyzing', '검사 기록을 저장하고 있어요.');
-    await saveCompleted(owner, {...input, name:filename, file:resolvedFile}, result, mode);
-    if (token !== generation) return;
     renderExplanation(result);
     stage.dataset.verdict = result.verdict;
     $('lens-percent').textContent = `${(result.real * 100).toFixed(1)}%`;
     $('lens-verdict').textContent = result.verdict === 'real' ? (result.video ? '실제 촬영 영상으로 분류' : '실제 사진으로 분류') : 'AI 생성으로 분류';
     $('score-caption').textContent = scoreCaption(result);
     setState('result', '검사가 끝났어요. 점수는 모델 출력이며 진위의 확정이나 정답률이 아니에요.');
+    void saveCompleted(owner, {...input, name:filename, file:resolvedFile}, result, mode);
     if (current.file) { const item=attachments.find(item=>item===current);if(item){item.result=result;delete item.file;}current = { kind: current.kind, source: current.source };submit.disabled = true;renderAttachments(); }
   } catch (error) {
     if (token !== generation) return;
