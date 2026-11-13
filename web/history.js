@@ -24,7 +24,19 @@ function openDatabase() {
       db.createObjectStore('records', { keyPath: ['scope', 'id'] }).createIndex('scope', 'scope');
       db.createObjectStore('results');
     };
-    database = request(opening).catch(error => { database = null; throw error; });
+    database = new Promise((resolve, reject) => {
+      opening.onblocked = () => reject(new Error('다른 Fakit 탭에서 기록 저장소를 사용하고 있어요. 다른 탭을 닫고 다시 검사해 주세요.'));
+      opening.onerror = () => reject(opening.error);
+      opening.onsuccess = () => {
+        const db = opening.result;
+        db.onversionchange = () => { db.close(); database = null; };
+        resolve(db);
+      };
+    }).catch(error => {
+      database = null;
+      opening.onsuccess = () => opening.result.close();
+      throw error;
+    });
   }
   return database;
 }
@@ -78,7 +90,12 @@ function readOriginal(file) {
 }
 
 export async function saveCompleted(owner, input, result, type) {
-  if (result.status !== 'result' || !input.id || !isCurrent(owner) || !enabled(owner)) return;
+  if (result.status !== 'result' || !input.id) return;
+  if (!owner) {
+    window.Fakit.toast('기록 저장에 필요한 브라우저 상태를 확인하지 못했어요. 새로고침한 뒤 다시 검사해 주세요.');
+    return;
+  }
+  if (!isCurrent(owner) || !enabled(owner)) return;
   const { id } = input;
   const at = Date.now();
   const summary = {
@@ -98,23 +115,35 @@ export async function saveCompleted(owner, input, result, type) {
     const payload = await transform(owner, id, 'result', savedResult, true);
     const size = [meta, payload].reduce((sum, value) => sum + (typeof value === 'string' ? value.length * 2 : value.data.byteLength + 12), 0);
     if (size > MAX_BYTES) throw new Error('이 검사 결과는 저장 한도를 넘어요.');
-    await write(owner, async (records, results) => {
-      const rows = await request(records.index('scope').getAll(owner.scope));
-      if (!isCurrent(owner) || rows.some(row => row.id === id)) return;
-      records.add({scope:owner.scope, id, at, size, meta});
-      results.add(payload, [owner.scope, id]);
-      let bytes = size + rows.reduce((sum,row) => sum + row.size, 0);
-      rows.sort((a,b) => b.at - a.at);
-      while (rows.length >= MAX_RECORDS || bytes > MAX_BYTES) {
-        const old = rows.pop();
-        records.delete([owner.scope, old.id]);
-        results.delete([owner.scope, old.id]);
-        bytes -= old.size;
-      }
-    });
+    await write(owner, (records, results) => new Promise((resolve, reject) => {
+      const reading = records.index('scope').getAll(owner.scope);
+      reading.onerror = () => reject(reading.error);
+      reading.onsuccess = () => {
+        try {
+          const rows = reading.result;
+          if (!isCurrent(owner) || !enabled(owner) || rows.some(row => row.id === id)) {
+            resolve();
+            return;
+          }
+          records.add({scope:owner.scope, id, at, size, meta});
+          results.add(payload, [owner.scope, id]);
+          let bytes = size + rows.reduce((sum,row) => sum + row.size, 0);
+          rows.sort((a,b) => b.at - a.at);
+          while (rows.length >= MAX_RECORDS || bytes > MAX_BYTES) {
+            const old = rows.pop();
+            records.delete([owner.scope, old.id]);
+            results.delete([owner.scope, old.id]);
+            bytes -= old.size;
+          }
+          resolve();
+        } catch (error) { reject(error); }
+      };
+    }));
     void refresh();
   } catch (error) {
-    if (isCurrent(owner)) window.Fakit.toast(error.name === 'QuotaExceededError' ? '저장 공간이 부족해 이번 검사는 기록에 남기지 못했어요.' : '검사는 완료했지만 기록을 저장하지 못했어요.');
+    if (isCurrent(owner)) window.Fakit.toast(error.name === 'QuotaExceededError'
+      ? '저장 공간이 부족해 이번 검사는 기록에 남기지 못했어요.'
+      : error.message?.startsWith('다른 Fakit 탭') ? error.message : '검사는 완료했지만 기록을 저장하지 못했어요.');
   }
 }
 
