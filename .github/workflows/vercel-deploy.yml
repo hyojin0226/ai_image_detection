@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  checks: write
 
 jobs:
   deploy-preview:
@@ -48,7 +49,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
 
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
@@ -61,22 +62,46 @@ jobs:
         run: |
           mkdir -p .vercel
           echo "{\"projectId\":\"$VERCEL_PROJECT_ID\",\"orgId\":\"$VERCEL_ORG_ID\"}" > .vercel/project.json
-          echo "Vercel project linked successfully:"
-          echo "  Directory: ${{ matrix.directory }}"
-          echo "  Project ID: ${VERCEL_PROJECT_ID:0:6}...${VERCEL_PROJECT_ID: -4} (len: ${#VERCEL_PROJECT_ID})"
-          echo "  Org ID:     ${VERCEL_ORG_ID:0:6}...${VERCEL_ORG_ID: -4} (len: ${#VERCEL_ORG_ID})"
+          echo "::notice title=Vercel Config (${{ matrix.name }})::Dir=${{ matrix.directory }}, ProjectID=${VERCEL_PROJECT_ID:0:8}... (len ${#VERCEL_PROJECT_ID}), OrgID=${VERCEL_ORG_ID:0:8}... (len ${#VERCEL_ORG_ID})"
 
       - name: Pull Vercel settings
-        run: vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
+        id: pull
+        run: |
+          if output=$(vercel pull --yes --environment=preview --token="$VERCEL_TOKEN" 2>&1); then
+            echo "$output"
+            echo "Vercel pull succeeded"
+          else
+            echo "$output"
+            # Format single line for annotation
+            compact_err=$(echo "$output" | tr '\n' ' ' | head -c 500)
+            echo "::error title=Pull Error (${{ matrix.name }})::$compact_err"
+            exit 1
+          fi
 
       - name: Build website
-        run: vercel build --token="$VERCEL_TOKEN"
+        id: build
+        run: |
+          if output=$(vercel build --token="$VERCEL_TOKEN" 2>&1); then
+            echo "$output"
+            echo "Vercel build succeeded"
+          else
+            echo "$output"
+            compact_err=$(echo "$output" | tr '\n' ' ' | head -c 500)
+            echo "::error title=Build Error (${{ matrix.name }})::$compact_err"
+            exit 1
+          fi
 
       - name: Deploy preview
         id: deploy
         run: |
-          url=$(vercel deploy --prebuilt --token="$VERCEL_TOKEN")
-          echo "PREVIEW_URL=$url" >> "$GITHUB_ENV"
-          echo "### Preview Deployment for ${{ matrix.name }}" >> $GITHUB_STEP_SUMMARY
-          echo "URL: $url" >> $GITHUB_STEP_SUMMARY
-          echo "Deployed successfully to: $url"
+          if url=$(vercel deploy --prebuilt --token="$VERCEL_TOKEN" 2>&1); then
+            echo "PREVIEW_URL=$url" >> "$GITHUB_ENV"
+            echo "### Preview Deployment for ${{ matrix.name }}" >> $GITHUB_STEP_SUMMARY
+            echo "URL: $url" >> $GITHUB_STEP_SUMMARY
+            echo "Deployed successfully to: $url"
+            echo "::notice title=Preview Deployed (${{ matrix.name }})::$url"
+          else
+            compact_err=$(echo "$url" | tr '\n' ' ' | head -c 500)
+            echo "::error title=Deploy Error (${{ matrix.name }})::$compact_err"
+            exit 1
+          fi
