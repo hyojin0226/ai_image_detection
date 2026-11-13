@@ -150,7 +150,7 @@
           <input id="album-file" type="file" accept="image/*,video/*" multiple hidden>
           <p class="format-help" id="classifier-formats">사진 JPG·PNG·WEBP · 20장, 장당 15MB / 영상 MP4·WebM · 1개, 3~40초·90MB</p>
           <p class="privacy-note"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3M5 10h14v11H5Z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>사진과 영상 파일은 서버로 올라가지 않아요. 기기 안에서 분석해요.</span></p>
-          <p class="privacy-extra">사진 링크는 원본 사이트에 요청해요. YouTube 자동 가져오기는 아직 Fakit에 연결되지 않았어요.</p>
+          <p class="privacy-extra">사진 링크는 원본 사이트에 요청해요.</p>
           </div>
           <div id="attachment-list" hidden aria-label="첨부 파일과 개별 결과"></div>
           <progress id="video-progress" hidden max="64" value="0" aria-label="영상 분석 진행"></progress><div class="lens-feedback"><p id="lens-message" role="status" aria-live="polite" aria-atomic="true"></p><button type="button" id="cancel-analysis" hidden>취소</button><button type="button" id="retry-analysis" hidden>다시 시도</button><a id="video-service-link" href="https://duhyeon-ai-video.vercel.app/" target="_blank" rel="noopener noreferrer" hidden>영상 분석기 열기 ↗</a><button type="button" id="result-gradcam" hidden>Grad-CAM 결과 다시 보기</button><button type="button" id="reset-analysis" hidden>다시 검사</button></div>
@@ -396,7 +396,6 @@
           <article class="help-media help-video">
             <h3>영상 검사</h3>
             <dl class="help-specs"><div><dt>형식</dt><dd>MP4, WebM</dd></div><div><dt>길이</dt><dd>3~40초</dd></div><div><dt>용량</dt><dd>최대 90MB</dd></div><div><dt>개수</dt><dd>한 번에 1개</dd></div></dl>
-            <p>YouTube 링크 대신 영상 파일을 직접 선택해 주세요.</p>
           </article>
         </div>
         <p>글과 PDF, DOCX 문서는 검사할 수 없어요.</p>
