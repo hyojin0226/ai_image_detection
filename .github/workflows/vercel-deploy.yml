@@ -1,4 +1,3 @@
-
 name: Deploy AI Video to Vercel
 
 on:
@@ -21,14 +20,16 @@ jobs:
         include:
           - name: site
             directory: AI_video/deploy/site
-            project_id: ${{ vars.VERCEL_SITE_PROJECT_ID }}
+            project_id: ${{ vars.VERCEL_SITE_PROJECT_ID || 'prj_SiXAdlXOnCa0OkzKODmdTv4iXqyk' }}
+            project_name: duhyeon-ai-video
           - name: cloud
             directory: AI_video/deploy/cloud
-            project_id: ${{ vars.VERCEL_CLOUD_PROJECT_ID }}
+            project_id: ${{ vars.VERCEL_CLOUD_PROJECT_ID || 'prj_QoPw0QRcTOEiZVYjLKUe5SyLJrrN' }}
+            project_name: duhyeon-ai-video-cloud
 
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+      VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID || 'team_kCloEe4t0ufwmj8gp3gCnru5' }}
       VERCEL_PROJECT_ID: ${{ matrix.project_id }}
 
     defaults:
@@ -44,8 +45,26 @@ jobs:
         with:
           node-version: "22"
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
+
+      - name: Install dependencies (cloud)
+        if: matrix.name == 'cloud'
+        run: npm ci || npm install
+
+      - name: Link Vercel project
+        run: |
+          mkdir -p .vercel
+          echo "{\"projectId\":\"$VERCEL_PROJECT_ID\",\"orgId\":\"$VERCEL_ORG_ID\"}" > .vercel/project.json
+          echo "Vercel project linked successfully:"
+          echo "  Directory: ${{ matrix.directory }}"
+          echo "  Project ID: ${VERCEL_PROJECT_ID:0:6}...${VERCEL_PROJECT_ID: -4} (len: ${#VERCEL_PROJECT_ID})"
+          echo "  Org ID:     ${VERCEL_ORG_ID:0:6}...${VERCEL_ORG_ID: -4} (len: ${#VERCEL_ORG_ID})"
 
       - name: Pull Vercel settings
         run: vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
@@ -54,4 +73,10 @@ jobs:
         run: vercel build --token="$VERCEL_TOKEN"
 
       - name: Deploy preview
-        run: vercel deploy --prebuilt --token="$VERCEL_TOKEN"
+        id: deploy
+        run: |
+          url=$(vercel deploy --prebuilt --token="$VERCEL_TOKEN")
+          echo "PREVIEW_URL=$url" >> "$GITHUB_ENV"
+          echo "### Preview Deployment for ${{ matrix.name }}" >> $GITHUB_STEP_SUMMARY
+          echo "URL: $url" >> $GITHUB_STEP_SUMMARY
+          echo "Deployed successfully to: $url"
