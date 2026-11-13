@@ -3,7 +3,7 @@ const $ = id => document.getElementById(id);
 
 export async function analyzeVideo(file, { signal, onState = () => {} } = {}) {
   onState('loading', '영상 분석 모델을 불러오고 있어요.');
-  const { analyzeFile } = await import('./browser-engine.js?v=accuracy');
+  const { analyzeFile } = await import('./browser-engine.js?v=frames');
   signal?.throwIfAborted();
   const video = await analyzeFile(file, { signal, progress: message => {
     onState(message.includes('준비') ? 'loading' : 'analyzing', message);
