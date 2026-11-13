@@ -66,6 +66,12 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Install uv for Vercel Python builds
+        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+
+      - name: Verify uv installation
+        run: uv --version
+
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
@@ -76,4 +82,4 @@ jobs:
         run: vercel build
 
       - name: Deploy preview (no production changes)
-        run: vercel deploy --prebuilt
+        run: vercel deploy --prebuilt --archive=tgz
