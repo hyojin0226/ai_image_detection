@@ -1,4 +1,4 @@
-import { openGradcam, renderPhotoEvidence } from './gradcam-dialog.js?v=photo-result';
+import { openGradcam, renderPhotoEvidence } from './gradcam-dialog.js?v=original-photo';
 
 const $ = id => document.getElementById(id);
 const MAX_RECORDS = 200;
@@ -70,6 +70,13 @@ async function write(owner, update) {
   }
 }
 
+function readOriginal(file) {
+  const reader = new FileReader();
+  const reading = request(reader);
+  reader.readAsDataURL(file);
+  return reading;
+}
+
 export async function saveCompleted(owner, input, result, type) {
   if (result.status !== 'result' || !input.id || !isCurrent(owner) || !enabled(owner)) return;
   const { id } = input;
@@ -82,7 +89,13 @@ export async function saveCompleted(owner, input, result, type) {
   };
   try {
     const meta = await transform(owner, id, 'meta', summary, true);
-    const payload = await transform(owner, id, 'result', result, true);
+    let savedResult = result;
+    if (type === 'image' && input.file) {
+      const data = await readOriginal(input.file).catch(() => null);
+      if (data) savedResult = { ...result, originalPhoto: { data, name: input.file.name } };
+    }
+    if (!isCurrent(owner) || !enabled(owner)) return;
+    const payload = await transform(owner, id, 'result', savedResult, true);
     const size = [meta, payload].reduce((sum, value) => sum + (typeof value === 'string' ? value.length * 2 : value.data.byteLength + 12), 0);
     if (size > MAX_BYTES) throw new Error('이 검사 결과는 저장 한도를 넘어요.');
     await write(owner, async (records, results) => {

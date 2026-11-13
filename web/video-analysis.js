@@ -1,4 +1,4 @@
-import { openGradcam } from './gradcam-dialog.js?v=photo-result';
+import { openGradcam } from './gradcam-dialog.js?v=original-photo';
 const $ = id => document.getElementById(id);
 
 export async function analyzeVideo(file, { signal, onState = () => {} } = {}) {

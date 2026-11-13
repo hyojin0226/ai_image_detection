@@ -12,7 +12,7 @@ export function scoreText(result) {
   return [scores, threshold, '점수는 모델 출력(0–1)을 백분율로 표시한 값입니다.'].filter(Boolean).join(' · ');
 }
 
-function imagePanel(label, src, filename) {
+function imagePanel(label, src, filename, original) {
   const figure = document.createElement('figure');
   const img = document.createElement('img');
   img.src = src;
@@ -20,13 +20,16 @@ function imagePanel(label, src, filename) {
   const caption = document.createElement('figcaption');
   caption.textContent = label;
   figure.append(img,caption);
-  const format = filename && /^data:image\/(png|jpeg|webp);base64,/i.exec(src)?.[1];
-  if (format) {
+  const downloadSource = original?.data || src;
+  const format = filename && /^data:image\/(png|jpeg|webp);base64,/i.exec(downloadSource)?.[1];
+  const hasOriginal = original && /^data:[^;,]*;base64,/i.test(downloadSource);
+  if (hasOriginal || format) {
     const download = document.createElement('a');
     download.className = 'btn btn-soft';
-    download.href = src;
-    download.download = filename + '.' + (format === 'jpeg' ? 'jpg' : format);
-    download.textContent = label + ' 저장';
+    download.href = downloadSource;
+    download.download = hasOriginal && original.name
+      ? original.name : filename + '.' + (format === 'jpeg' ? 'jpg' : format || 'img');
+    download.textContent = hasOriginal ? '원본 사진 저장' : label + ' 저장';
     figure.append(download);
   }
   return figure;
@@ -35,7 +38,7 @@ function imagePanel(label, src, filename) {
 export function renderPhotoEvidence(container, result) {
   const evidence = result.explanation;
   const panels = [
-    ['사진 미리보기', result.thumb, 'fakit-photo-preview'],
+    ['사진 미리보기', result.thumb, 'fakit-photo-preview', result.originalPhoto],
     ['Grad-CAM 히트맵', evidence?.heatmap, 'fakit-gradcam'],
     ['겹쳐 보기', evidence?.image, 'fakit-overlay'],
   ];

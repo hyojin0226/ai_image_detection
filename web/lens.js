@@ -1,8 +1,8 @@
 import { analyze, classifyInput, LIMITS } from './input-adapters.js';
 import { analyzeBatch, MAX_ATTACHMENTS } from './batch-input.js?v=classifiers';
-import { analyzeVideo, renderVideoResult, updateVideoProgress } from './video-analysis.js?v=photo-result';
-import { captureHistoryOwner, saveCompleted } from './history.js?v=photo-result';
-import { openGradcam } from './gradcam-dialog.js?v=photo-result';
+import { analyzeVideo, renderVideoResult, updateVideoProgress } from './video-analysis.js?v=original-photo';
+import { captureHistoryOwner, saveCompleted } from './history.js?v=original-photo';
+import { openGradcam } from './gradcam-dialog.js?v=original-photo';
 import { releaseInference } from './inference-client.js?v=classifiers';
 const mode = window.Fakit.routeName();
 const isVideo = mode === 'video';
@@ -260,19 +260,20 @@ async function run() {
   const input = current;
   const owner = captureHistoryOwner();
   let filename = input.name || input.file?.name;
+  let resolvedFile = input.file;
   try {
     // Manual corrections never coerce binary files into a different format.
     if (input.file && input.kind !== mode) throw new Error('선택한 종류와 파일 형식이 달라요. 해당 종류의 파일을 다시 넣어 주세요.');
     if (!input.file && ['image','video'].includes(input.kind)) throw new Error('이미지·영상은 파일이나 직접 링크로 넣어 주세요.');
     setState('loading', '입력을 확인하고 있어요.');
-    const requestOptions = {...options, signal, onResolved: file => { if(token === generation) { filename = file.name; morphText(false); preview(classifyInput(file,'url'),token); } }, onState: (state, message) => { if (token === generation) setState(state, message); } };
+    const requestOptions = {...options, signal, onResolved: file => { if(token === generation) { resolvedFile = file; filename = file.name; morphText(false); preview(classifyInput(file,'url'),token); } }, onState: (state, message) => { if (token === generation) setState(state, message); } };
     const result = isVideo && input.kind === 'url'
       ? {status:'unsupported', message:'영상 링크는 직접 분석할 수 없어요. MP4 또는 WebM 파일을 선택해 주세요.', serviceUrl:'https://duhyeon-ai-video.vercel.app/'}
       : await analyze(input, requestOptions);
     if (token !== generation) return;
     releasePreview();
     if (result.status === 'unsupported') { morphText(false);setState('unsupported', result.message); if (result.serviceUrl) $('video-service-link').hidden=false; return; }
-    await saveCompleted(owner, {...input, name:filename}, result, mode);
+    await saveCompleted(owner, {...input, name:filename, file:resolvedFile}, result, mode);
     if (token !== generation) return;
     renderExplanation(result);
     stage.dataset.verdict = result.verdict;

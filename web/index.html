@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
   <link rel="stylesheet" href="/style.css">
-  <link rel="stylesheet" href="/experience.css?v=photo-result">
+  <link rel="stylesheet" href="/experience.css?v=original-photo">
   <script>document.documentElement.classList.add("js");</script>
 </head>
 <body data-route="home">
@@ -366,7 +366,7 @@
     <section class="page" data-page="privacy">
       <div class="page-head"><h1>사진과 기록 관리</h1><p class="lead">현재 구현에서 어디에 어떤 정보가 남는지 안내합니다.</p></div>
       <section class="block"><h2>분석한 사진</h2><p class="body">파일은 이 브라우저에서 분석하며 Fakit 서버로 업로드하지 않습니다. 모델과 화면에 필요한 라이브러리·글꼴을 내려받을 때는 네트워크 연결을 사용합니다.</p><p class="body">이미지 주소로 가져오기를 누르면 원본 이미지 호스트에 요청이 전달됩니다. 확장 프로그램은 선택한 이미지 주소만 Fakit으로 전달하며 페이지 전체나 로그인 쿠키를 수집하지 않습니다.</p></section>
-      <section class="block"><h2>분석 기록</h2><ul class="bullets"><li>파일명, 축소 미리보기, 결과 점수, 판정 기준선, 분석 시각, Grad-CAM과 영상 프레임 결과가 이 브라우저에 저장됩니다. 축소 이미지에도 얼굴 등 식별 가능한 정보가 남을 수 있습니다.</li><li>최대 200건 또는 계정당 약 64MB를 보관하며 초과하면 오래된 기록부터 제외합니다.</li><li>‘기록 저장’을 끄면 이후 기록을 저장하지 않습니다. 이미 저장된 기록까지 지워지지는 않습니다.</li><li>로그인한 계정의 기록은 이 브라우저에서 암호화되며 같은 계정으로 다시 로그인하면 볼 수 있습니다. 게스트 기록은 같은 브라우저의 게스트 모드에 남습니다.</li><li>기록 페이지에서 개별 기록 또는 전체 기록을 삭제할 수 있습니다. 삭제 후 복구 기능은 없습니다.</li></ul><a class="btn btn-soft" href="/#/history">기록 관리</a></section>
+      <section class="block"><h2>분석 기록</h2><ul class="bullets"><li>파일명, 원본 사진, 축소 미리보기, 결과 점수, 판정 기준선, 분석 시각, Grad-CAM과 영상 프레임 결과가 이 브라우저에 저장됩니다. 사진에는 얼굴 등 식별 가능한 정보가 남을 수 있습니다. 이전 기록은 축소 미리보기만 저장됐을 수 있습니다.</li><li>최대 200건 또는 계정당 약 64MB를 보관하며 초과하면 오래된 기록부터 제외합니다.</li><li>‘기록 저장’을 끄면 이후 기록을 저장하지 않습니다. 이미 저장된 기록까지 지워지지는 않습니다.</li><li>로그인한 계정의 기록은 이 브라우저에서 암호화되며 같은 계정으로 다시 로그인하면 볼 수 있습니다. 게스트 기록은 같은 브라우저의 게스트 모드에 남습니다.</li><li>기록 페이지에서 개별 기록 또는 전체 기록을 삭제할 수 있습니다. 삭제 후 복구 기능은 없습니다.</li></ul><a class="btn btn-soft" href="/#/history">기록 관리</a></section>
       <section class="block"><h2>소셜 로그인</h2><p class="body">카카오·구글에서 계정 식별자와 표시 이름을 받아 로그인 상태를 관리합니다. 로그인했다고 이미지 기록이 계정에 업로드되거나 다른 기기로 동기화되지는 않습니다.</p><p class="body">로그인 상태는 암호화된 보안 쿠키로 최대 8시간 유지합니다. 제공자의 접근 토큰은 프로필 조회 후 보관하지 않습니다. 로그아웃하면 이 브라우저의 로그인 쿠키를 지웁니다. 서비스 로그아웃은 제공자 계정 연결 해제와 다릅니다.</p></section>
     </section>
 
@@ -406,7 +406,7 @@
           <details><summary>어떤 사진에 쓸 수 있나요?</summary><p>얼굴이 또렷하게 보이는 인물 사진에 맞춰 학습한 모델입니다. 풍경·사물 사진이나 얼굴이 아주 작은 사진에서는 결과를 믿기 어렵습니다.</p></details>
           <details><summary>결과는 얼마나 정확한가요?</summary><p>기존 97.8%는 학습과 중복된 사진이 포함된 1차 평가 결과여서 실사용 정확도로 볼 수 없습니다. 중복을 제거한 2차 실험에서도 처음 보는 생성기 계열에는 성능이 크게 떨어졌습니다. 모델 페이지에서 평가 조건과 한계를 확인해 주세요.</p></details>
           <details><summary>사진이 서버로 전송되나요?</summary><p>아니요. 처음 한 번 모델(약 41MB)을 내려받은 뒤에는 모든 분석이 브라우저 안에서 이루어집니다. 업로드한 이미지는 어디로도 전송되지 않습니다.</p></details>
-          <details><summary>기록은 어디에 저장되나요?</summary><p>이 브라우저의 저장소(IndexedDB)에 검사 결과와 설명용 축소 이미지가 저장됩니다. 기록 페이지에서 끄거나 모두 삭제할 수 있습니다.</p></details>
+          <details><summary>기록은 어디에 저장되나요?</summary><p>이 브라우저의 저장소(IndexedDB)에 검사 결과와 사진 파일, 설명용 축소 이미지가 저장됩니다. 기록 페이지에서 끄거나 모두 삭제할 수 있습니다.</p></details>
           <details><summary>로그인하면 무엇이 달라지나요?</summary><p>카카오·구글 계정으로 로그인할 수 있습니다. 현재 기록은 로그인 여부와 관계없이 이 브라우저에만 저장되며 기기 간 동기화는 제공하지 않습니다. 준비 중으로 표시된 로그인은 아직 사용할 수 없습니다.</p></details>
           <details><summary>REAL 확률이 기준선 근처예요.</summary><p>사진 모델의 0.16은 분류 기준입니다. 가까운 값은 출력이 조금만 달라져도 분류가 바뀔 수 있습니다. 이 거리만으로 모델의 확신 정도를 알 수는 없습니다. 원본과 출처를 함께 확인하세요.</p></details>
         </div>
@@ -560,6 +560,6 @@
   <script src="/ui.js?v=model-guide"></script>
 
   <script src="/diagnostics.js"></script>
-  <script type="module" src="/classifier-entry.js?v=photo-result"></script>
+  <script type="module" src="/classifier-entry.js?v=original-photo"></script>
 </body>
 </html>
