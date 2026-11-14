@@ -25,6 +25,8 @@ import webbrowser
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / 'deploy/site'
 URL = 'https://duhyeon-ai-video.vercel.app'
+# Fakit's video page sends YouTube Shorts links to this notebook server as well.
+FAKIT_URL = 'https://fakit-lens.vercel.app'
 PROJECT = 'prj_SiXAdlXOnCa0OkzKODmdTv4iXqyk'
 TOOLS = ROOT.parent / '.local/deploy-tools'
 VERCEL = TOOLS / 'vercel/node_modules/@vercel/vc-native-win32-x64/bin/vercel.exe'
@@ -117,7 +119,7 @@ class Controller:
         python = Path(sys.executable).with_name('python.exe')
         with (STATE / 'server.log').open('a', encoding='utf-8') as log:
             process = self.spawn([str(python), '-u', str(ROOT / 'deploy/notebook_server.py'),
-                                  '--port', '8766', '--origin', URL], stdout=log, stderr=log)
+                                  '--port', '8766', '--origin', URL, '--origin', FAKIT_URL], stdout=log, stderr=log)
         for _ in range(30):
             if healthy('http://127.0.0.1:8766'):
                 return
