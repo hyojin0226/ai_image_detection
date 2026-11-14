@@ -1,4 +1,4 @@
-import { openGradcam, renderPhotoEvidence } from './gradcam-dialog.js?v=original-photo';
+import { openGradcam, renderPhotoEvidence } from './gradcam-dialog.js?v=whole8-photo';
 
 const $ = id => document.getElementById(id);
 const MAX_RECORDS = 200;
@@ -181,7 +181,7 @@ async function openResult(entry) {
     video.hidden = !result.video;
     if (result.video) {
       const title = document.createElement('h3');
-      title.textContent = '구간별 AI 점수';
+      title.textContent = result.video.decision_frames ? '구간별 AI 점수 (참고)' : '구간별 AI 점수';
       const summary = document.createElement('p');
       summary.textContent = result.video.duration_sec.toFixed(1) + '초 · ' + result.video.analyzed_frames + '프레임 검사';
       const segments = document.createElement('ul');

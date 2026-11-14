@@ -1,8 +1,8 @@
 import { analyze, classifyInput, LIMITS } from './input-adapters.js';
 import { analyzeBatch, MAX_ATTACHMENTS } from './batch-input.js?v=classifiers';
-import { analyzeVideo, renderVideoResult, updateVideoProgress } from './video-analysis.js?v=original-photo';
-import { captureHistoryOwner, saveCompleted } from './history.js?v=compact-history';
-import { openGradcam } from './gradcam-dialog.js?v=original-photo';
+import { analyzeVideo, renderVideoResult, updateVideoProgress } from './video-analysis.js?v=whole8';
+import { captureHistoryOwner, saveCompleted } from './history.js?v=whole8-history';
+import { openGradcam } from './gradcam-dialog.js?v=whole8-photo';
 import { releaseInference } from './inference-client.js?v=classifiers';
 const mode = window.Fakit.routeName();
 const isVideo = mode === 'video';
