@@ -1,4 +1,4 @@
-// Fakit 최종 얼굴 모델 (ConvNeXt-T, ONNX) 브라우저 추론 모듈.
+// Fakit 최종 얼굴 모델 (EfficientNetV2S, ONNX) 브라우저 추론 모듈.
 // 원본: develop 저장소 web_model/fakit-face-model.js (서버와 판정 불일치 0/131 얼굴로 검증).
 // 사이트용 추가: explain 결과에 투명 히트맵(gradcam_heatmap), ELA 생략 옵션(ela:false).
 //
