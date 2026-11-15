@@ -317,12 +317,12 @@
             <div>
               <h3>사진 검사</h3>
               <dl class="model-specs">
-                <div><dt>모델</dt><dd>ConvNeXt-T · ImageNet-22k 사전학습</dd></div>
-                <div><dt>전처리</dt><dd>BlazeFace로 얼굴 검출. 얼굴 주변 2배 영역을 256 × 256으로 맞춘 뒤 JPEG 품질 90으로 재인코딩하고 ImageNet 방식으로 정규화해요.</dd></div>
-                <div><dt>판정</dt><dd>REAL 점수 0.16 이상은 REAL, 미만은 AI이에요.</dd></div>
-                <div><dt>실행과 크기</dt><dd>브라우저 · ONNX Runtime Web(WASM). ConvNeXt-T 모델 파일 약 56MB.</dd></div>
-                <div><dt>시각화</dt><dd>ConvNeXt-T의 8 × 8 특징 맵에서 계산한 Grad-CAM.</dd></div>
-                <div><dt>보고된 검증 결과</dt><dd>모델 통합 자료 기준, 학습에 쓰지 않은 추가 이미지 2만 장에서 AUC 0.990. AUC는 두 범주를 점수로 구분하는 능력을 나타냅니다.</dd></div>
+                <div><dt>모델</dt><dd>EfficientNetV2S · 최종 모델(Phase 9, VAE 의사 fake + 축소·블러 학습)</dd></div>
+                <div><dt>전처리</dt><dd>BlazeFace로 얼굴 검출. 얼굴 주변 2배 영역을 256 × 256으로 맞춘 뒤 JPEG 품질 90으로 재인코딩하고 평균·표준편차 0.5로 정규화한 뒤, 모델 안에서 320 × 320으로 키워요.</dd></div>
+                <div><dt>판정</dt><dd>REAL 점수 0.34 이상은 REAL, 미만은 AI이에요.</dd></div>
+                <div><dt>실행과 크기</dt><dd>브라우저 · ONNX Runtime Web(WASM). EfficientNetV2S 모델 파일 약 42MB.</dd></div>
+                <div><dt>시각화</dt><dd>EfficientNetV2S의 마지막 10 × 10 특징 맵에서 계산한 Grad-CAM.</dd></div>
+                <div><dt>보고된 검증 결과</dt><dd>모델 통합 자료 기준, 학습에 쓰지 않은 추가 이미지 2만 장에서 AUC 0.994, 정확도 95.5%. AUC는 두 범주를 점수로 구분하는 능력을 나타냅니다.</dd></div>
               </dl>
             </div>
             <div>

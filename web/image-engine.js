@@ -1,4 +1,4 @@
-// Image page engine: BlazeFace face detection -> 2x face crop -> 256x256 -> ConvNeXt-T (ONNX).
+// Image page engine: BlazeFace face detection -> 2x face crop -> 256x256 -> EfficientNetV2S (ONNX, Phase 9 final).
 // Same pipeline and runtime versions as the verified develop-branch module (web_model/test.html).
 // The video page keeps the EfficientNetV2S TF.js worker because the video heads use its features.
 import { MODEL_BASE } from './model-release.js';
@@ -21,7 +21,7 @@ function loadScript(src) {
   });
 }
 
-// Fetch the model with progress so the page can show the 56 MB download.
+// Fetch the model with progress so the page can show the 42 MB download.
 async function fetchModel(url, onProgress) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(new Error('모델 다운로드 시간이 초과됐어요. 연결을 확인하고 다시 검사해 주세요.')), 120000);
@@ -59,7 +59,7 @@ export function loadImageEngine({ onProgress = () => {} } = {}) {
     // Run ONNX in a worker so the page stays responsive during inference.
     ort.env.wasm.proxy = true;
     const vision = await import(/* webpackIgnore: true */ MEDIAPIPE_BASE + 'vision_bundle.mjs');
-    const modelBytes = await fetchModel(MODEL_BASE + 'convnext_tiny_fake_face.onnx', onProgress);
+    const modelBytes = await fetchModel(MODEL_BASE + 'efficientnetv2s_fake_face.onnx', onProgress);
     const model = await createFaceModel({
       ort,
       vision: { FilesetResolver: vision.FilesetResolver, FaceDetector: vision.FaceDetector },

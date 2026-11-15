@@ -1,4 +1,4 @@
-// Detection: final ConvNeXt-T face model (ONNX) run in the browser.
+// Detection: final EfficientNetV2S face model (ONNX, Phase 9) run in the browser.
 // BlazeFace finds faces, each face is cropped at 2x its box, resized to 256x256 and classified.
 // The largest face decides the image verdict (same rule as the develop-branch server).
 // Images are queued and analysed one at a time; results are kept in a local history.
@@ -366,7 +366,7 @@ window.Fakit.analyzeImage = async (file, { signal, onState = () => {} } = {}) =>
     const face = item.faces[0];
     let explanation, explanationError;
     if (face.crop_image && face.gradcam_image && face.gradcam_heatmap) {
-      explanation = { original: face.crop_image, heatmap: face.gradcam_heatmap, image: face.gradcam_image, target: face.gradcam_target, layer: 'convnext stage 4 (8 × 8)' };
+      explanation = { original: face.crop_image, heatmap: face.gradcam_heatmap, image: face.gradcam_image, target: face.gradcam_target, layer: 'efficientnetv2-s top (10 × 10)' };
     } else {
       explanationError = '판별 점수는 계산했지만 이 환경에서는 Grad-CAM을 표시하지 못했어요.';
     }
