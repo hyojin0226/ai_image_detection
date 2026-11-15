@@ -1,8 +1,11 @@
-"""ConvNeXt-T fake-face 분류 모델 로더 (PyTorch, CPU).
+"""fake-face 분류 모델 로더 (PyTorch timm, CPU). 기본 모델은 EfficientNetV2S (Phase 9).
 
-WSL 실험 저장소에서 학습한 최종 모델(Phase 6: 세 계열 전체 + SD VAE 재구성·SBI 의사 fake)을 쓴다.
+WSL 실험 저장소(scripts/32_train_cnn.py)에서 학습한 모델을 설정 JSON 으로 불러온다.
 학습·평가 코드(src/models.py cnn_transform, src/perturb.py EVAL_JPEG)와 같은 전처리를 지킨다.
-- 입력: 256x256 RGB crop -> JPEG 품질 90 재인코딩(평가 때와 동일) -> /255 -> ImageNet mean/std 정규화
+- 입력: 256x256 RGB crop -> JPEG 품질 90 재인코딩(평가 때와 동일) -> [input_size 가 256 이 아니면 bicubic 확대]
+  -> /255 -> 모델별 mean/std 정규화 (EfficientNetV2S 0.5/0.5)
+- 설정의 tta_hflip 이 true 면 좌우 반전 이미지와 logit 을 평균한다 (학습 run 의 --tta 와 동일)
+- Grad-CAM 층은 설정의 gradcam_layer (EfficientNetV2S: bn2 = conv_head 뒤)
 - 출력: logit 1개, sigmoid = P(real). 클래스 순서 fake=0, real=1
 - threshold 는 보기(mode)별로 다름: face(얼굴 crop x2.0) / full(이미지 전체)
 """
@@ -22,17 +25,17 @@ MODELS_DIR = SERVER_DIR / "models"
 IMAGE_SIZE = (256, 256)
 CLASS_NAMES = ["fake", "real"]
 DEFAULT_THRESHOLD = 0.5
-CONFIG_FILE_NAME = "convnext_tiny_fake_face.json"
+CONFIG_FILE_NAME = "efficientnetv2s_fake_face.json"
 
 
 def find_config() -> Path:
-    """FAKE_FACE_MODEL_CONFIG 환경변수 또는 server/models/convnext_tiny_fake_face.json."""
+    """FAKE_FACE_MODEL_CONFIG 환경변수 또는 server/models/efficientnetv2s_fake_face.json."""
     override = os.environ.get("FAKE_FACE_MODEL_CONFIG")
     path = Path(override) if override else MODELS_DIR / CONFIG_FILE_NAME
     if not path.exists():
         raise FileNotFoundError(
             f"모델 설정 파일이 없습니다: {path}. README 의 '준비물' 대로 "
-            f"convnext_tiny_fake_face.pt 와 {CONFIG_FILE_NAME} 를 server/models/ 에 복사하세요."
+            f"efficientnetv2s_fake_face.pt 와 {CONFIG_FILE_NAME} 를 server/models/ 에 복사하세요."
         )
     return path
 
@@ -65,6 +68,9 @@ class FakeFaceModel:
         thresholds = self.config.get("decision_threshold_real", {})
         self.thresholds = {mode: float(thresholds.get(mode, DEFAULT_THRESHOLD)) for mode in ("face", "full")}
         self.jpeg_quality = int(self.config.get("eval_jpeg_quality", 0))
+        self.input_size = int(self.config.get("input_size", IMAGE_SIZE[0]))
+        self.tta_hflip = bool(self.config.get("tta_hflip", False))
+        self.gradcam_layer = self.config.get("gradcam_layer", "bn2")
         self._mean = torch.tensor(self.config["mean"]).view(1, 3, 1, 1)
         self._std = torch.tensor(self.config["std"]).view(1, 3, 1, 1)
         self._torch = torch
@@ -80,16 +86,24 @@ class FakeFaceModel:
         return images
 
     def _tensor(self, images: list[Image.Image]):
+        if self.input_size != IMAGE_SIZE[0]:  # 학습 cnn_transform(img_size) 과 같은 bicubic 확대
+            images = [image.resize((self.input_size, self.input_size), Image.BICUBIC) for image in images]
         array = np.stack([np.asarray(image, dtype=np.float32) for image in images]) / 255.0
         tensor = self._torch.from_numpy(array).permute(0, 3, 1, 2)
         return (tensor - self._mean) / self._std
+
+    def _logits(self, tensor):
+        logits = self.model(tensor).float()
+        if self.tta_hflip:
+            logits = (logits + self.model(self._torch.flip(tensor, dims=[3])).float()) / 2
+        return logits
 
     # ---------- 추론 ----------
     def predict_prob_real(self, batch: np.ndarray) -> np.ndarray:
         """batch: (N, 256, 256, 3) float32, 0~255. 반환: (N,) P(real)."""
         with self._torch.inference_mode():
-            logits = self.model(self._tensor(self.model_inputs(batch)))
-        return self._torch.sigmoid(logits.float()).reshape(-1).numpy().astype(float)
+            logits = self._logits(self._tensor(self.model_inputs(batch)))
+        return self._torch.sigmoid(logits).reshape(-1).numpy().astype(float)
 
     def threshold_for(self, mode: str) -> float:
         return self.thresholds.get(mode, DEFAULT_THRESHOLD)
@@ -99,8 +113,8 @@ class FakeFaceModel:
 
     # ---------- Grad-CAM ----------
     def gradcam(self, image: Image.Image, target: str) -> np.ndarray:
-        """마지막 stage 특징맵 기준 Grad-CAM. target='fake' 면 FAKE 쪽 근거(-logit), 'real' 이면 REAL 쪽 근거.
-        image 는 model_inputs() 로 만든 256x256 이미지. 반환: (256, 256) 0~1."""
+        """마지막 특징맵(gradcam_layer) 기준 Grad-CAM. target='fake' 면 FAKE 쪽 근거(-logit), 'real' 이면 REAL 쪽 근거.
+        image 는 model_inputs() 로 만든 256x256 이미지. 반환: (256, 256) 0~1. TTA 없이 원본 방향만 봅니다."""
         torch = self._torch
         captured = {}
 
@@ -108,7 +122,7 @@ class FakeFaceModel:
             output.retain_grad()
             captured["features"] = output
 
-        handle = self.model.stages[-1].register_forward_hook(hook)
+        handle = self.model.get_submodule(self.gradcam_layer).register_forward_hook(hook)
         try:
             with torch.enable_grad():
                 logit = self.model(self._tensor([image])).reshape(())

@@ -433,7 +433,7 @@
     try {
       const status = await chrome.runtime.sendMessage({ type: "health" });
       if (status?.status !== "ok") {
-        showToast("로컬 서버(127.0.0.1:8000)에 연결할 수 없습니다. run_server.bat 실행을 확인하세요.", 6000);
+        showToast(`모델을 불러오지 못했습니다: ${status?.error || "알 수 없는 오류"}`, 6000);
         return;
       }
 
@@ -479,7 +479,7 @@
           queueLayout();
         })
       );
-      if (serverDown) showToast("분석 중 로컬 서버 연결이 끊겼습니다.", 6000);
+      if (serverDown) showToast("분석 중 모델 실행이 중단되었습니다. 다시 스캔해 주세요.", 6000);
       else showToast(`이미지 ${images.length}장 분석 완료 · FAKE 판정 얼굴 ${fake}개`);
     } catch (error) {
       showToast(`스캔 실패: ${error?.message || error}`, 6000);

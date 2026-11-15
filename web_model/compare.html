@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>모델 비교</title>
+<style>
+  :root { --bg:#f7f7f8; --fg:#1d1d1f; --muted:#6e6e73; --card:#fff; --line:#e3e3e8; --accent:#6741d9; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#121214; --fg:#f2f2f4; --muted:#a1a1a6; --card:#1c1c1f; --line:#2e2e33; --accent:#9b7bff; } }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.5 system-ui, "Malgun Gothic", sans-serif; }
+  main { max-width: 1080px; margin: 0 auto; padding: 24px 16px 64px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin-top:12px; overflow-x:auto; }
+  button { font:inherit; background:var(--accent); color:#fff; border:0; border-radius:8px; padding:8px 14px; }
+  table { border-collapse: collapse; font-size: 13px; width: 100%; }
+  th, td { padding: 6px 8px; border-bottom: 1px solid var(--line); text-align: right; }
+  th:first-child, td:first-child { text-align: left; }
+  .muted { color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>제이 사이트 EfficientNetV2S vs 최종 EfficientNetV2S(Phase 9)</h1>
+  <p class="muted">EfficientNetV2S 는 제이 사이트의 TF.js 모델과 전처리(app.js inputCanvas, 기준 0.24)를 그대로 사용. 최종 모델 점수는 compare_models.py 가 서버와 같은 경로로 계산.</p>
+  <button id="run">비교 실행</button> <span id="progress" class="muted"></span>
+  <div id="out"></div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+<script type="module">
+const $ = (id) => document.getElementById(id);
+// ?set=compare_scene 이면 얼굴이 작게 나온 사진 세트
+const BASE = `./reference/${new URLSearchParams(location.search).get('set') || 'compare'}/`;
+const config = await (await fetch('./reference/jei_model/inference_config.json')).json();
+const model = await tf.loadGraphModel('./reference/jei_model/model.json');
+const [H, W] = config.image_size;
+const EFF_T = Number(config.decision_threshold_real);
+tf.tidy(() => model.predict(tf.zeros([1, H, W, 3])));
+$('progress').textContent = `모델 준비 (${tf.getBackend()})`;
+
+// 제이 사이트 app.js inputCanvas 그대로
+function inputCanvas(img) {
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, W, H);
+  ctx.drawImage(img, 0, 0, W, H);
+  return canvas;
+}
+const loadOnce = (src) => new Promise((resolve, reject) => {
+  const img = new Image();
+  img.onload = () => resolve(img);
+  img.onerror = () => reject(new Error(`이미지 로드 실패: ${src}`));
+  img.src = src;
+});
+// 로컬 정적 서버가 동시 요청을 가끔 거절하므로 재시도
+async function loadImg(src) {
+  for (let attempt = 0; ; attempt++) {
+    try { return await loadOnce(attempt ? `${src}?r=${attempt}` : src); }
+    catch (error) { if (attempt >= 4) throw error; await new Promise((r) => setTimeout(r, 300 * (attempt + 1))); }
+  }
+}
+
+function auc(labels, scores) {
+  const idx = scores.map((s, i) => i).sort((a, b) => scores[a] - scores[b]);
+  const ranks = new Array(scores.length);
+  let i = 0;
+  while (i < idx.length) {
+    let j = i;
+    while (j + 1 < idx.length && scores[idx[j + 1]] === scores[idx[i]]) j++;
+    for (let k = i; k <= j; k++) ranks[idx[k]] = (i + j) / 2 + 1;
+    i = j + 1;
+  }
+  let nPos = 0, sumPos = 0;
+  labels.forEach((l, k) => { if (l === 1) { nPos++; sumPos += ranks[k]; } });
+  const nNeg = labels.length - nPos;
+  return (sumPos - nPos * (nPos + 1) / 2) / (nPos * nNeg);
+}
+
+function metrics(rows, key, t) {
+  const valid = rows.filter((r) => r[key] !== null && r[key] !== undefined);
+  const real = valid.filter((r) => r.label === 1), fake = valid.filter((r) => r.label === 0);
+  const realRecall = real.filter((r) => r[key] >= t).length / real.length;
+  const fakeRecall = fake.filter((r) => r[key] < t).length / fake.length;
+  return { n: valid.length, skipped: rows.length - valid.length,
+    auc: real.length && fake.length ? auc(valid.map((r) => r.label), valid.map((r) => r[key])) : null,
+    bacc: (realRecall + fakeRecall) / 2, realRecall, fakeRecall };
+}
+
+$('run').addEventListener('click', async () => {
+  $('run').disabled = true;
+  const ref = await (await fetch(BASE + 'manifest.json')).json();
+  const items = ref.items;
+  const CNX_T = ref.final_threshold;
+  const batch = 16;
+  const t0 = performance.now();
+  for (let s = 0; s < items.length; s += batch) {
+    const part = items.slice(s, s + batch);
+    const imgs = await Promise.all(part.map((it) => loadImg(BASE + 'images/' + it.file)));
+    const probs = tf.tidy(() => model.predict(tf.stack(imgs.map((img) => tf.browser.fromPixels(inputCanvas(img), 3).toFloat()))));
+    const data = await probs.data();
+    probs.dispose();
+    part.forEach((it, k) => { it.effnet = data[k]; });
+    $('progress').textContent = `${Math.min(s + batch, items.length)} / ${items.length}`;
+  }
+  const seconds = (performance.now() - t0) / 1000;
+  const models = [
+    ['EfficientNetV2S 1차 Keras (현재 사이트, 이미지 전체)', 'effnet', EFF_T],
+    ['EfficientNetV2S Phase 9 (최종, 얼굴 crop)', 'final_face', CNX_T],
+    ['EfficientNetV2S Phase 9 (최종, 이미지 전체)', 'final_full', ref.final_threshold_full ?? 0.5],
+  ];
+  const conds = ['none', 'jpeg_q50', 'resize_0.5', 'blur_1.0', 'scene_small_face'].filter((c) => items.some((r) => r.condition === c));
+  const summary = { seconds: Number(seconds.toFixed(1)), pool: ref.pool, conditions: {}, families: {}, edited: {} };
+  for (const c of conds) {
+    const rows = items.filter((r) => r.condition === c);
+    summary.conditions[c] = Object.fromEntries(models.map(([name, key, t]) => [key, metrics(rows, key, t)]));
+    summary.conditions[c].n_real = rows.filter((r) => r.label === 1).length;
+    summary.conditions[c].n_fake = rows.filter((r) => r.label === 0).length;
+    summary.families[c] = {};
+    for (const fam of ['gan', 'diffusion', 'manip']) {
+      const famRows = rows.filter((r) => r.label === 0 && r.family === fam);
+      summary.families[c][fam] = { n: famRows.length, ...Object.fromEntries(models.map(([, key, t]) => {
+        const v = famRows.filter((r) => r[key] !== null);
+        return [key, v.length ? v.filter((r) => r[key] < t).length / v.length : null];
+      })) };
+    }
+  }
+  for (const c of ['edit_control', 'edit_skin_mid', 'edit_beauty_mid']) {
+    const rows = items.filter((r) => r.condition === c);
+    summary.edited[c] = { n: rows.length, ...Object.fromEntries(models.map(([, key, t]) => {
+      const v = rows.filter((r) => r[key] !== null);
+      return [key, v.length ? v.filter((r) => r[key] < t).length / v.length : null];
+    })) };
+  }
+  window.__summary = summary;
+  const pct = (v) => (v === null || v === undefined ? '–' : (v * 100).toFixed(1) + '%');
+  let html = '';
+  for (const c of conds) {
+    html += `<div class="card"><b>${c}</b> · real ${summary.conditions[c].n_real} / fake ${summary.conditions[c].n_fake}<table><tr><th>모델</th><th>AUC</th><th>균형 정확도</th><th>real 정답률</th><th>fake 탐지율</th><th>판단 불가</th></tr>`;
+    for (const [name, key] of models) {
+      const m = summary.conditions[c][key];
+      html += `<tr><td>${name}</td><td>${m.auc?.toFixed(3)}</td><td>${pct(m.bacc)}</td><td>${pct(m.realRecall)}</td><td>${pct(m.fakeRecall)}</td><td>${m.skipped}</td></tr>`;
+    }
+    html += '</table></div>';
+  }
+  html += '<div class="card"><b>보정한 진짜 사진을 FAKE 로 오판한 비율</b><table><tr><th>조건</th><th>n</th>' + models.map(([n]) => `<th>${n}</th>`).join('') + '</tr>';
+  for (const [c, v] of Object.entries(summary.edited)) html += `<tr><td>${c}</td><td>${v.n}</td>${models.map(([, k]) => `<td>${pct(v[k])}</td>`).join('')}</tr>`;
+  html += '</table></div>';
+  $('out').innerHTML = html;
+  $('progress').textContent = `완료 (${seconds.toFixed(1)}초)`;
+});
+</script>
+</body>
+</html>

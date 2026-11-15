@@ -1,0 +1,38 @@
+{
+  "model_name": "efficientnetv2s_pseudo_vae_deg_t4/all",
+  "model_file": "efficientnetv2s_fake_face.onnx",
+  "input_name": "input",
+  "outputs": {
+    "logit": "logit of P(real)",
+    "cam_map": "REAL 방향 Grad-CAM, ReLU 이전 (N,10,10)"
+  },
+  "input_size": 256,
+  "model_input_size": 320,
+  "tta_hflip": false,
+  "mean": [
+    0.5,
+    0.5,
+    0.5
+  ],
+  "std": [
+    0.5,
+    0.5,
+    0.5
+  ],
+  "eval_jpeg_quality": 90,
+  "decision_threshold_real": {
+    "face": 0.34,
+    "full": 0.52
+  },
+  "class_names": [
+    "fake",
+    "real"
+  ],
+  "face_crop": {
+    "scale": 2.0,
+    "shift_up": 0.05,
+    "min_face_ratio": 0.04,
+    "max_faces": 8
+  },
+  "source_config": "server/models/efficientnetv2s_fake_face.json"
+}

@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fakit 모델 테스트</title>
+<style>
+  :root { --bg:#f7f7f8; --fg:#1d1d1f; --muted:#6e6e73; --card:#fff; --line:#e3e3e8; --real:#1a7f37; --fake:#c62828; --accent:#6741d9; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#121214; --fg:#f2f2f4; --muted:#a1a1a6; --card:#1c1c1f; --line:#2e2e33; --real:#4cc26a; --fake:#ff6b6b; --accent:#9b7bff; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.5 system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif; }
+  main { max-width: 1080px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 17px; margin: 28px 0 10px; }
+  .muted { color: var(--muted); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  button, input[type=file] { font: inherit; }
+  button { background: var(--accent); color: #fff; border: 0; border-radius: 8px; padding: 8px 14px; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  #preview { position: relative; display: inline-block; max-width: 100%; margin-top: 12px; }
+  #preview img { max-width: 100%; max-height: 480px; display: block; border-radius: 8px; }
+  .box { position: absolute; border: 2px solid; border-radius: 4px; font-size: 12px; font-weight: 600; }
+  .box span { position: absolute; top: -20px; left: -2px; padding: 0 6px; color: #fff; border-radius: 4px; white-space: nowrap; }
+  .faces { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin-top: 12px; }
+  .faces img { width: 120px; height: 120px; border-radius: 6px; }
+  .real { color: var(--real); } .fake { color: var(--fake); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+  .table-wrap { overflow-x: auto; }
+  .ok { color: var(--real); font-weight: 600; } .bad { color: var(--fake); font-weight: 600; }
+  pre { white-space: pre-wrap; font-size: 13px; margin: 0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Fakit 최종 모델 브라우저 테스트</h1>
+  <p class="muted">EfficientNetV2S (ONNX, onnxruntime-web wasm) + MediaPipe 얼굴 검출. 이미지는 이 브라우저 밖으로 나가지 않습니다.</p>
+  <div class="card"><pre id="status">모델 준비 중…</pre></div>
+
+  <h2>직접 검사</h2>
+  <div class="card">
+    <div class="row">
+      <input type="file" id="file" accept="image/*" disabled>
+      <label><input type="radio" name="mode" value="face" checked> 얼굴 crop</label>
+      <label><input type="radio" name="mode" value="full"> 이미지 전체</label>
+    </div>
+    <div id="preview"></div>
+    <div id="faces" class="faces"></div>
+  </div>
+
+  <h2>서버(PyTorch)와 비교</h2>
+  <div class="card">
+    <div class="row"><button id="compare" disabled>비교 실행</button><span id="compare-progress" class="muted"></span></div>
+    <div id="compare-summary" style="margin-top:12px"></div>
+    <div class="table-wrap" style="margin-top:12px"><table id="compare-table"></table></div>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
+<script type="module">
+import { FilesetResolver, FaceDetector } from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs';
+import { createFaceModel, internals } from './fakit-face-model.js';
+
+const $ = (id) => document.getElementById(id);
+const status = (text) => { $('status').textContent = text; };
+ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/';
+ort.env.wasm.numThreads = self.crossOriginIsolated ? Math.min(4, navigator.hardwareConcurrency || 1) : 1;
+
+const started = performance.now();
+let model;
+try {
+  model = await createFaceModel({
+    ort,
+    vision: { FilesetResolver, FaceDetector },
+    modelUrl: './out/efficientnetv2s_fake_face.onnx',
+    configUrl: './out/model_config.json',
+    detectorModelUrl: '../server/models/blaze_face_short_range.tflite',
+    mediapipeWasmUrl: 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm',
+  });
+  status(`준비 완료 (${((performance.now() - started) / 1000).toFixed(1)}초) · ${model.config.model_name} · 기준값 face ${model.config.decision_threshold_real.face} / full ${model.config.decision_threshold_real.full} · wasm 스레드 ${ort.env.wasm.numThreads}`);
+  $('file').disabled = false;
+  $('compare').disabled = false;
+  window.__model = model;
+} catch (error) {
+  status(`모델 준비 실패: ${error.message}`);
+  throw error;
+}
+
+// ---------------- 직접 검사
+$('file').addEventListener('change', async () => {
+  const file = $('file').files[0];
+  if (!file) return;
+  const mode = document.querySelector('input[name=mode]:checked').value;
+  const url = URL.createObjectURL(file);
+  $('preview').innerHTML = `<img src="${url}" alt="">`;
+  $('faces').innerHTML = '';
+  status('분석 중…');
+  const result = await model.analyze(file, { mode, explain: true });
+  status(`${result.status} · ${result.faces.length}개 · ${result.elapsed_ms} ms`);
+  const [w, h] = result.image_size;
+  for (const face of result.faces) {
+    const [x, y, bw, bh] = face.bbox;
+    const color = face.label === 'real' ? 'var(--real)' : 'var(--fake)';
+    const box = document.createElement('div');
+    box.className = 'box';
+    Object.assign(box.style, { left: `${(x / w) * 100}%`, top: `${(y / h) * 100}%`, width: `${(bw / w) * 100}%`, height: `${(bh / h) * 100}%`, borderColor: color });
+    box.innerHTML = `<span style="background:${color}">${face.label.toUpperCase()} ${(face.label === 'real' ? face.prob_real : face.prob_fake) * 100 | 0}%</span>`;
+    $('preview').appendChild(box);
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `<div class="row"><img src="${face.crop_image}" alt="모델 입력"><img src="${face.gradcam_image}" alt="Grad-CAM"></div>
+      <div class="${face.label}"><b>${face.label.toUpperCase()}</b> · P(real) ${face.prob_real}</div>
+      <div class="muted">Grad-CAM: ${face.gradcam_target.toUpperCase()} 판단 근거</div>`;
+    $('faces').appendChild(card);
+  }
+});
+
+// ---------------- 서버 비교
+function iou(a, b) {
+  const x1 = Math.max(a[0], b[0]), y1 = Math.max(a[1], b[1]);
+  const x2 = Math.min(a[0] + a[2], b[0] + b[2]), y2 = Math.min(a[1] + a[3], b[1] + b[3]);
+  const inter = Math.max(0, x2 - x1) * Math.max(0, y2 - y1);
+  return inter / (a[2] * a[3] + b[2] * b[3] - inter);
+}
+
+async function loadPixels(url) {
+  const blob = await (await fetch(url)).blob();
+  return internals.bitmapToPixels(await internals.decodeBlob(blob));
+}
+
+function pixelDiff(a, b) {
+  let max = 0, sum = 0;
+  for (let i = 0; i < a.data.length; i += 4) {
+    for (let c = 0; c < 3; c++) {
+      const d = Math.abs(a.data[i + c] - b.data[i + c]);
+      if (d > max) max = d;
+      sum += d;
+    }
+  }
+  return { max, mean: sum / (a.width * a.height * 3) };
+}
+
+$('compare').addEventListener('click', async () => {
+  $('compare').disabled = true;
+  const ref = await (await fetch('./reference/reference.json')).json();
+  const rows = [];
+  const t0 = performance.now();
+  for (const [index, entry] of ref.entries.entries()) {
+    $('compare-progress').textContent = `${index + 1} / ${ref.entries.length}`;
+    const original = await loadPixels(`./reference/images/${entry.name}`);
+    const stem = entry.name.replace(/\.[^.]+$/, '');
+    // 단계 1: 리사이즈 (Pillow BILINEAR 재현)
+    let work = original;
+    if (Math.max(work.width, work.height) > internals.MAX_IMAGE_SIDE) {
+      const s = internals.MAX_IMAGE_SIDE / Math.max(work.width, work.height);
+      work = internals.resizeBilinear(work, internals.pyRound(work.width * s), internals.pyRound(work.height * s));
+    }
+    const resized = internals.resizeBilinear(work, 256, 256);
+    const resizeDiff = pixelDiff(resized, await loadPixels(`./reference/stages/${stem}.resized.png`));
+    // 단계 2: JPEG 90 (같은 입력에서 인코더 차이만)
+    const serverResized = await loadPixels(`./reference/stages/${stem}.resized.png`);
+    const jpeg = await internals.jpegRoundTrip(serverResized, 90);
+    const jpegDiff = pixelDiff(jpeg, await loadPixels(`./reference/stages/${stem}.jpeg90.png`));
+    // 단계 3: 전체 파이프라인
+    const full = await model.analyze(original, { mode: 'full' });
+    const face = await model.analyze(original, { mode: 'face' });
+    const sFull = entry.full.faces[0].prob_real;
+    const row = {
+      name: entry.name, label: entry.label,
+      resizeMax: resizeDiff.max, jpegMax: jpegDiff.max, jpegMean: jpegDiff.mean,
+      fullServer: sFull, fullBrowser: full.faces[0].prob_real_raw,
+      fullLabelSame: full.faces[0].label === entry.full.faces[0].label,
+      serverFaces: entry.face.faces.length, browserFaces: face.faces.length, faceMatches: [],
+    };
+    for (const sf of entry.face.faces) {
+      let best = null, bestIou = 0;
+      for (const bf of face.faces) {
+        const v = iou(sf.bbox, bf.bbox);
+        if (v > bestIou) { bestIou = v; best = bf; }
+      }
+      row.faceMatches.push({ iou: bestIou, server: sf.prob_real, browser: best?.prob_real_raw ?? null,
+        labelSame: best ? best.label === sf.label : false, cropSame: best ? sf.crop_box.every((v, i) => Math.abs(v - best.crop_box[i]) <= 1) : false });
+    }
+    rows.push(row);
+  }
+  const elapsed = (performance.now() - t0) / 1000;
+  const matches = rows.flatMap((r) => r.faceMatches).filter((m) => m.browser !== null && m.iou > 0.5);
+  const allServerFaces = rows.reduce((s, r) => s + r.serverFaces, 0);
+  const fullDiffs = rows.map((r) => Math.abs(r.fullServer - r.fullBrowser));
+  const faceDiffs = matches.map((m) => Math.abs(m.server - m.browser));
+  const stat = (arr) => ({ max: Math.max(...arr), mean: arr.reduce((a, b) => a + b, 0) / arr.length });
+  const summary = {
+    images: rows.length,
+    seconds: Number(elapsed.toFixed(1)),
+    resize_pixel_max_diff: Math.max(...rows.map((r) => r.resizeMax)),
+    resize_exact_images: rows.filter((r) => r.resizeMax === 0).length,
+    jpeg_pixel_max_diff: Math.max(...rows.map((r) => r.jpegMax)),
+    jpeg_pixel_mean_diff: Number(stat(rows.map((r) => r.jpegMean)).mean.toFixed(4)),
+    full_prob_diff: stat(fullDiffs),
+    full_label_disagreements: rows.filter((r) => !r.fullLabelSame).length,
+    face_count_mismatch_images: rows.filter((r) => r.serverFaces !== r.browserFaces).length,
+    server_faces: allServerFaces,
+    matched_faces: matches.length,
+    crop_box_same: matches.filter((m) => m.cropSame).length,
+    face_prob_diff: faceDiffs.length ? stat(faceDiffs) : null,
+    face_label_disagreements: matches.filter((m) => !m.labelSame).length,
+  };
+  window.__compare = { summary, rows };
+  const good = (ok) => `<span class="${ok ? 'ok' : 'bad'}">${ok ? '일치' : '차이'}</span>`;
+  $('compare-summary').innerHTML = `<pre>${JSON.stringify(summary, null, 2)}</pre>`;
+  $('compare-table').innerHTML = '<tr><th>이미지</th><th>리사이즈 최대차</th><th>JPEG 최대차</th><th>full P(real) 서버 / 브라우저</th><th>판정</th><th>얼굴 수 서버 / 브라우저</th></tr>' +
+    rows.map((r) => `<tr><td>${r.name}</td><td>${r.resizeMax}</td><td>${r.jpegMax}</td><td>${r.fullServer.toFixed(4)} / ${r.fullBrowser.toFixed(4)}</td><td>${good(r.fullLabelSame)}</td><td>${r.serverFaces} / ${r.browserFaces}</td></tr>`).join('');
+  $('compare-progress').textContent = `완료 (${elapsed.toFixed(1)}초)`;
+  $('compare').disabled = false;
+});
+</script>
+</body>
+</html>

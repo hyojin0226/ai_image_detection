@@ -1,0 +1,39 @@
+{
+  "model_name": "efficientnetv2s_pseudo_vae_deg_t4/all",
+  "timm_name": "tf_efficientnetv2_s.in21k_ft_in1k",
+  "weights": "efficientnetv2s_fake_face.pt",
+  "output": "logit of P(real); fake=0, real=1",
+  "input_size": 320,
+  "tta_hflip": false,
+  "gradcam_layer": "bn2",
+  "mean": [
+    0.5,
+    0.5,
+    0.5
+  ],
+  "std": [
+    0.5,
+    0.5,
+    0.5
+  ],
+  "eval_jpeg_quality": 90,
+  "decision_threshold_real": {
+    "face": 0.34,
+    "full": 0.52
+  },
+  "threshold_note": "valid Macro F1 기준. face = 얼굴 crop x2.0 보기, full = 이미지 전체 보기",
+  "training_run": "WSL outputs/exp2/efficientnetv2s_pseudo_vae_deg_t4/all",
+  "training_options": {
+    "pseudo": "vae",
+    "degrade": true,
+    "epochs": 8,
+    "lr": 0.0001,
+    "zero_head": true,
+    "img_size": 320,
+    "ema": 0.999,
+    "drop_path": 0.2,
+    "crop_mix": 0.5,
+    "tta": false,
+    "seed": 42
+  }
+}

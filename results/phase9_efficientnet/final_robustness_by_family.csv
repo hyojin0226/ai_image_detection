@@ -1,0 +1,193 @@
+view,perturbation,eval_set,family,n,fake_recall,model,run
+face_crop,none,held_out,diffusion,2818,0.9996451383960255,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,none,held_out,gan,4466,0.9997760859829825,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,none,held_out,manip,2716,0.7698821796759941,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,none,test_id,diffusion,1196,1.0,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,none,test_id,gan,1367,1.0,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,none,test_id,manip,437,0.7597254004576659,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,jpeg_q90,held_out,diffusion,2818,0.9996451383960255,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,jpeg_q90,held_out,gan,4466,0.9997760859829825,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,jpeg_q90,held_out,manip,2716,0.7761413843888071,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,jpeg_q90,test_id,diffusion,1196,1.0,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,jpeg_q90,test_id,gan,1367,1.0,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,jpeg_q90,test_id,manip,437,0.7620137299771167,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,jpeg_q70,held_out,diffusion,2818,1.0,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,jpeg_q70,held_out,gan,4466,0.9991043439319302,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,jpeg_q70,held_out,manip,2716,0.7676730486008837,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,jpeg_q70,test_id,diffusion,1196,1.0,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,jpeg_q70,test_id,gan,1367,0.9985369422092173,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,jpeg_q70,test_id,manip,437,0.7414187643020596,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,jpeg_q50,held_out,diffusion,2818,0.9996451383960255,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,jpeg_q50,held_out,gan,4466,0.9959695476936856,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,jpeg_q50,held_out,manip,2716,0.8505154639175257,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,jpeg_q50,test_id,diffusion,1196,1.0,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,jpeg_q50,test_id,gan,1367,0.9941477688368691,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,jpeg_q50,test_id,manip,437,0.8466819221967964,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,resize_0.75,held_out,diffusion,2818,0.9985805535841022,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,resize_0.75,held_out,gan,4466,0.9988804299149127,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,resize_0.75,held_out,manip,2716,0.7687776141384389,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,resize_0.75,test_id,diffusion,1196,1.0,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,resize_0.75,test_id,gan,1367,0.9978054133138259,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,resize_0.75,test_id,manip,437,0.7597254004576659,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,resize_0.5,held_out,diffusion,2818,0.9989354151880766,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,resize_0.5,held_out,gan,4466,0.9979847738468428,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,resize_0.5,held_out,manip,2716,0.8313696612665685,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,resize_0.5,test_id,diffusion,1196,0.9974916387959866,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,resize_0.5,test_id,gan,1367,0.9941477688368691,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,resize_0.5,test_id,manip,437,0.8375286041189931,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,blur_0.5,held_out,diffusion,2818,0.9982256919801278,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,blur_0.5,held_out,gan,4466,1.0,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,blur_0.5,held_out,manip,2716,0.7978645066273933,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,blur_0.5,test_id,diffusion,1196,0.9991638795986622,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,blur_0.5,test_id,gan,1367,0.9992684711046086,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,blur_0.5,test_id,manip,437,0.7780320366132724,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,blur_1.0,held_out,diffusion,2818,0.9989354151880766,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,blur_1.0,held_out,gan,4466,0.9982086878638603,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,blur_1.0,held_out,manip,2716,0.8203240058910162,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,blur_1.0,test_id,diffusion,1196,0.9991638795986622,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,blur_1.0,test_id,gan,1367,0.9978054133138259,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,blur_1.0,test_id,manip,437,0.8329519450800915,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,none,held_out,diffusion,2818,0.9996451383960255,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,none,held_out,gan,4466,0.9997760859829825,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,none,held_out,manip,2716,0.8107511045655376,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,none,test_id,diffusion,1196,1.0,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,none,test_id,gan,1367,1.0,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,none,test_id,manip,437,0.8192219679633868,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,jpeg_q90,held_out,diffusion,2818,0.9996451383960255,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,jpeg_q90,held_out,gan,4466,0.9997760859829825,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,jpeg_q90,held_out,manip,2716,0.8184830633284241,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,jpeg_q90,test_id,diffusion,1196,1.0,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,jpeg_q90,test_id,gan,1367,1.0,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,jpeg_q90,test_id,manip,437,0.8237986270022883,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,jpeg_q70,held_out,diffusion,2818,1.0,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,jpeg_q70,held_out,gan,4466,0.9991043439319302,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,jpeg_q70,held_out,manip,2716,0.7982326951399117,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,jpeg_q70,test_id,diffusion,1196,1.0,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,jpeg_q70,test_id,gan,1367,0.9992684711046086,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,jpeg_q70,test_id,manip,437,0.8146453089244852,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,jpeg_q50,held_out,diffusion,2818,1.0,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,jpeg_q50,held_out,gan,4466,0.9973130317957905,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,jpeg_q50,held_out,manip,2716,0.9131075110456554,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,jpeg_q50,test_id,diffusion,1196,1.0,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,jpeg_q50,test_id,gan,1367,0.9956108266276518,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,jpeg_q50,test_id,manip,437,0.9107551487414187,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,resize_0.75,held_out,diffusion,2818,0.9992902767920511,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,resize_0.75,held_out,gan,4466,0.9991043439319302,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,resize_0.75,held_out,manip,2716,0.8063328424153167,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,resize_0.75,test_id,diffusion,1196,1.0,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,resize_0.75,test_id,gan,1367,0.9978054133138259,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,resize_0.75,test_id,manip,437,0.8306636155606407,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,resize_0.5,held_out,diffusion,2818,0.9992902767920511,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,resize_0.5,held_out,gan,4466,0.9984326018808778,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,resize_0.5,held_out,manip,2716,0.8391016200294551,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,resize_0.5,test_id,diffusion,1196,1.0,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,resize_0.5,test_id,gan,1367,0.9970738844184345,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,resize_0.5,test_id,manip,437,0.8421052631578947,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,blur_0.5,held_out,diffusion,2818,0.9992902767920511,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,blur_0.5,held_out,gan,4466,1.0,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,blur_0.5,held_out,manip,2716,0.8291605301914581,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,blur_0.5,test_id,diffusion,1196,1.0,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,blur_0.5,test_id,gan,1367,0.9992684711046086,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,blur_0.5,test_id,manip,437,0.8375286041189931,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,blur_1.0,held_out,diffusion,2818,0.9992902767920511,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,blur_1.0,held_out,gan,4466,0.9993282579489476,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,blur_1.0,held_out,manip,2716,0.8291605301914581,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,blur_1.0,test_id,diffusion,1196,1.0,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,blur_1.0,test_id,gan,1367,0.9985369422092173,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+full_image,blur_1.0,test_id,manip,437,0.8489702517162472,배포 (VAE + 축소·블러),efficientnetv2s_pseudo_vae_deg_t4
+face_crop,none,held_out,diffusion,2818,0.9992902767920511,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,none,held_out,gan,4466,0.9991043439319302,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,none,held_out,manip,2716,0.7389543446244478,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,none,test_id,diffusion,1196,0.9983277591973244,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,none,test_id,gan,1367,0.9970738844184345,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,none,test_id,manip,437,0.7414187643020596,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,jpeg_q90,held_out,diffusion,2818,0.9992902767920511,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,jpeg_q90,held_out,gan,4466,0.999552171965965,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,jpeg_q90,held_out,manip,2716,0.7470544918998527,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,jpeg_q90,test_id,diffusion,1196,0.9974916387959866,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,jpeg_q90,test_id,gan,1367,0.9970738844184345,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,jpeg_q90,test_id,manip,437,0.7437070938215103,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,jpeg_q70,held_out,diffusion,2818,0.9978708303761533,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,jpeg_q70,held_out,gan,4466,0.9986565158978952,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,jpeg_q70,held_out,manip,2716,0.6918262150220913,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,jpeg_q70,test_id,diffusion,1196,0.9974916387959866,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,jpeg_q70,test_id,gan,1367,0.9934162399414777,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,jpeg_q70,test_id,manip,437,0.6590389016018307,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,jpeg_q50,held_out,diffusion,2818,0.9971611071682044,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,jpeg_q50,held_out,gan,4466,0.9935064935064936,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,jpeg_q50,held_out,manip,2716,0.8041237113402062,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,jpeg_q50,test_id,diffusion,1196,1.0,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,jpeg_q50,test_id,gan,1367,0.9934162399414777,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,jpeg_q50,test_id,manip,437,0.7780320366132724,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,resize_0.75,held_out,diffusion,2818,0.9985805535841022,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,resize_0.75,held_out,gan,4466,0.9986565158978952,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,resize_0.75,held_out,manip,2716,0.7544182621502209,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,resize_0.75,test_id,diffusion,1196,0.9983277591973244,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,resize_0.75,test_id,gan,1367,0.9978054133138259,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,resize_0.75,test_id,manip,437,0.7482837528604119,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,resize_0.5,held_out,diffusion,2818,0.9989354151880766,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,resize_0.5,held_out,gan,4466,0.9950738916256158,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,resize_0.5,held_out,manip,2716,0.8696612665684831,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,resize_0.5,test_id,diffusion,1196,0.9983277591973244,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,resize_0.5,test_id,gan,1367,0.9941477688368691,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,resize_0.5,test_id,manip,437,0.8878718535469108,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,blur_0.5,held_out,diffusion,2818,0.9989354151880766,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,blur_0.5,held_out,gan,4466,0.9997760859829825,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,blur_0.5,held_out,manip,2716,0.7632547864506627,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,blur_0.5,test_id,diffusion,1196,0.995819397993311,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,blur_0.5,test_id,gan,1367,0.9985369422092173,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,blur_0.5,test_id,manip,437,0.7620137299771167,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,blur_1.0,held_out,diffusion,2818,0.9985805535841022,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,blur_1.0,held_out,gan,4466,0.9977608598298253,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,blur_1.0,held_out,manip,2716,0.7993372606774669,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,blur_1.0,test_id,diffusion,1196,0.9974916387959866,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,blur_1.0,test_id,gan,1367,0.9941477688368691,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+face_crop,blur_1.0,test_id,manip,437,0.8032036613272311,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,none,held_out,diffusion,2818,0.9996451383960255,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,none,held_out,gan,4466,0.9993282579489476,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,none,held_out,manip,2716,0.7691458026509573,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,none,test_id,diffusion,1196,0.9991638795986622,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,none,test_id,gan,1367,0.9970738844184345,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,none,test_id,manip,437,0.7757437070938215,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,jpeg_q90,held_out,diffusion,2818,0.9996451383960255,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,jpeg_q90,held_out,gan,4466,0.999552171965965,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,jpeg_q90,held_out,manip,2716,0.7735640648011782,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,jpeg_q90,test_id,diffusion,1196,0.9991638795986622,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,jpeg_q90,test_id,gan,1367,0.9978054133138259,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,jpeg_q90,test_id,manip,437,0.7803203661327232,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,jpeg_q70,held_out,diffusion,2818,0.9989354151880766,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,jpeg_q70,held_out,gan,4466,0.9991043439319302,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,jpeg_q70,held_out,manip,2716,0.7109720176730486,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,jpeg_q70,test_id,diffusion,1196,0.9983277591973244,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,jpeg_q70,test_id,gan,1367,0.9948792977322605,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,jpeg_q70,test_id,manip,437,0.6750572082379863,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,jpeg_q50,held_out,diffusion,2818,0.9989354151880766,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,jpeg_q50,held_out,gan,4466,0.9950738916256158,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,jpeg_q50,held_out,manip,2716,0.8089101620029455,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,jpeg_q50,test_id,diffusion,1196,0.9991638795986622,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,jpeg_q50,test_id,gan,1367,0.9934162399414777,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,jpeg_q50,test_id,manip,437,0.8054919908466819,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,resize_0.75,held_out,diffusion,2818,0.9985805535841022,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,resize_0.75,held_out,gan,4466,0.9991043439319302,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,resize_0.75,held_out,manip,2716,0.7569955817378498,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,resize_0.75,test_id,diffusion,1196,0.9991638795986622,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,resize_0.75,test_id,gan,1367,0.9985369422092173,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,resize_0.75,test_id,manip,437,0.7711670480549199,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,resize_0.5,held_out,diffusion,2818,0.9985805535841022,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,resize_0.5,held_out,gan,4466,0.996641289744738,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,resize_0.5,held_out,manip,2716,0.7908689248895434,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,resize_0.5,test_id,diffusion,1196,0.9991638795986622,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,resize_0.5,test_id,gan,1367,0.9941477688368691,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,resize_0.5,test_id,manip,437,0.8077803203661327,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,blur_0.5,held_out,diffusion,2818,0.9996451383960255,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,blur_0.5,held_out,gan,4466,0.9997760859829825,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,blur_0.5,held_out,manip,2716,0.7790868924889544,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,blur_0.5,test_id,diffusion,1196,0.9991638795986622,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,blur_0.5,test_id,gan,1367,0.9992684711046086,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,blur_0.5,test_id,manip,437,0.7963386727688787,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,blur_1.0,held_out,diffusion,2818,0.9978708303761533,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,blur_1.0,held_out,gan,4466,0.9986565158978952,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,blur_1.0,held_out,manip,2716,0.7492636229749632,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,blur_1.0,test_id,diffusion,1196,0.9991638795986622,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,blur_1.0,test_id,gan,1367,0.9956108266276518,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9
+full_image,blur_1.0,test_id,manip,437,0.7597254004576659,대안 (VAE + SBI + 축소·블러),efficientnetv2s_pseudo_vae_sbi_deg_p9

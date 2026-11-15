@@ -1,0 +1,26 @@
+{
+  "n": 1200,
+  "threshold_real_full": 0.52,
+  "per_folder": 150,
+  "models": {
+    "fp32": {
+      "max_abs_prob_diff": 6.0498714447021484e-06,
+      "mean_abs_prob_diff": 3.27999936587415e-08,
+      "label_disagreements": 0,
+      "auc": 0.9986666666666667,
+      "gradcam_corr_min": 0.9999980498313263,
+      "gradcam_corr_mean": 0.9999999615466385,
+      "gradcam_samples": 78
+    },
+    "fp16w": {
+      "max_abs_prob_diff": 0.0020505785942077637,
+      "mean_abs_prob_diff": 2.502386400714526e-05,
+      "label_disagreements": 0,
+      "auc": 0.9986638888888889,
+      "gradcam_corr_min": 0.9999853096231625,
+      "gradcam_corr_mean": 0.9999953691806441,
+      "gradcam_samples": 78
+    }
+  },
+  "torch_auc": 0.9986666666666667
+}

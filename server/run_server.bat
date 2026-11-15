@@ -10,8 +10,8 @@ if not exist ".venv\Scripts\python.exe" (
     ".venv\Scripts\python.exe" -m pip install -r requirements.txt || goto :error
 )
 
-if not exist "models\convnext_tiny_fake_face.pt" (
-    echo [warn] models\convnext_tiny_fake_face.pt 가 없습니다. README 의 모델 준비 단계를 확인하세요.
+if not exist "models\efficientnetv2s_fake_face.pt" (
+    echo [warn] models\efficientnetv2s_fake_face.pt 가 없습니다. README 의 모델 준비 단계를 확인하세요.
 )
 
 echo [run] http://127.0.0.1:8000  (종료: Ctrl+C)

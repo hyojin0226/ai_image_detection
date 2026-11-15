@@ -1,16 +1,17 @@
 {
   "manifest_version": 3,
-  "name": "AI Face Detector (Local)",
-  "version": "0.1.0",
-  "description": "페이지의 얼굴 이미지를 로컬 서버로 보내 REAL / FAKE(AI 생성) 확률을 표시합니다.",
+  "name": "AI Face Detector",
+  "version": "0.2.0",
+  "description": "페이지의 얼굴 이미지를 이 브라우저 안에서 분석해 REAL / FAKE(AI 생성) 확률을 표시합니다. 이미지를 외부 서버로 보내지 않습니다.",
+  "minimum_chrome_version": "116",
+  "permissions": ["offscreen"],
   "background": {
     "service_worker": "background.js"
   },
-  "host_permissions": [
-    "http://localhost:8000/*",
-    "http://127.0.0.1:8000/*",
-    "<all_urls>"
-  ],
+  "host_permissions": ["<all_urls>"],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+  },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],

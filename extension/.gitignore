@@ -1,0 +1,5 @@
+# web_model/build_extension.py 가 채우는 파일 (모델·라이브러리, 수십 MB). 커밋하지 않는다.
+fakit-face-model.js
+model/
+lib/
+THIRD_PARTY_NOTICES.txt

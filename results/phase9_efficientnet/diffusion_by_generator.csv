@@ -1,0 +1,21 @@
+run,model,generator,n_fake,ood_auc,fake_recall
+efficientnetv2s,"Phase 3 기준선 (튜닝 전, 의사 fake 없음)",flux_dev,1066,0.6389424953095685,0.0009380863039399625
+efficientnetv2s,"Phase 3 기준선 (튜닝 전, 의사 fake 없음)",flux_pro,483,0.6241226708074534,0.0
+efficientnetv2s,"Phase 3 기준선 (튜닝 전, 의사 fake 없음)",sd,690,0.8821521739130436,0.008695652173913044
+efficientnetv2s,"Phase 3 기준선 (튜닝 전, 의사 fake 없음)",sdxl,7761,0.732928340420049,0.00901945625563716
+efficientnetv2s_nopseudo_deg_p9,Phase 9 + 의사 fake 없음,flux_dev,1066,0.561190712945591,0.00375234521575985
+efficientnetv2s_nopseudo_deg_p9,Phase 9 + 의사 fake 없음,flux_pro,483,0.5826707039337473,0.010351966873706004
+efficientnetv2s_nopseudo_deg_p9,Phase 9 + 의사 fake 없음,sd,690,0.9178107246376812,0.050724637681159424
+efficientnetv2s_nopseudo_deg_p9,Phase 9 + 의사 fake 없음,sdxl,7761,0.7356108877721943,0.021517845638448652
+efficientnetv2s_pseudo_vae_deg_p9,Phase 9 + 의사 fake VAE,flux_dev,1066,0.8517135084427767,0.0947467166979362
+efficientnetv2s_pseudo_vae_deg_p9,Phase 9 + 의사 fake VAE,flux_pro,483,0.7858589026915115,0.045548654244306416
+efficientnetv2s_pseudo_vae_deg_p9,Phase 9 + 의사 fake VAE,sd,690,0.9625676086956522,0.39855072463768115
+efficientnetv2s_pseudo_vae_deg_p9,Phase 9 + 의사 fake VAE,sdxl,7761,0.8769609199845381,0.1127432031954645
+efficientnetv2s_pseudo_sbi_deg_p9,Phase 9 + 의사 fake SBI,flux_dev,1066,0.9111968574108819,0.07035647279549719
+efficientnetv2s_pseudo_sbi_deg_p9,Phase 9 + 의사 fake SBI,flux_pro,483,0.9343016563146999,0.10766045548654245
+efficientnetv2s_pseudo_sbi_deg_p9,Phase 9 + 의사 fake SBI,sd,690,0.9007789855072463,0.05652173913043478
+efficientnetv2s_pseudo_sbi_deg_p9,Phase 9 + 의사 fake SBI,sdxl,7761,0.9056975067645923,0.08246360005153976
+efficientnetv2s_pseudo_vae_sbi_deg_p9,Phase 9 + 의사 fake VAE+SBI,flux_dev,1066,0.9202903377110695,0.21951219512195122
+efficientnetv2s_pseudo_vae_sbi_deg_p9,Phase 9 + 의사 fake VAE+SBI,flux_pro,483,0.932527950310559,0.2318840579710145
+efficientnetv2s_pseudo_vae_sbi_deg_p9,Phase 9 + 의사 fake VAE+SBI,sd,690,0.9655136231884058,0.5347826086956522
+efficientnetv2s_pseudo_vae_sbi_deg_p9,Phase 9 + 의사 fake VAE+SBI,sdxl,7761,0.9342155907743847,0.24520036077825022
