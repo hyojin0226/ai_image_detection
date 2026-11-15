@@ -1,9 +1,11 @@
-import { openGradcam } from './gradcam-dialog.js?v=original-photo';
+import { openGradcam } from './gradcam-dialog.js?v=whole8-photo';
 const $ = id => document.getElementById(id);
+// Frames used for the verdict (whole-video 8) vs reference segment frames.
+export const frameLabel = frame => frame.role === 'decision' ? '전체 판정' : '구간 ' + frame.segment;
 
 export async function analyzeVideo(file, { signal, onState = () => {} } = {}) {
   onState('loading', '영상 분석 모델을 불러오고 있어요.');
-  const { analyzeFile } = await import('./browser-engine.js?v=frames');
+  const { analyzeFile } = await import('./browser-engine.js?v=whole8');
   signal?.throwIfAborted();
   const video = await analyzeFile(file, { signal, progress: message => {
     onState(message.includes('준비') ? 'loading' : 'analyzing', message);
@@ -30,7 +32,7 @@ function frameCard(frame, result) {
   button.append(image);
   button.onclick = () => openGradcam(result,frame.index);
   const caption = document.createElement('figcaption');
-  caption.textContent = `${frame.timestamp_sec.toFixed(2)}초 · 구간 ${frame.segment}${frame.gradcam_available ? '' : ' · 양의 기여 신호 없음'}`;
+  caption.textContent = `${frame.timestamp_sec.toFixed(2)}초 · ${frameLabel(frame)}${frame.gradcam_available ? '' : ' · 양의 기여 신호 없음'}`;
   figure.append(button, caption); return figure;
 }
 
@@ -41,11 +43,13 @@ export function renderVideoResult(result) {
   $('video-details').open = false; $('video-details').ontoggle = null;
   updateVideoProgress();
   if (!video) return;
-  $('video-meta').textContent = `${video.duration_sec.toFixed(1)}초 · ${video.analyzed_frames}/${video.planned_frames}프레임 분석 · ${video.elapsed_sec}초 소요`;
+  $('video-meta').textContent = video.decision_frames
+    ? `${video.duration_sec.toFixed(1)}초 · 판정 ${video.decision_frames}프레임 + 구간 참고 ${video.segment_frames}프레임 · ${video.elapsed_sec}초 소요`
+    : `${video.duration_sec.toFixed(1)}초 · ${video.analyzed_frames}/${video.planned_frames}프레임 분석 · ${video.elapsed_sec}초 소요`;
   $('video-limits').textContent = video.limitations_ko;
   const map = new Map(video.frames.map(frame => [frame.index, frame]));
   $('video-main-frames').append(...video.main_frame_indices.map(id => map.get(id)).filter(Boolean).map(frame => frameCard(frame,result)));
-  $('video-details-title').textContent = `나머지 프레임 ${video.detail_frame_indices.length}개`;
+  $('video-details-title').textContent = `${video.decision_frames ? '구간 참고 프레임' : '나머지 프레임'} ${video.detail_frame_indices.length}개`;
   let rendered = false;
   $('video-details').ontoggle = () => {
     if (!$('video-details').open || rendered) return;
